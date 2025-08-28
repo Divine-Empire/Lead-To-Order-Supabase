@@ -1329,7 +1329,7 @@ const filterCounts = calculateFilterCounts();
                           <tr key={index} className="hover:bg-slate-50">
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                               <div className="flex space-x-2">
-                                <Link to={`/call-tracker/new?leadId=${tracker.lead_no}`}>
+                                <Link state={activeTab} to={`/call-tracker/new?leadId=${tracker.lead_no}`}>
                                   <button className="px-3 py-1 text-xs border border-purple-200 text-purple-600 hover:bg-purple-50 rounded-md">
                                     Process <ArrowRightIcon className="ml-1 h-3 w-3 inline" />
                                   </button>
@@ -1471,7 +1471,7 @@ const filterCounts = calculateFilterCounts();
                           <tr key={index} className="hover:bg-slate-50">
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                               <div className="flex space-x-2">
-                                <Link to={`/call-tracker/new?leadId=${tracker.enquiry_no}`}>
+                                <Link state={activeTab}  to={`/call-tracker/new?leadId=${tracker.enquiry_no}`}>
                                   <button className="px-3 py-1 text-xs border border-purple-200 text-purple-600 hover:bg-purple-50 rounded-md">
                                     Process <ArrowRightIcon className="ml-1 h-3 w-3 inline" />
                                   </button>

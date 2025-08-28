@@ -126,7 +126,7 @@ function Leads() {
     try {
       const { data, error } = await supabase
         .from("dropdown")
-        .select("company_name, salesperson_name, phone_number, email, location")
+        .select("lead_form_company_name, lead_form_person_name, phone_number, email, location")
         .not("company_name", "is", null)
 
       if (error) {

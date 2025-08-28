@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import supabase from "../utils/supabase"
 
 const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
   const [leadSources, setLeadSources] = useState([])
@@ -57,240 +58,252 @@ const [assignToProjectOptions, setAssignToProjectOptions] = useState([])
     fetchLastEnquiryNumber()
   }, [])
 
-  // Function to fetch the last enquiry number from the spreadsheet
-  const fetchLastEnquiryNumber = async () => {
-    try {
-      const publicUrl = "https://docs.google.com/spreadsheets/d/1TZVWkmASF7tG-QER17588sl4SvRgY7knFKFDtYFjB0Q/gviz/tq?tqx=out:json&sheet=ENQUIRY TO ORDER"
-      
-      const response = await fetch(publicUrl)
-      const text = await response.text()
-      
-      const jsonStart = text.indexOf('{')
-      const jsonEnd = text.lastIndexOf('}') + 1
-      const jsonData = text.substring(jsonStart, jsonEnd)
-      
-      const data = JSON.parse(jsonData)
-      
-      if (data && data.table && data.table.rows && data.table.rows.length > 0) {
-        // Get all enquiry numbers (column B, index 1) from non-empty rows
-        const enquiryNumbers = data.table.rows
-          .filter(row => row.c && row.c[1] && row.c[1].v)
-          .map(row => row.c[1].v.toString())
-        
-        // Find the highest enquiry number (assuming format "En-XX" where XX is a number)
-        let maxNumber = 0
-        enquiryNumbers.forEach(num => {
-          if (num.startsWith("En-")) {
-            const numPart = parseInt(num.substring(3), 10)
-            if (!isNaN(numPart) && numPart > maxNumber) {
-              maxNumber = numPart
-            }
-          }
-        })
-        
-        // Generate the next enquiry number
-        const nextNumber = maxNumber + 1
-        const nextEnquiryNo = `En-${nextNumber.toString().padStart(2, "0")}`
-        
-        // Set the next enquiry number
-        setLastEnquiryNo(nextEnquiryNo)
-        setNewCallTrackerData(prev => ({
-          ...prev,
-          enquiryNo: nextEnquiryNo
-        }))
-      } else {
-        // Default to "En-01" if no data found
-        setLastEnquiryNo("En-01")
+  // Function to fetch the last enquiry number from Supabase
+const fetchLastEnquiryNumber = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('enquiry_to_order') // Changed to enquiry_tracker to match your table name
+      .select('enquiry_no')
+      .order('created_at', { ascending: false }) // Using created_at instead of id
+      .limit(1)
+      .single()
+
+    if (error) {
+      // Handle different error cases
+      if (error.code === 'PGRST116') {
+        // No rows found - this is normal for empty table
+        console.log("No existing records found, starting with En-01");
+        setLastEnquiryNo("En-01");
         setNewCallTrackerData(prev => ({
           ...prev,
           enquiryNo: "En-01"
-        }))
+        }));
+        return;
+      } else if (error.code === '42P01') {
+        // Table doesn't exist
+        console.log("Table doesn't exist yet, starting with En-01");
+        setLastEnquiryNo("En-01");
+        setNewCallTrackerData(prev => ({
+          ...prev,
+          enquiryNo: "En-01"
+        }));
+        return;
+      } else {
+        // Other errors
+        console.error("Error fetching last enquiry number:", error);
+        setLastEnquiryNo("En-01");
+        setNewCallTrackerData(prev => ({
+          ...prev,
+          enquiryNo: "En-01"
+        }));
+        return;
       }
-    } catch (error) {
-      console.error("Error fetching last enquiry number:", error)
-      // Default to "En-01" if there's an error
-      setLastEnquiryNo("En-01")
+    }
+
+    if (data && data.enquiry_no) {
+      // Extract the number part and increment
+      const match = data.enquiry_no.match(/En-(\d+)/);
+      if (match && match[1]) {
+        const nextNumber = parseInt(match[1]) + 1;
+        const nextEnquiryNo = `En-${nextNumber.toString().padStart(2, "0")}`;
+        setLastEnquiryNo(nextEnquiryNo);
+        setNewCallTrackerData(prev => ({
+          ...prev,
+          enquiryNo: nextEnquiryNo
+        }));
+      } else {
+        // Default to "En-01" if format doesn't match
+        setLastEnquiryNo("En-01");
+        setNewCallTrackerData(prev => ({
+          ...prev,
+          enquiryNo: "En-01"
+        }));
+      }
+    } else {
+      // Default to "En-01" if no data found
+      setLastEnquiryNo("En-01");
       setNewCallTrackerData(prev => ({
         ...prev,
         enquiryNo: "En-01"
-      }))
+      }));
     }
+  } catch (error) {
+    console.error("Error fetching last enquiry number:", error);
+    // Default to "En-01" if there's an error
+    setLastEnquiryNo("En-01");
+    setNewCallTrackerData(prev => ({
+      ...prev,
+      enquiryNo: "En-01"
+    }));
   }
+}
 
   // Function to fetch dropdown data from DROPDOWN sheet with updated column references
-  const fetchDropdownData = async () => {
-    try {
-      const publicUrl = "https://docs.google.com/spreadsheets/d/1TZVWkmASF7tG-QER17588sl4SvRgY7knFKFDtYFjB0Q/gviz/tq?tqx=out:json&sheet=DROPDOWN"
-      
-      const response = await fetch(publicUrl)
-      const text = await response.text()
-      
-      const jsonStart = text.indexOf('{')
-      const jsonEnd = text.lastIndexOf('}') + 1
-      const jsonData = text.substring(jsonStart, jsonEnd)
-      
-      const data = JSON.parse(jsonData)
-      
-      if (data && data.table && data.table.rows) {
-        const sources = []        // Column B (Lead Sources)
-        const scNames = []        // Column AK (SC Name Options) - index 36
-        const states = []         // Column C (Enquiry States)
-        const salesTypeOptions = [] // Column D (Sales Types)
-        const productItems = []   // Column AJ (index 35) - Product Categories
-        const nobItems = []       // Column AL (index 37) - NOB Options
-        const approachOptions = [] // Column AM (index 38) - Enquiry Approach
-        const receivers = []      // Column BW (index 74) - Enquiry Receiver Name Options
-        const assignToProjects = [] // Column BX (index 75) - Enquiry Assign to Project Options
-        
-        // Skip the header row
-        data.table.rows.slice(0).forEach(row => {
-          if (row.c) {
-            // Column B (Lead Sources)
-            if (row.c[1] && row.c[1].v) {
-              sources.push(row.c[1].v.toString())
-            }
-            
-            // Column AK (SC Name Options) - index 36
-            if (row.c[36] && row.c[36].v) {
-              scNames.push(row.c[36].v.toString())
-            }
-            
-            // Column C (Enquiry States)
-            if (row.c[2] && row.c[2].v) {
-              states.push(row.c[2].v.toString())
-            }
-            
-            // Column D (Sales Types)
-            if (row.c[3] && row.c[3].v) {
-              salesTypeOptions.push(row.c[3].v.toString())
-            }
-            
-            // Column AJ (Product Categories) - index 35
-            if (row.c[76] && row.c[76].v) {
-              productItems.push(row.c[76].v.toString())
-            }
-            
-            // Column AL (NOB Options) - index 37
-            if (row.c[37] && row.c[37].v) {
-              nobItems.push(row.c[37].v.toString())
-            }
-            
-            // Column AM (Enquiry Approach) - index 38
-            if (row.c[38] && row.c[38].v) {
-              approachOptions.push(row.c[38].v.toString())
-            }
-            
-            // Column BW (Enquiry Receiver Name) - index 74
-            if (row.c[74] && row.c[74].v) {
-              receivers.push(row.c[74].v.toString())
-            }
-            
-            // Column BX (Enquiry Assign to Project) - index 75
-            if (row.c[75] && row.c[75].v) {
-              assignToProjects.push(row.c[75].v.toString())
-            }
-          }
-        })
-        
-        // Update state with fetched values (using unique values to prevent duplicates)
-        setLeadSources([...new Set(sources.filter(Boolean))])
-        setScNameOptions([...new Set(scNames.filter(Boolean))]) // Added SC Name options
-        setEnquiryStates([...new Set(states.filter(Boolean))])
-        setSalesTypes([...new Set(salesTypeOptions.filter(Boolean))])
-        setProductCategories([...new Set(productItems.filter(Boolean))])
-        setNobOptions([...new Set(nobItems.filter(Boolean))])
-        setEnquiryApproachOptions([...new Set(approachOptions.filter(Boolean))])
-        setReceiverOptions([...new Set(receivers.filter(Boolean))])
-        setAssignToProjectOptions([...new Set(assignToProjects.filter(Boolean))])
-      }
-    } catch (error) {
-      console.error("Error fetching dropdown values:", error)
-      // Fallback to empty arrays if there's an error
-      setLeadSources(["Website", "Justdial", "Sulekha", "Indiamart", "Referral", "Other"])
-      setScNameOptions(["SC 1", "SC 2", "SC 3"]) // Added fallback for SC Name
-      setEnquiryStates(["Maharashtra", "Gujarat", "Karnataka", "Tamil Nadu", "Delhi"])
-      setNobOptions(["NOB 1", "NOB 2", "NOB 3"])
-      setSalesTypes(["NBD", "CRR", "NBD_CRR"])
-      setEnquiryApproachOptions(["Approach 1", "Approach 2", "Approach 3"])
-      setProductCategories(["Product 1", "Product 2", "Product 3"])
-      setReceiverOptions(["Receiver 1", "Receiver 2", "Receiver 3"])
-      setAssignToProjectOptions(["Project 1", "Project 2", "Project 3"])
-    }
-  }
+ const fetchDropdownData = async () => {
+  try {
+    // Fetch each column individually with not null condition
+    const [
+      { data: leadSourcesData, error: leadSourcesError },
+      { data: scNamesData, error: scNamesError },
+      { data: companyData, error: companyError },
+      { data: statesData, error: statesError },
+      { data: nobData, error: nobError },
+      { data: salesTypeData, error: salesTypeError },
+      { data: approachData, error: approachError },
+      { data: productData, error: productError },
+      { data: receiversData, error: receiversError },
+      { data: assignToData, error: assignToError }
+    ] = await Promise.all([
+      supabase.from("dropdown").select("lead_source").not("lead_source", "is", null),
+      supabase.from("dropdown").select("sales_co_ordinator_name").not("sales_co_ordinator_name", "is", null),
+      supabase.from("dropdown").select("direct_enquiry_company_name").not("direct_enquiry_company_name", "is", null),
+      supabase.from("dropdown").select("direct_enquiry_state").not("direct_enquiry_state", "is", null),
+      supabase.from("dropdown").select("nob").not("nob", "is", null),
+      supabase.from("dropdown").select("sales_type").not("sales_type", "is", null),
+      supabase.from("dropdown").select("enquiry_approach").not("enquiry_approach", "is", null),
+      supabase.from("dropdown").select("item_name").not("item_name", "is", null),
+      supabase.from("dropdown").select("lead_receiver_name").not("lead_receiver_name", "is", null),
+      supabase.from("dropdown").select("enquiry_assign_to").not("enquiry_assign_to", "is", null)
+    ]);
 
-  // Function to fetch company data
-  const fetchCompanyData = async () => {
-    try {
-      const publicUrl = "https://docs.google.com/spreadsheets/d/1TZVWkmASF7tG-QER17588sl4SvRgY7knFKFDtYFjB0Q/gviz/tq?tqx=out:json&sheet=DROPDOWN"
-      
-      const response = await fetch(publicUrl)
-      const text = await response.text()
-      
-      const jsonStart = text.indexOf('{')
-      const jsonEnd = text.lastIndexOf('}') + 1
-      const jsonData = text.substring(jsonStart, jsonEnd)
-      
-      const data = JSON.parse(jsonData)
-      
-      if (data && data.table && data.table.rows) {
-        const companies = []
-        const detailsMap = {}
-        
-        // Skip the header row
-        data.table.rows.slice(0).forEach(row => {
-          // Column AX for company name
-          if (row.c && row.c[49] && row.c[49].v !== null) {
-            const companyName = row.c[49].v.toString()
-            companies.push(companyName)
-            
-            // Store company details for auto-fill
-            detailsMap[companyName] = {
-              phoneNumber: (row.c[51] && row.c[51].v !== null) ? row.c[51].v.toString() : "", // Column AZ
-              salesPerson: (row.c[50] && row.c[50].v !== null) ? row.c[50].v.toString() : "", // Column AY
-              gstNumber: (row.c[53] && row.c[53].v !== null) ? row.c[53].v.toString() : "", // Column BB
-              billingAddress: (row.c[54] && row.c[54].v !== null) ? row.c[54].v.toString() : "", // Column BC
-              // shippingAddress: (row.c[55] && row.c[55].v !== null) ? row.c[55].v.toString() : "", // Column BD
-              // enquiryReceiverName: (row.c[56] && row.c[56].v !== null) ? row.c[56].v.toString() : "", // Column BE
-              // enquiryAssignToProject: (row.c[57] && row.c[57].v !== null) ? row.c[57].v.toString() : "" // Column BF
-            }
-          }
-        })
-        
-        setCompanyOptions(companies)
-        setCompanyDetailsMap(detailsMap)
-      }
-    } catch (error) {
-      console.error("Error fetching company data:", error)
-      setCompanyOptions([])
-      setCompanyDetailsMap({})
+    // Check for any errors
+    const errors = [
+      leadSourcesError, scNamesError, companyError, statesError, nobError, 
+      salesTypeError, approachError, productError, receiversError, assignToError
+    ].filter(error => error !== null);
+
+    if (errors.length > 0) {
+      console.log("Errors fetching dropdown data:", errors);
+      throw new Error("Failed to fetch some dropdown data");
     }
+
+    // Extract values from each column (already filtered for non-null)
+    const sources = leadSourcesData.map(item => item.lead_source);
+    const scNames = scNamesData.map(item => item.sales_co_ordinator_name);
+    const companies = companyData.map(item => item.direct_enquiry_company_name);
+    const states = statesData.map(item => item.direct_enquiry_state);
+    const nobItems = nobData.map(item => item.nob);
+    const salesTypeOptions = salesTypeData.map(item => item.sales_type);
+    const approachOptions = approachData.map(item => item.enquiry_approach);
+    const productItems = productData.map(item => item.item_name);
+    const receivers = receiversData.map(item => item.lead_receiver_name);
+    const assignToProjects = assignToData.map(item => item.enquiry_assign_to);
+
+    // Update state with fetched values (using unique values to prevent duplicates)
+    setLeadSources([...new Set(sources)]);
+    setScNameOptions([...new Set(scNames)]);
+    setEnquiryStates([...new Set(states)]);
+    setNobOptions([...new Set(nobItems)]);
+    setSalesTypes([...new Set(salesTypeOptions)]);
+    setEnquiryApproachOptions([...new Set(approachOptions)]);
+    setProductCategories([...new Set(productItems)]);
+    setReceiverOptions([...new Set(receivers)]);
+    setAssignToProjectOptions([...new Set(assignToProjects)]);
+
+    console.log("Dropdown data fetched successfully");
+
+  } catch (error) {
+    console.error("Error fetching dropdown values:", error);
+    // Fallback to empty arrays if there's an error
+    setLeadSources(["Website", "Justdial", "Sulekha", "Indiamart", "Referral", "Other"]);
+    setScNameOptions(["SC 1", "SC 2", "SC 3"]);
+    setCompanyOptions([]); // Empty array for companies
+    setEnquiryStates(["Maharashtra", "Gujarat", "Karnataka", "Tamil Nadu", "Delhi"]);
+    setNobOptions(["NOB 1", "NOB 2", "NOB 3"]);
+    setSalesTypes(["NBD", "CRR", "NBD_CRR"]);
+    setEnquiryApproachOptions(["Approach 1", "Approach 2", "Approach 3"]);
+    setProductCategories(["Product 1", "Product 2", "Product 3"]);
+    setReceiverOptions(["Receiver 1", "Receiver 2", "Receiver 3"]);
+    setAssignToProjectOptions(["Project 1", "Project 2", "Project 3"]);
   }
+}
+  // Function to fetch company data
+// Function to fetch company data
+const fetchCompanyData = async () => {
+  try {
+    // Fetch company data from your Supabase table
+    const { data, error } = await supabase
+      .from("dropdown")
+      .select("direct_enquiry_company_name, direct_enquiry_client_name, direct_enquiry_client_contact_no, direct_enquiry_state, direct_enquiry_gstin_uin, direct_enquiry_billing_address")
+      .order("direct_enquiry_company_name", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching company data:", error);
+      return;
+    }
+
+    if (data) {
+      // Create company options array and details mapping
+      const companies = [];
+      const detailsMap = {};
+      
+      data.forEach(company => {
+        if (company.direct_enquiry_company_name) { // Changed from company_name to direct_enquiry_company_name
+          companies.push(company.direct_enquiry_company_name);
+          
+          // Map company details for auto-fill
+          detailsMap[company.direct_enquiry_company_name] = {
+            phoneNumber: company.direct_enquiry_client_contact_no || "",
+            salesPersonName: company.direct_enquiry_client_name || "",
+            location: company.direct_enquiry_billing_address || "",
+            gstNumber: company.direct_enquiry_gstin_uin || "",
+            enquiryState: company.direct_enquiry_state || ""
+          };
+        }
+      });
+      
+      setCompanyOptions(companies);
+      setCompanyDetailsMap(detailsMap);
+      //console.log("Company data loaded:", companies); // Debug log
+    }
+  } catch (error) {
+    console.error("Error fetching company data:", error);
+    setCompanyOptions([]);
+    setCompanyDetailsMap({});
+  }
+}
+
+// Add this useEffect to debug the company options
+// useEffect(() => {
+//   console.log("Company options updated:", companyOptions);
+// }, [companyOptions]);
+
+// // Add this useEffect to debug the fetched data
+// useEffect(() => {
+//   console.log("Company details map:", companyDetailsMap);
+// }, [companyDetailsMap]);
 
   // Handle company name change and auto-fill other fields
   const handleCompanyChange = (companyName) => {
-    const isAutoFilled = true
     setNewCallTrackerData(prev => ({
       ...prev,
       companyName: companyName,
-      isCompanyAutoFilled: true // Set to true when a company is selected
+      isCompanyAutoFilled: true
     }));
 
     // Auto-fill related fields if company is selected
     if (companyName) {
-      const companyDetails = companyDetailsMap[companyName] || {}
+      const companyDetails = companyDetailsMap[companyName] || {};
       setNewCallTrackerData(prev => ({
         ...prev,
         phoneNumber: companyDetails.phoneNumber || "",
-        salesPersonName: companyDetails.salesPerson || "",
-        location: companyDetails.billingAddress || "",
+        salesPersonName: companyDetails.salesPersonName || "",
+        location: companyDetails.location || "",
         gstNumber: companyDetails.gstNumber || "",
-        shippingAddress: companyDetails.shippingAddress || "",
-        enquiryReceiverName: companyDetails.enquiryReceiverName || "",
-        enquiryAssignToProject: companyDetails.enquiryAssignToProject || "",
-        isCompanyAutoFilled: isAutoFilled
-      }))
+        isCompanyAutoFilled: true
+      }));
+      
+      // Also update the enquiry state if available
+      if (companyDetails.enquiryState) {
+        setEnquiryFormData(prev => ({
+          ...prev,
+          enquiryState: companyDetails.enquiryState
+        }));
+      }
     }
   }
+
+
 
   // Function to handle adding a new item
   const addItem = () => {
@@ -335,135 +348,91 @@ const [assignToProjectOptions, setAssignToProjectOptions] = useState([])
     }, 0)
   }
 
-  // Function to handle form submission
-// Function to handle form submission
-// Replace the existing handleSubmit function with this modified version
-const handleSubmit = async () => {
-  setIsSubmitting(true)
+
+// Replace the formatDateToDDMMYYYY function with this:
+const formatDateToISO = (dateValue) => {
+  if (!dateValue) return "";
+
   try {
-    const currentDate = new Date()
-    const formattedDate = formatDateToDDMMYYYY(currentDate)
-
-    // Prepare base row data (columns A-E)
-    const rowData = [
-      formattedDate, // A: Current date
-      // newCallTrackerData.enquiryNo, // B: Lead Number
-      "",
-      newCallTrackerData.leadSource, // C: Lead Source
-      newCallTrackerData.companyName, // F: Company Name
-      newCallTrackerData.phoneNumber, // G: Phone Number
-      newCallTrackerData.salesPersonName, // H: Sales Person Name
-      newCallTrackerData.location, // I: Location
-      newCallTrackerData.emailAddress, // J: Email Address
-      newCallTrackerData.shippingAddress, // K: Shipping Address
-      newCallTrackerData.enquiryReceiverName, // L: Enquiry Receiver Name
-      newCallTrackerData.enquiryAssignToProject, // M: Enquiry Assign to Project
-      newCallTrackerData.gstNumber, // N: GST Number
-    ]
-
-    // Add columns O-S for the enquiry form data
-    rowData.push(
-      enquiryFormData.enquiryDate ? formatDateToDDMMYYYY(enquiryFormData.enquiryDate) : "", // O: Enquiry Received Date
-      enquiryFormData.enquiryState, // P: Enquiry for State
-      enquiryFormData.projectName, // Q: Project Name (NOB)
-      enquiryFormData.salesType, // R: Sales Type
-      enquiryFormData.enquiryApproach, // S: Enquiry Approach
-    )
-
-    // Handle first 10 items (columns T-AC)
-    const first10Items = items.slice(0, 10)
-    
-    // Add first 10 items in pairs (name, quantity)
-    first10Items.forEach((item) => {
-      rowData.push(item.name || "") // Product name
-      rowData.push(item.quantity || "0") // Quantity (0 if null/empty)
-    })
-
-    // If less than 10 items, fill remaining slots with empty values
-    const remainingSlots = 10 - first10Items.length
-    for (let i = 0; i < remainingSlots; i++) {
-      rowData.push("", "0") // Empty name and 0 quantity
+    const date = new Date(dateValue);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD
     }
-
-    // Add expected form data
-    rowData.push(
-      expectedFormData.nextAction || "", // Next Action
-      expectedFormData.nextCallDate || "", // Next Call Date
-      expectedFormData.nextCallTime || "" // Next Call Time
-    )
-
-    // Add empty columns up to column BX (index 75) to place SC Name in the correct position
-    // Calculate how many empty columns we need to add to reach column BX
-    const currentLength = rowData.length
-    const targetIndex = 75 // Column BX is index 75 (0-based)
-    
-    // Add empty columns if needed
-    while (rowData.length < targetIndex) {
-      rowData.push("")
-    }
-    
-    // Add SC Name at column BX (index 75)
-    rowData.push(newCallTrackerData.scName || "") // BX: SC Name
-
-    // Add empty columns up to column CB (index 81) for additional items JSON
-    while (rowData.length < 79) {
-      rowData.push("")
-    }
-
-    // Handle items 11 and onwards as JSON in column CB (index 81)
-    if (items.length > 10) {
-      const additionalItems = items.slice(10).map(item => ({
-        name: item.name || "",
-        quantity: item.quantity || "0"
-      }))
-      rowData.push(JSON.stringify(additionalItems)) // Column CB
-    } else {
-      rowData.push("") // Empty if no additional items
-    }
-
-    // Add total quantity in column CC (index 82)
-    rowData.push(calculateTotalQuantity().toString())
-
-    console.log("Row Data to be submitted:", rowData)
-
-    // Submit data to Google Sheets using fetch
-    const scriptUrl = "https://script.google.com/macros/s/AKfycbzTPj_x_0Sh6uCNnMDi-KlwVzkGV3nC4tRF6kGUNA1vXG0Ykx4Lq6ccR9kYv6Cst108aQ/exec"
-    
-    // Parameters for Google Apps Script
-    const params = {
-      sheetName: "ENQUIRY TO ORDER",
-      action: "insert",
-      rowData: JSON.stringify(rowData)
-    }
-
-    // Create URL-encoded string for the parameters
-    const urlParams = new URLSearchParams()
-    for (const key in params) {
-      urlParams.append(key, params[key])
-    }
-    
-    // Send the data
-    const response = await fetch(scriptUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      body: urlParams
-    })
-
-    const result = await response.json()
-    
-    if (result.success) {
-      alert("Data submitted successfully!")
-      onClose() // Close the form after successful submission
-    } else {
-      alert("Error submitting data: " + (result.error || "Unknown error"))
-    }
+    return dateValue;
   } catch (error) {
-    console.error("Error submitting form:", error)
-    alert("Error submitting form: " + error.message)
+    console.error("Error formatting date:", error);
+    return dateValue;
+  }
+}
+
+// Function to handle form submission
+const handleSubmit = async () => {
+  setIsSubmitting(true);
+  
+  try {
+    // Prepare the first 10 items in individual columns
+    const itemColumns = {};
+    const first10Items = items.slice(0, 10);
+    
+    first10Items.forEach((item, index) => {
+      itemColumns[`item_name${index + 1}`] = item.name || "";
+      itemColumns[`quantity${index + 1}`] = item.quantity || "0";
+    });
+    
+    // Prepare additional items beyond 10 as JSON
+    const additionalItems = items.length > 10 
+      ? items.slice(10).map(item => ({
+          name: item.name || "",
+          quantity: item.quantity || "0"
+        }))
+      : [];
+    
+    // Prepare data for Supabase insertion
+    const rowData = { 
+      enquiry_no: newCallTrackerData.enquiryNo,
+      lead_source: newCallTrackerData.leadSource,
+      sales_coordinator_name: newCallTrackerData.scName,
+      company_name: newCallTrackerData.companyName,
+      phone_number: newCallTrackerData.phoneNumber,
+      sales_person_name: newCallTrackerData.salesPersonName,
+      location: newCallTrackerData.location,
+      email: newCallTrackerData.emailAddress,
+      shipping_address: newCallTrackerData.shippingAddress,
+      enquiry_receiver_name: newCallTrackerData.enquiryReceiverName,
+      enquiry_assign_to_project: newCallTrackerData.enquiryAssignToProject,
+      gst_number: newCallTrackerData.gstNumber,
+      enquiry_date: enquiryFormData.enquiryDate ? formatDateToISO(enquiryFormData.enquiryDate) : "",
+      enquiry_for_state: enquiryFormData.enquiryState,
+      project_name: enquiryFormData.projectName,
+      sales_type: enquiryFormData.salesType,
+      enquiry_approach: enquiryFormData.enquiryApproach,
+      // Add the first 10 items as individual columns
+      ...itemColumns,
+      // Add additional items as JSON
+      item_qty: additionalItems.length > 0 ? JSON.stringify(additionalItems) : null,
+      total_qty: calculateTotalQuantity(),
+    };
+
+    console.log("Data to be submitted to Supabase:", rowData);
+
+    // Insert data into Supabase
+    const { data, error } = await supabase
+      .from("enquiry_to_order")
+      .insert([rowData]);
+
+    if (error) {
+      console.error("Error inserting data:", error.message);
+      alert("Error saving data: " + error.message);
+    } else {
+      console.log("Inserted successfully:", data);
+      alert("Call tracker updated successfully");
+      onClose(); // Close the form after successful submission
+    }
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    alert("Error saving data: " + err.message);
   } finally {
-    setIsSubmitting(false)
+    setIsSubmitting(false);
   }
 }
 

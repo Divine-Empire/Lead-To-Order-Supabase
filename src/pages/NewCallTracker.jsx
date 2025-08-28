@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useContext, useEffect } from "react"
-import { useNavigate, useSearchParams } from "react-router-dom"
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom"
 import { AuthContext } from "../App"
 import MakeQuotationForm from "../components/call-tracker/MakeQuotationFrom"
 import QuotationValidationForm from "../components/call-tracker/QuotationValidationForm"
@@ -25,6 +25,15 @@ function NewCallTracker() {
     enquiryStatus: "",
     customerFeedback: "",
   })
+
+   const location = useLocation();
+ 
+
+  // get the state
+  const activeTab = location.state;
+
+
+
   const [enquiryStatusOptions, setEnquiryStatusOptions] = useState([])
   const [isLoadingDropdown, setIsLoadingDropdown] = useState(false)
   
@@ -117,55 +126,57 @@ const fetchLatestQuotationNumber = async (enquiryNo) => {
 }
 
   // Fetch dropdown options from DROPDOWN sheet column G
-  useEffect(() => {
-    const fetchDropdownOptions = async () => {
-      try {
-        setIsLoadingDropdown(true)
-        
-        // Fetch data from DROPDOWN sheet
-        const dropdownUrl = "https://docs.google.com/spreadsheets/d/1TZVWkmASF7tG-QER17588sl4SvRgY7knFKFDtYFjB0Q/gviz/tq?tqx=out:json&sheet=DROPDOWN"
-        const response = await fetch(dropdownUrl)
-        const text = await response.text()
-        
-        // Extract the JSON part from the response
-        const jsonStart = text.indexOf('{')
-        const jsonEnd = text.lastIndexOf('}') + 1
-        const jsonData = text.substring(jsonStart, jsonEnd)
-        
-        const data = JSON.parse(jsonData)
-        
-        // Extract values from columns
-        if (data && data.table && data.table.rows) {
-          const statusOptions = []
-          const feedbackOptions = []
-          
-          // Skip the header row (index 0)
-          data.table.rows.slice(0).forEach(row => {
-            // Column G is index 6 for enquiry status
-            if (row.c && row.c[6] && row.c[6].v) {
-              statusOptions.push(row.c[6].v)
-            }
-            // Column CG is index 86 for customer feedback
-            if (row.c && row.c[84] && row.c[84].v) {
-              feedbackOptions.push(row.c[84].v.toString())
-            }
-          })
-          
-          setEnquiryStatusOptions(statusOptions)
-          setCustomerFeedbackOptions(feedbackOptions)
-        }
-      } catch (error) {
-        console.error("Error fetching dropdown options:", error)
-        // Fallback options if fetch fails
-        setEnquiryStatusOptions(["hot", "warm", "cold"])
-        setCustomerFeedbackOptions(["Feedback 1", "Feedback 2", "Feedback 3"])
-      } finally {
-        setIsLoadingDropdown(false)
+ useEffect(() => {
+  const fetchDropdownOptions = async () => {
+    try {
+      setIsLoadingDropdown(true)
+
+      // Fetch non-null values from supabase table
+      const { data, error } = await supabase
+        .from("dropdown")
+        .select("enquiry_status, what_did_customer_say")
+        .not("enquiry_status", "is", null)
+        .not("what_did_customer_say", "is", null)
+
+      if (error) throw error
+
+      if (data) {
+        // Extract unique + clean values
+        const statusOptions = [
+          ...new Set(
+            data
+              .map((row) => row.enquiry_status)
+              .filter((val) => val && val.trim() !== "")
+          ),
+        ]
+
+        const feedbackOptions = [
+          ...new Set(
+            data
+              .map((row) => row.what_did_customer_say)
+              .filter((val) => val && val.trim() !== "")
+          ),
+        ]
+
+        console.log("Status Options:", statusOptions)
+        console.log("Feedback Options:", feedbackOptions)
+
+        setEnquiryStatusOptions(statusOptions)
+        setCustomerFeedbackOptions(feedbackOptions)
       }
+    } catch (error) {
+      console.error("Error fetching dropdown options:", error)
+      // fallback values
+      setEnquiryStatusOptions(["hot", "warm", "cold"])
+      setCustomerFeedbackOptions(["Feedback 1", "Feedback 2", "Feedback 3"])
+    } finally {
+      setIsLoadingDropdown(false)
     }
-    
-    fetchDropdownOptions()
-  }, [])
+  }
+
+  fetchDropdownOptions()
+}, [])
+
 
   // Update form data when leadId changes
   useEffect(() => {
@@ -210,12 +221,28 @@ const fetchLatestQuotationNumber = async (enquiryNo) => {
   }
 
   // Handler for order status form data updates
-  const handleOrderStatusChange = (field, value) => {
+// Handler for order status form data updates
+const handleOrderStatusChange = (field, value) => {
+  // Define which fields should be numeric
+  const numericFields = [
+    'creditLimit' 
+  ];
+  
+  // Convert numeric fields from string to number or null
+  if (numericFields.includes(field)) {
+    const numericValue = value === '' ? null : Number(value);
+    setOrderStatusData(prev => ({
+      ...prev,
+      [field]: numericValue
+    }));
+  } else {
+    // For non-numeric fields, keep as is
     setOrderStatusData(prev => ({
       ...prev,
       [field]: value
-    }))
+    }));
   }
+}
 
   // Function to format date as dd/mm/yyyy
   const formatDate = (date) => {
@@ -288,82 +315,466 @@ const fetchLatestQuotationNumber = async (enquiryNo) => {
     }
   }
 
+
+ const updateLeadToOrderTable = async (enquiryNo, formData, currentStage, orderStatusData = {}) => {
+  try {
+    // ✅ Helper: safely convert any value to boolean
+    const toBoolean = (value) => {
+      if (value === null || value === undefined || value === "") return false;
+      if (typeof value === "boolean") return value;
+      if (typeof value === "string") {
+        return value.toLowerCase() === "true" || value === "1";
+      }
+      return Boolean(value);
+    };
+
+    // ✅ Base fields
+    let updateData = {
+      "LD-Lead-No": formData.leadId,
+      Enquiry_Status: formData.enquiryStatus,
+      What_Did_Customer_Say: formData.customerFeedback,
+      Current_Stage: currentStage,
+    };
+
+    switch (currentStage) {
+      case "make-quotation":
+        Object.assign(updateData, {
+          "Send_Quotation_No.": formData.sendQuotationNo,
+          Quotation_Shared_By: formData.quotationSharedBy,
+          Quotation_Number: formData.quotationNumber,
+          Quotation_Value_Without_Tax: formData.valueWithoutTax,
+          Quotation_Value_With_Tax: formData.valueWithTax,
+          Quotation_Upload: formData.quotationFileUrl,
+          Quotation_Remarks: formData.remarks,
+
+          // reset followup + order fields
+          "Next Call Date_1": null,
+          "Next Call Time_1": null,
+          "Is_Order_Received?_Status": null,
+          Acceptance_Via: null,
+          Payment_Mode: null,
+          Payment_Terms_In_Days: null,
+          Transport_Mode: null,
+        });
+        break;
+
+      case "order-expected":
+        Object.assign(updateData, {
+          "Next Call Date_1": formData.nextCallDate,
+          "Next Call Time_1": formData.nextCallTime,
+
+          // reset quotation + order fields
+          "Send_Quotation_No.": null,
+          Quotation_Shared_By: null,
+          Quotation_Number: null,
+          Quotation_Value_Without_Tax: null,
+          Quotation_Value_With_Tax: null,
+          Quotation_Upload: null,
+          Quotation_Remarks: null,
+          "Is_Order_Received?_Status": null,
+          Acceptance_Via: null,
+          Payment_Mode: null,
+          Payment_Terms_In_Days: null,
+          Transport_Mode: null,
+        });
+        break;
+
+      case "order-status":
+        // Always set order status
+        updateData.Quotation_Number = orderStatusData.orderStatusQuotationNumber || null;
+        updateData["Is_Order_Received?_Status"] = formData.orderStatus;
+
+        if (formData.orderStatus?.toLowerCase() === "yes") {
+          Object.assign(updateData, {
+            Actual1: new Date().toISOString(),
+            Acceptance_Via: formData.acceptanceVia,
+            Payment_Mode: formData.paymentMode,
+            Destination: formData.destination,
+            "Po Number": formData.poNumber,
+            Payment_Terms_In_Days: formData.paymentTerms,
+            Transport_Mode: formData.transportMode,
+            If_No_Then_Get_Relevant_Reason_Status: null,
+            If_No_Then_Get_Relevant_Reason_Remark: null,
+            CUSTOMER_ORDER_HOLD_REASON_CATEGORY: null,
+
+            CONVEYED_FOR_REGISTRATION_FORM: toBoolean(formData.conveyedForRegistration),
+
+            Offer: formData.orderVideo,
+            Acceptance_File_Upload: null, // handle upload later
+            REMARK: formData.orderRemark,
+
+            // reset "no" + "hold" fields
+            Order_Lost_Apology_Video: null,
+            HOLDING_DATE: null,
+            HOLD_REMARK: null,
+          });
+        } else if (formData.orderStatus?.toLowerCase() === "no") {
+          Object.assign(updateData, {
+            Order_Lost_Apology_Video: null, // handle upload later
+            If_No_Then_Get_Relevant_Reason_Status: orderStatusData.reasonStatus || null,
+            If_No_Then_Get_Relevant_Reason_Remark: orderStatusData.reasonRemark || null,
+            CUSTOMER_ORDER_HOLD_REASON_CATEGORY: null,
+
+            Acceptance_Via: null,
+            Payment_Mode: null,
+            Destination: null,
+            "Po Number": null,
+            Payment_Terms_In_Days: null,
+            Transport_Mode: null,
+
+            CONVEYED_FOR_REGISTRATION_FORM: toBoolean(formData.conveyedForRegistration),
+
+            Offer: null,
+            Acceptance_File_Upload: null,
+            HOLDING_DATE: null,
+            HOLD_REMARK: null,
+          });
+        } else if (formData.orderStatus?.toLowerCase() === "hold") {
+          Object.assign(updateData, {
+            HOLDING_DATE: formData.holdingDate,
+            HOLD_REMARK: formData.holdRemark,
+            If_No_Then_Get_Relevant_Reason_Status: null,
+            If_No_Then_Get_Relevant_Reason_Remark: null,
+            CUSTOMER_ORDER_HOLD_REASON_CATEGORY: orderStatusData.holdReason || null,
+
+            Acceptance_Via: null,
+            Payment_Mode: null,
+            Destination: null,
+            "Po Number": null,
+            Payment_Terms_In_Days: null,
+            Transport_Mode: null,
+
+            CONVEYED_FOR_REGISTRATION_FORM: toBoolean(formData.conveyedForRegistration),
+
+            Offer: null,
+            Acceptance_File_Upload: null,
+            Order_Lost_Apology_Video: null,
+          });
+        }
+
+        // reset quotation + followup fields
+        Object.assign(updateData, {
+          "Send_Quotation_No.": null,
+          Quotation_Shared_By: null,
+          Quotation_Number: null,
+          Quotation_Value_Without_Tax: null,
+          Quotation_Value_With_Tax: null,
+          Quotation_Upload: null,
+          Quotation_Remarks: null,
+          "Next Call Date_1": null,
+          "Next Call Time_1": null,
+        });
+        break;
+
+      default:
+        console.warn("Unknown stage:", currentStage);
+    }
+
+    // ✅ Use enquiryNo (not undefined leadId)
+    const { data, error } = await supabase
+      .from("leads_to_order")
+      .update(updateData)
+      .eq("LD-Lead-No", enquiryNo)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating leads_to_order:", error);
+      return false;
+    }
+
+    console.log("✅ Successfully updated leads_to_order:", data);
+    return true;
+  } catch (error) {
+    console.error("❌ Exception updating leads_to_order:", error);
+    return false;
+  }
+};
+
+
+
+const updateEnquiryToOrderTable = async (enquiryNo, formData, currentStage) => {
+  try {
+    // Helper function to safely convert to boolean
+    const toBoolean = (value) => {
+      if (value === null || value === undefined || value === '') return false;
+      if (typeof value === 'boolean') return value;
+      if (typeof value === 'string') {
+        return value.toLowerCase() === 'true' || value === '1';
+      }
+      return Boolean(value);
+    };
+
+    // Base fields always updated
+    let updateData = {
+      enquiry_no: formData.enquiryNo,
+      enquiry_status: formData.enquiryStatus,
+      customer_feedback: formData.customerFeedback,
+      current_stage: currentStage,
+    };
+
+    switch (currentStage) {
+      case "make-quotation":
+        Object.assign(updateData, {
+          // fill quotation fields
+          send_quotation_no: formData.sendQuotationNo,
+          quotation_shared_by: formData.quotationSharedBy,
+          quotation_number: formData.quotationNumber,
+          quotation_value_without_tax: formData.valueWithoutTax,
+          quotation_value_with_tax: formData.valueWithTax,
+          quotation_upload: formData.quotationFileUrl,
+          quotation_remarks: formData.remarks,
+
+          // reset followup + order fields
+          next_call_date: null,
+          next_call_time: null,
+          is_order_received_status: null,
+          acceptance_via: null,
+          payment_mode: null,
+          payment_terms_days: null,
+          transport_mode: null,
+        });
+        break;
+
+      case "order-expected":
+        Object.assign(updateData, {
+          // fill followup fields
+          next_call_date: formData.nextCallDate,
+          next_call_time: formData.nextCallTime,
+
+          // reset quotation + order fields
+          send_quotation_no: null,
+          quotation_shared_by: null,
+          quotation_number: null,
+          quotation_value_without_tax: null,
+          quotation_value_with_tax: null,
+          quotation_upload: null,
+          quotation_remarks: null,
+          is_order_received_status: null,
+          acceptance_via: null,
+          payment_mode: null,
+          payment_terms_days: null,
+          transport_mode: null,
+        });
+        break;
+
+      case "order-status":
+        // Always set the status
+        updateData.quotation_number = orderStatusData.orderStatusQuotationNumber;
+        updateData.is_order_received_status = formData.orderStatus;
+
+        if (formData.orderStatus?.toLowerCase() === "yes") {
+          Object.assign(updateData, {
+            actual1: new Date().toISOString(),
+            acceptance_via: formData.acceptanceVia,
+            payment_mode: formData.paymentMode,
+            destination: formData.destination,
+            po_number: formData.poNumber,
+            payment_terms_days: formData.paymentTerms,
+            transport_mode: formData.transportMode,
+            if_no_reason_status: null,
+            if_no_reason_remark: null,
+            customer_order_hold_reason_category: null,
+
+            // ✅ Use the helper function for boolean conversion
+            conveyed_for_registration_form: toBoolean(formData.conveyedForRegistration),
+
+            offer: formData.orderVideo,
+            acceptance_file_upload: "", // handle upload later
+            remark: formData.orderRemark,
+
+            // reset "no" + "hold" fields
+            order_lost_apology_video: null,
+            holding_date: null,
+            hold_remark: null,
+          });
+        } else if (formData.orderStatus?.toLowerCase() === "no") {
+          Object.assign(updateData, {
+            order_lost_apology_video: "", // handle upload later
+            if_no_reason_status: orderStatusData.reasonStatus,
+            if_no_reason_remark: orderStatusData.reasonRemark,
+            customer_order_hold_reason_category: null,
+            // reset "yes" + "hold" fields
+            acceptance_via: null,
+            payment_mode: null,
+            destination: null,
+            po_number: null,
+            payment_terms_days: null,
+            transport_mode: null,
+          
+            // ✅ Use the helper function for boolean conversion
+            conveyed_for_registration_form: toBoolean(formData.conveyedForRegistration),
+
+            offer: null,
+            acceptance_file_upload: null,
+           
+            holding_date: null,
+            hold_remark: null,
+          });
+        } else if (formData.orderStatus?.toLowerCase() === "hold") {
+          Object.assign(updateData, {
+            holding_date: formData.holdingDate,
+            hold_remark: formData.holdRemark,
+            if_no_reason_status: null,
+            if_no_reason_remark: null,
+            customer_order_hold_reason_category: orderStatusData.holdReason,
+            // reset "yes" + "no" fields
+            acceptance_via: null,
+            payment_mode: null,
+            destination: null,
+            po_number: null,
+            payment_terms_days: null,
+            transport_mode: null,
+           
+            // ✅ Use the helper function for boolean conversion
+            conveyed_for_registration_form: toBoolean(formData.conveyedForRegistration),
+
+            offer: null,
+            acceptance_file_upload: null,
+            order_lost_apology_video: null,
+          });
+        }
+
+        // reset quotation + followup fields (like in your original code)
+        Object.assign(updateData, {
+          send_quotation_no: null,
+          quotation_shared_by: null,
+          quotation_number: null,
+          quotation_value_without_tax: null,
+          quotation_value_with_tax: null,
+          quotation_upload: null,
+          quotation_remarks: null,
+          next_call_date: null,
+          next_call_time: null,
+        });
+
+        break;
+
+      default:
+        console.warn("Unknown stage:", currentStage);
+    }
+
+    const { data, error } = await supabase
+      .from("enquiry_to_order")
+      .update(updateData)
+      .eq("enquiry_no", enquiryNo)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating enquiry_to_order:", error);
+      return false;
+    }
+
+    console.log("Successfully updated enquiry_to_order:", data);
+    return true;
+  } catch (error) {
+    console.error("Exception updating enquiry_to_order:", error);
+    return false;
+  }
+};
+  // Add this function to your NewCallTracker component
+
+const validateNumericFields = (data) => {
+  const numericFields = [
+    'valueWithoutTax', 'valueWithTax', 'paymentTerms', 
+    'creditDays', 'creditLimit'
+  ];
   
+  for (const field of numericFields) {
+    if (data[field] !== null && data[field] !== undefined && data[field] !== "") {
+      const numValue = Number(data[field]);
+      if (isNaN(numValue)) {
+        return `Invalid numeric value for ${field}: ${data[field]}`;
+      }
+    }
+  }
+  return null;
+};
+
+// Use it in your handleSubmit function
+const validationError = validateNumericFields({
+  ...quotationData,
+  ...orderStatusData
+});
+
+if (validationError) {
+  showNotification(validationError, "error");
+  setIsSubmitting(false);
+  return;
+}
+
 
 const handleSubmit = async (e) => {
   e.preventDefault();
   setIsSubmitting(true);
 
   try {
-    const currentDate = new Date();
-    const formattedDate = formatDate(currentDate);
-
     // Prepare the data object for Supabase
     const supabaseData = {
-      "Timestamp": currentDate.toISOString(),
       "Enquiry No.": formData.enquiryNo,
       "Enquiry Status": formData.enquiryStatus,
       "What Did Customer Say": formData.customerFeedback,
       "Current Stage": currentStage,
     };
 
-    // Add stage-specific data
+    // Add stage-specific data with proper numeric handling
     if (currentStage === "make-quotation") {
       Object.assign(supabaseData, {
         "Send Quotation No.": quotationData.sendQuotationNo,
         "Quotation Shared By": quotationData.quotationSharedBy,
         "Quotation Number": quotationData.quotationNumber,
-        "Quotation Value Without Tax": quotationData.valueWithoutTax,
-        "Quotation Value With Tax": quotationData.valueWithTax,
+        "Quotation Value Without Tax": quotationData.valueWithoutTax === "" ? null : Number(quotationData.valueWithoutTax),
+        "Quotation Value With Tax": quotationData.valueWithTax === "" ? null : Number(quotationData.valueWithTax),
         "Quotation Remarks": quotationData.remarks,
       });
     } 
-    else if (currentStage === "order-expected") {
-      Object.assign(supabaseData, {
-        "Followup Status": formattedDate, // Current date as followup start
-        "Next Call Date": orderExpectedData.nextCallDate,
-        "Next Call Time": orderExpectedData.nextCallTime,
-      });
-    } 
+    // ... rest of your stage handling code
+
+    // For order status stage
     else if (currentStage === "order-status") {
       Object.assign(supabaseData, {
         "Quotation Number": orderStatusData.orderStatusQuotationNumber,
-        "Is Order Received?Status": orderStatusData.orderStatus,
+        "Is Order Received? Status": orderStatusData.orderStatus,
       });
 
-      // Add additional fields based on order status
-      // if (orderStatusData.orderStatus === "yes") {
-      //   Object.assign(supabaseData, {
-      //     "Acceptance Via": orderStatusData.acceptanceVia,
-      //     "Payment Mode": orderStatusData.paymentMode,
-      //     "Payment Terms": orderStatusData.paymentTerms,
-      //     "Transport Mode": orderStatusData.transportMode,
-      //     "CONVEYED FOR REGISTRATION FORM": orderStatusData.conveyedForRegistration,
-      //     "Order Video": orderStatusData.orderVideo,
-      //     "Acceptance File Upload": "", // You can add file upload logic here
-      //     "Remark": orderStatusData.orderRemark,
-      //   });
-      // } 
-      // else if (orderStatusData.orderStatus === "no") {
-      //   Object.assign(supabaseData, {
-      //     "Order Lost Apology Video": "", // You can add file upload logic here
-      //     "If No Then Get Relevant Reason Status": orderStatusData.reasonStatus,
-      //     "If No Then Get Relevant Reason Remark": orderStatusData.reasonRemark,
-      //   });
-      // } 
-      // else if (orderStatusData.orderStatus === "hold") {
-      //   Object.assign(supabaseData, {
-      //     "Customer Order Hold Reason Category": orderStatusData.holdReason,
-      //     "Holding Date": orderStatusData.holdingDate,
-      //     "Hold Remark": orderStatusData.holdRemark,
-      //   });
-      // }
-    }
+      if (orderStatusData.orderStatus === "yes") {
+        Object.assign(supabaseData, {
+          "Acceptance Via": orderStatusData.acceptanceVia,
+          "Payment Mode": orderStatusData.paymentMode,
+          "Destination": orderStatusData.destination,
+          "PO Number": orderStatusData.poNumber, 
+          "Payment Terms (In Days)": orderStatusData.paymentTerms === "" ? null : Number(orderStatusData.paymentTerms),
+          "Transport Mode": orderStatusData.transportMode,
+          "Credit Days": orderStatusData.creditDays === "" ? null : Number(orderStatusData.creditDays),
+          "Credit Limit": orderStatusData.creditLimit === "" ? null : Number(orderStatusData.creditLimit),
+          "CONVEYED FOR REGISTRATION FORM": orderStatusData.conveyedForRegistration,
+          "Offer": orderStatusData.orderVideo,
+          "Acceptance File Upload": "", 
+          "Remark": orderStatusData.orderRemark,
+        });
+      }
+      } 
+      else if (orderStatusData.orderStatus === "no") {
+        Object.assign(supabaseData, {
+          "Order Lost Apology Video": "", // You can add file upload logic here
+          "If No Then Get Relevant Reason Status": orderStatusData.reasonStatus,
+          "If No Then Get Relevant Reason Remark": orderStatusData.reasonRemark,
+        });
+      } 
+      else if (orderStatusData.orderStatus === "hold") {
+        Object.assign(supabaseData, {
+          "Customer Order Hold Reason Category": orderStatusData.holdReason,
+          "Holding Date": orderStatusData.holdingDate,
+          "Hold Remark": orderStatusData.holdRemark,
+        });
+      }
+    
 
     console.log("Supabase Data to be inserted:", supabaseData);
 
     // Insert into Supabase
-    const { data, error } = await supabase
+   const { data, error } = await supabase
       .from("enquiry_tracker")
       .insert([supabaseData]);
 
@@ -372,7 +783,47 @@ const handleSubmit = async (e) => {
       showNotification("Error saving data: " + error.message, "error");
     } else {
       console.log("Inserted successfully:", data);
-      showNotification("Call tracker updated successfully", "success");
+      
+      // Update the appropriate table based on activeTab
+      if (activeTab === "directEnquiry") { 
+        const updateSuccess = await updateEnquiryToOrderTable(
+          formData.enquiryNo, 
+          {
+            ...formData,
+            ...quotationData,
+            ...orderExpectedData,
+            ...orderStatusData
+          },
+          currentStage
+        );
+        
+        if (updateSuccess) {
+          showNotification("Call tracker updated successfully and enquiry record updated", "success");
+        } else {
+          showNotification("Call tracker updated but enquiry record could not be updated", "warning");
+        }
+      }
+      
+      if (activeTab === "pending") { 
+        // FIXED: Call the correct function updateLeadToOrderTable instead of updatel
+        const updateSuccess = await updateLeadToOrderTable(
+          formData.enquiryNo, // Use enquiryNo instead of leadId
+          {
+            ...formData,
+            ...quotationData,
+            ...orderExpectedData,
+            ...orderStatusData
+          },
+          currentStage
+        );
+        
+        if (updateSuccess) {
+          showNotification("Call tracker updated successfully and lead record updated", "success");
+        } else {
+          showNotification("Call tracker updated but lead record could not be updated", "warning");
+        }
+      }
+      
       navigate("/call-tracker");
     }
   } catch (err) {

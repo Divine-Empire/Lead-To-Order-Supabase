@@ -35,54 +35,92 @@ function NewFollowUp() {
   const [enquiryApproachOptions, setEnquiryApproachOptions] = useState([])
 
   // Function to fetch dropdown data from DROPDOWNSHEET
-  // Function to fetch dropdown data from DROPDOWNSHEET
-  const fetchDropdownData = async () => {
+ const fetchDropdownData = async () => {
     try {
-      const publicUrl =
-        "https://docs.google.com/spreadsheets/d/1TZVWkmASF7tG-QER17588sl4SvRgY7knFKFDtYFjB0Q/gviz/tq?tqx=out:json&sheet=DROPDOWN"
+      // Fetch states
+      const { data: statesData, error: statesError } = await supabase
+        .from('dropdown')
+        .select('state')
+        .not('state', 'is', null)
+      
+      if (statesError) throw statesError
+      
+      // Fetch sales types
+      const { data: salesTypesData, error: salesTypesError } = await supabase
+        .from('dropdown')
+        .select('sales_type')
+        .not('sales_type', 'is', null)
+      
+      if (salesTypesError) throw salesTypesError
+      
+      // Fetch product categories (item_name)
+      const { data: productCategoriesData, error: productCategoriesError } = await supabase
+        .from('dropdown')
+        .select('item_name')
+        .not('item_name', 'is', null)
+      
+      if (productCategoriesError) throw productCategoriesError
+      
+      // Fetch NOB options
+      const { data: nobData, error: nobError } = await supabase
+        .from('dropdown')
+        .select('nob')
+        .not('nob', 'is', null)
+      
+      if (nobError) throw nobError
+      
+      // Fetch enquiry approach options
+      const { data: enquiryApproachData, error: enquiryApproachError } = await supabase
+        .from('dropdown')
+        .select('enquiry_approach')
+        .not('enquiry_approach', 'is', null)
+      
+      if (enquiryApproachError) throw enquiryApproachError
+      
+      // Fetch customer feedback options
+      const { data: customerFeedbackData, error: customerFeedbackError } = await supabase
+        .from('dropdown')
+        .select('what_did_customer_say')
+        .not('what_did_customer_say', 'is', null)
+      
+      if (customerFeedbackError) throw customerFeedbackError
 
-      const response = await fetch(publicUrl)
-      const text = await response.text()
-
-      const jsonStart = text.indexOf("{")
-      const jsonEnd = text.lastIndexOf("}") + 1
-      const jsonData = text.substring(jsonStart, jsonEnd)
-
-      const data = JSON.parse(jsonData)
-
-      if (data && data.table && data.table.rows) {
-        const states = []
-        const types = []
-        const categories = []
-        const nobs = []
-        const approaches = [] // New array for enquiry approaches
-        const feedbackOptions = [] // New array for customer feedback (column CG - index 86)
-
-
-        data.table.rows.slice(0).forEach((row) => {
-          // Existing column processing...
-          if (row.c && row.c[2] && row.c[2].v) states.push(row.c[2].v.toString())
-          if (row.c && row.c[3] && row.c[3].v) types.push(row.c[3].v.toString())
-          if (row.c && row.c[76] && row.c[76].v) categories.push(row.c[76].v.toString())
-          if (row.c && row.c[37] && row.c[37].v) nobs.push(row.c[37].v.toString())
-            // Add column CG (index 86) processing for customer feedback options
-          
-          // Add column AM (index 38) processing
-          if (row.c && row.c[38] && row.c[38].v) {
-            approaches.push(row.c[38].v.toString())
-          }
-          if (row.c && row.c[84] && row.c[84].v) {
-            feedbackOptions.push(row.c[84].v.toString())
-          }
-        })
-
-        setEnquiryStates(states)
-        setSalesTypes(types)
-        setProductCategories(categories)
-        setNobOptions(nobs)
-        setEnquiryApproachOptions(approaches) // Set the new state
-        setCustomerFeedbackOptions(feedbackOptions) // Set the customer feedback options
+      // Process and set states
+      if (statesData) {
+        const uniqueStates = [...new Set(statesData.map(item => item.state))].filter(Boolean)
+        setEnquiryStates(uniqueStates)
       }
+
+      // Process and set sales types
+      if (salesTypesData) {
+        const uniqueSalesTypes = [...new Set(salesTypesData.map(item => item.sales_type))].filter(Boolean)
+        setSalesTypes(uniqueSalesTypes)
+      }
+
+      // Process and set product categories
+      if (productCategoriesData) {
+        const uniqueProductCategories = [...new Set(productCategoriesData.map(item => item.item_name))].filter(Boolean)
+        setProductCategories(uniqueProductCategories)
+      }
+
+      // Process and set NOB options
+      if (nobData) {
+        const uniqueNobOptions = [...new Set(nobData.map(item => item.nob))].filter(Boolean)
+        setNobOptions(uniqueNobOptions)
+      }
+
+      // Process and set enquiry approach options
+      if (enquiryApproachData) {
+        const uniqueEnquiryApproachOptions = [...new Set(enquiryApproachData.map(item => item.enquiry_approach))].filter(Boolean)
+        setEnquiryApproachOptions(uniqueEnquiryApproachOptions)
+      }
+
+      // Process and set customer feedback options
+      if (customerFeedbackData) {
+        const uniqueCustomerFeedbackOptions = [...new Set(customerFeedbackData.map(item => item.what_did_customer_say))].filter(Boolean)
+        setCustomerFeedbackOptions(uniqueCustomerFeedbackOptions)
+      }
+
     } catch (error) {
       console.error("Error fetching dropdown values:", error)
       // Fallback values
@@ -90,7 +128,8 @@ function NewFollowUp() {
       setSalesTypes(["NBD", "CRR", "NBD_CRR"])
       setProductCategories(["Product 1", "Product 2", "Product 3"])
       setNobOptions(["NOB 1", "NOB 2", "NOB 3"])
-      setEnquiryApproachOptions(["Approach 1", "Approach 2", "Approach 3"]) // Fallback for enquiry approach
+      setEnquiryApproachOptions(["Approach 1", "Approach 2", "Approach 3"])
+      setCustomerFeedbackOptions(["Feedback 1", "Feedback 2", "Feedback 3"])
     }
   }
 
@@ -106,6 +145,7 @@ function NewFollowUp() {
       }))
     }
   }, [leadNo])
+
 
   const handleChange = (e) => {
     const { id, value } = e.target
@@ -137,15 +177,23 @@ const handleSubmit = async (e) => {
     }
 
     // Handle different scenarios based on enquiry status
-    if (enquiryStatus === "expected") {
-      // For expected enquiries, only add next action details
-      insertData["Next_Action"] = document.getElementById("nextAction").value
-      insertData["Next_Call_Date"] = document.getElementById("nextCallDate").value
-      insertData["Next_Call_Time"] = document.getElementById("nextCallTime").value
-    } 
+   if (enquiryStatus === "expected") {
+  insertData["Next_Action"] = document.getElementById("nextAction").value
+
+  const nextCallDateInput = document.getElementById("nextCallDate").value
+  insertData["Next_Call_Date"] = nextCallDateInput 
+    ? new Date(nextCallDateInput).toISOString().split("T")[0] // "YYYY-MM-DD"
+    : null
+
+  const nextCallTimeInput = document.getElementById("nextCallTime").value
+  insertData["Next_Call_Time"] = nextCallTimeInput || null // "HH:mm"
+}
+
     else if (enquiryStatus === "yes") {
       // For confirmed enquiries, add all enquiry details
-      insertData["Enquiry_Received_Date"] = document.getElementById("enquiryDate").value
+      const enquiryDateInput = document.getElementById("enquiryDate").value;
+      insertData["Enquiry_Received_Date"] = enquiryDateInput ? new Date(enquiryDateInput).toISOString().split('T')[0] : null;
+      
       insertData["Enquiry_for_State"] = document.getElementById("enquiryState").value
       insertData["Project_Name"] = document.getElementById("projectName").value
       insertData["Enquiry_Type"] = document.getElementById("salesType").value
@@ -173,7 +221,7 @@ const handleSubmit = async (e) => {
 
     console.log("Data to be inserted:", insertData)
 
-    // Insert data into Supabase
+    // Insert data into Supabase leads_tracker table
     const { data, error } = await supabase
       .from('leads_tracker')
       .insert([insertData])
@@ -183,8 +231,90 @@ const handleSubmit = async (e) => {
       throw error
     }
 
-    console.log("Successfully inserted:", data)
-    showNotification("Follow-up recorded successfully", "success")
+    console.log("Successfully inserted into leads_tracker:", data)
+
+    // First, clear all the specified columns in leads_to_order table
+    const clearData = {
+      "What_Did_The_Customer say?": null,
+      "Enquiry_Received_Status": null,
+      "Enquiry_Received_Date": null,
+      "Enquiry_for_State": null,
+      "Project_Name": null,
+      "Enquiry_Type": null,
+      "Enquiry_Approach": null,
+      "Project_Approximate_Value": null,
+      "Item_Name1": null,
+      "Quantity1": null,
+      "Item_Name2": null,
+      "Quantity2": null,
+      "Item_Name3": null,
+      "Quantity3": null,
+      "Item_Name4": null,
+      "Quantity4": null,
+      "Item_Name5": null,
+      "Quantity5": null,
+      "Next_Action": null,
+      "Next_Call_Date": null,
+      "Next_Call_Time": null
+    }
+
+    // Clear the columns first
+    const { error: clearError } = await supabase
+      .from('leads_to_order')
+      .update(clearData)
+      .eq('LD-Lead-No', formData.leadNo)
+
+    if (clearError) {
+      console.error("Error clearing leads_to_order columns:", clearError)
+    } else {
+      console.log("Successfully cleared specified columns in leads_to_order")
+    }
+
+    // Prepare update data for leads_to_order table
+    const updateData = {}
+    
+    // Map the fields that need to be updated
+    updateData["What_Did_The_Customer say?"] = insertData["What_Did_The_Customer_say?"]
+    updateData["Enquiry_Received_Status"] = insertData["Enquiry_Received_Status"]
+    
+    if (enquiryStatus === "expected") {
+      updateData["Next_Action"] = insertData["Next_Action"]
+      updateData["Next_Call_Date"] = insertData["Next_Call_Date"]
+      updateData["Next_Call_Time"] = insertData["Next_Call_Time"]
+    }
+    
+    if (enquiryStatus === "yes") {
+      updateData["Enquiry_Received_Date"] = insertData["Enquiry_Received_Date"]
+      updateData["Enquiry_for_State"] = insertData["Enquiry_for_State"]
+      updateData["Project_Name"] = insertData["Project_Name"]
+      updateData["Enquiry_Type"] = insertData["Enquiry_Type"]
+      updateData["Enquiry_Approach"] = insertData["Enquiry_Approach"]
+      updateData["Project_Approximate_Value"] = insertData["Project_Approximate_Value"]
+      updateData["Leads_Tracking_Status"] = insertData["Leads_Tracking_Status"]
+      
+      // Update item fields
+      for (let i = 1; i <= 5; i++) {
+        updateData[`Item_Name${i}`] = insertData[`Item_Name${i}`] || ""
+        updateData[`Quantity${i}`] = insertData[`Quantity${i}`] || "0"
+      }
+    }
+
+    // Update the leads_to_order table with new data
+    const { data: updateResult, error: updateError } = await supabase
+      .from('leads_to_order')
+      .update(updateData)
+      .eq('LD-Lead-No', formData.leadNo)
+      .select()
+
+    if (updateError) {
+      console.error("Error updating leads_to_order:", updateError)
+      // Don't throw error here, as the main insert was successful
+      showNotification("Follow-up recorded successfully, but there was an issue updating the order table", "warning")
+    } else {
+      console.log("Successfully updated leads_to_order:", updateResult)
+      showNotification("Follow-up recorded successfully", "success")
+    }
+
     navigate("/follow-up")
 
   } catch (error) {
