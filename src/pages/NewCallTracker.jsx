@@ -353,15 +353,21 @@ const handleOrderStatusChange = (field, value) => {
           "Is_Order_Received?_Status": null,
           Acceptance_Via: null,
           Payment_Mode: null,
-          Payment_Terms_In_Days: null,
+         "Payment_Terms _In_Days": null,
           Transport_Mode: null,
         });
         break;
 
       case "order-expected":
         Object.assign(updateData, {
-          "Next Call Date_1": formData.nextCallDate,
-          "Next Call Time_1": formData.nextCallTime,
+     "Next Call Date_1": formData.nextCallDate
+  ? new Date(formData.nextCallDate).toISOString().split("T")[0] // 'YYYY-MM-DD'
+  : null,
+"Next Call Time_1": formData.nextCallTime
+  ? formData.nextCallTime.toString() // e.g. '14:30'
+  : null,
+
+
 
           // reset quotation + order fields
           "Send_Quotation_No.": null,
@@ -374,7 +380,7 @@ const handleOrderStatusChange = (field, value) => {
           "Is_Order_Received?_Status": null,
           Acceptance_Via: null,
           Payment_Mode: null,
-          Payment_Terms_In_Days: null,
+          "Payment_Terms _In_Days": null,
           Transport_Mode: null,
         });
         break;
@@ -391,7 +397,7 @@ const handleOrderStatusChange = (field, value) => {
             Payment_Mode: formData.paymentMode,
             Destination: formData.destination,
             "Po Number": formData.poNumber,
-            Payment_Terms_In_Days: formData.paymentTerms,
+            "Payment_Terms _In_Days": formData.paymentTerms,
             Transport_Mode: formData.transportMode,
             If_No_Then_Get_Relevant_Reason_Status: null,
             If_No_Then_Get_Relevant_Reason_Remark: null,
@@ -419,7 +425,7 @@ const handleOrderStatusChange = (field, value) => {
             Payment_Mode: null,
             Destination: null,
             "Po Number": null,
-            Payment_Terms_In_Days: null,
+            "Payment_Terms _In_Days": null,
             Transport_Mode: null,
 
             CONVEYED_FOR_REGISTRATION_FORM: toBoolean(formData.conveyedForRegistration),
@@ -441,7 +447,7 @@ const handleOrderStatusChange = (field, value) => {
             Payment_Mode: null,
             Destination: null,
             "Po Number": null,
-            Payment_Terms_In_Days: null,
+            "Payment_Terms _In_Days": null,
             Transport_Mode: null,
 
             CONVEYED_FOR_REGISTRATION_FORM: toBoolean(formData.conveyedForRegistration),
@@ -474,7 +480,7 @@ const handleOrderStatusChange = (field, value) => {
     const { data, error } = await supabase
       .from("leads_to_order")
       .update(updateData)
-      .eq("LD-Lead-No", enquiryNo)
+      .eq("LD-Lead-No", leadId)
       .select()
       .single();
 

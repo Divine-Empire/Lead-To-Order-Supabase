@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { Link, useLocation, useParams } from "react-router-dom"
+import supabase from "../../utils/supabase"
 
 function MakeQuotationForm({ enquiryNo, formData, onFieldChange }) {
   const location = useLocation()
@@ -9,46 +10,38 @@ function MakeQuotationForm({ enquiryNo, formData, onFieldChange }) {
   const [fileError, setFileError] = useState(null)
   
   // Fetch dropdown options from DROPDOWN sheet column E
-  useEffect(() => {
-    const fetchSharedByOptions = async () => {
-      try {
-        setIsLoading(true)
-        
-        // Fetch data from DROPDOWN sheet
-        const dropdownUrl = "https://docs.google.com/spreadsheets/d/1TZVWkmASF7tG-QER17588sl4SvRgY7knFKFDtYFjB0Q/gviz/tq?tqx=out:json&sheet=DROPDOWN"
-        const response = await fetch(dropdownUrl)
-        const text = await response.text()
-        
-        // Extract the JSON part from the response
-        const jsonStart = text.indexOf('{')
-        const jsonEnd = text.lastIndexOf('}') + 1
-        const jsonData = text.substring(jsonStart, jsonEnd)
-        
-        const data = JSON.parse(jsonData)
-        
-        // Extract column E values (skip header row)
-        if (data && data.table && data.table.rows) {
-          const options = []
-          
-          // Skip the header row (index 0)
-          data.table.rows.slice(1).forEach(row => {
-            // Column E is index 4
-            if (row.c && row.c[4] && row.c[4].v) {
-              options.push(row.c[4].v)
-            }
-          })
-          
-          setSharedByOptions(options)
-        }
-      } catch (error) {
-        console.error("Error fetching dropdown options:", error)
-        // Fallback options if fetch fails
-        setSharedByOptions(["Rahul Sharma", "Priya Patel", "Amit Singh", "Neha Gupta"])
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    
+  useEffect(() => {// adjust path
+
+const fetchSharedByOptions = async () => {
+  try {
+    setIsLoading(true);
+
+    // Fetch distinct values from `dropdown` table
+    const { data, error } = await supabase
+      .from("dropdown")
+      .select("quotation_shared_by")
+      .not("quotation_shared_by", "is", null);
+
+    if (error) throw error;
+
+    // Extract text values directly
+    const options = data.map(row => row.quotation_shared_by);
+
+    setSharedByOptions(options);
+  } catch (error) {
+    console.error("Error fetching dropdown options:", error);
+    // Fallback options if fetch fails
+    setSharedByOptions([
+      "Rahul Sharma",
+      "Priya Patel",
+      "Amit Singh",
+      "Neha Gupta"
+    ]);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
     fetchSharedByOptions()
   }, [])
 

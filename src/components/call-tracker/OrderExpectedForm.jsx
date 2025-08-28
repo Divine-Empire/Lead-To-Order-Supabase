@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import supabase from "../../utils/supabase";
 
 function OrderExpectedForm({ formData, onFieldChange }) {
   const [followupStatusOptions, setFollowupStatusOptions] = useState([])
@@ -6,44 +7,37 @@ function OrderExpectedForm({ formData, onFieldChange }) {
   
   // Fetch dropdown options from DROPDOWN sheet column 81
   useEffect(() => {
-    const fetchFollowupStatusOptions = async () => {
-      try {
-        setIsLoading(true)
-        
-        // Fetch data from DROPDOWN sheet
-        const dropdownUrl = "https://docs.google.com/spreadsheets/d/1TZVWkmASF7tG-QER17588sl4SvRgY7knFKFDtYFjB0Q/gviz/tq?tqx=out:json&sheet=DROPDOWN"
-        const response = await fetch(dropdownUrl)
-        const text = await response.text()
-        
-        // Extract the JSON part from the response
-        const jsonStart = text.indexOf('{')
-        const jsonEnd = text.lastIndexOf('}') + 1
-        const jsonData = text.substring(jsonStart, jsonEnd)
-        
-        const data = JSON.parse(jsonData)
-        
-        // Extract column 81 values (skip header row)
-        if (data && data.table && data.table.rows) {
-          const options = []
-          
-          // Skip the header row (index 0)
-          data.table.rows.slice(0).forEach(row => {
-            // Column 81 is index 80 (0-based indexing)
-            if (row.c && row.c[80] && row.c[80].v) {
-              options.push(row.c[80].v)
-            }
-          })
-          
-          setFollowupStatusOptions(options)
-        }
-      } catch (error) {
-        console.error("Error fetching followup status options:", error)
-        // Fallback options if fetch fails
-        setFollowupStatusOptions(["Pending", "In Progress", "Completed", "Cancelled"])
-      } finally {
-        setIsLoading(false)
-      }
-    }
+
+const fetchFollowupStatusOptions = async () => {
+  try {
+    setIsLoading(true);
+
+    // Fetch distinct values from dropdown table where followup_status is not null
+    const { data, error } = await supabase
+      .from("dropdown")
+      .select("followup_status")
+      .not("followup_status", "is", null);
+
+    if (error) throw error;
+
+    // Extract values into array
+    const options = data.map(row => row.followup_status);
+
+    setFollowupStatusOptions(options);
+  } catch (error) {
+    console.error("Error fetching followup status options:", error);
+    // fallback options
+    setFollowupStatusOptions([
+      "Pending",
+      "In Progress",
+      "Completed",
+      "Cancelled"
+    ]);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
     
     fetchFollowupStatusOptions()
   }, [])
