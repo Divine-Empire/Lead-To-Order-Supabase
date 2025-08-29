@@ -300,7 +300,7 @@ useEffect(() => {
           createdAt: row['Created_At'] || "",
           nextCallDate: row['Next_Call_Date'] || "",
           priority: determinePriority(row['Lead_Source'] || ""),
-          assignedTo: row['Sc_Name'] || "",
+          assignedTo: row['SC_Name'] || "",
           itemQty: row['Item_Qty'] || ""
         }));
 
@@ -983,7 +983,7 @@ const filteredHistory = historyData
                                 <tr key={`${followUp.leadId}-${index}`} className="hover:bg-slate-50 transition-colors">
                                   <td className="sticky left-0 z-10 bg-white px-3 sm:px-4 py-3 sm:py-4 text-sm font-medium border-r border-gray-200">
                                     <div className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2">
-                                      <Link to={`/follow-up/new?leadId=${followUp.leadId}&leadNo=${followUp.leadId}`}>
+                                      <Link state={followUp.assignedTo} to={`/follow-up/new?leadId=${followUp.leadId}&leadNo=${followUp.leadId}`}>
                                         <button className="w-full sm:w-auto px-2 sm:px-3 py-1 text-xs border border-amber-200 text-amber-600 hover:bg-amber-50 rounded-md transition-colors whitespace-nowrap">
                                           Call Now <ArrowRightIcon className="ml-1 h-3 w-3 inline" />
                                         </button>

@@ -1,15 +1,13 @@
 "use client"
 
-import { useState, useContext, useEffect } from "react"
+import { useState, useContext, useEffect, useCallback } from "react"
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom"
 import { AuthContext } from "../App"
 import MakeQuotationForm from "../components/call-tracker/MakeQuotationFrom"
 import QuotationValidationForm from "../components/call-tracker/QuotationValidationForm"
 import OrderExpectedForm from "../components/call-tracker/OrderExpectedForm"
 import OrderStatusForm from "../components/call-tracker/OrderStatusFrom"
-// import supabase from "../supabaseClient"
 import supabase from "../utils/supabase"
-
 
 function NewCallTracker() {
   const navigate = useNavigate()
@@ -26,11 +24,10 @@ function NewCallTracker() {
     customerFeedback: "",
   })
 
-   const location = useLocation();
- 
+  const location = useLocation();
+const { activeTab, sc_name } = location.state || {}; // fallback to {} if undefined
 
-  // get the state
-  const activeTab = location.state;
+
 
 
 
@@ -47,7 +44,7 @@ function NewCallTracker() {
     valueWithTax: "",
     remarks: "",
     quotationFile: null,
-    quotationFileUrl: "", // New field to store the uploaded file URL
+    quotationFileUrl: "",
   })
 
   // State for QuotationValidationForm data
@@ -92,39 +89,139 @@ function NewCallTracker() {
     holdRemark: "",
   })
 
+  // Memoized function to prevent recreation on every render
+  const fetchLatestQuotationNumber = useCallback(async (enquiryNo, activeTab) => {
+    try {
+      let tableName, columnName, filterColumn;
+
+      if (activeTab === "pending") {
+        tableName = "leads_to_order";
+        columnName = "Quotation_Number";
+        filterColumn = "LD-Lead-No";
+      } else if (activeTab === "directEnquiry") {
+        tableName = "enquiry_to_order";
+        columnName = "quotation_number";
+        filterColumn = "enquiry_no";
+      } else {
+        console.error("Invalid active tab:", activeTab);
+        return "";
+      }
+
+      const { data, error } = await supabase
+        .from(tableName)
+        .select(columnName)
+        .eq(filterColumn, enquiryNo)
+        .limit(1);
+
+      if (error) {
+        console.error(`Supabase error fetching from ${tableName}:`, error);
+        return "";
+      }
+
+      if (data && data.length > 0) {
+        return data[0][columnName];
+      }
+      
+      return "";
+    } catch (error) {
+      console.error("Error fetching quotation number:", error);
+      return "";
+    }
+  }, [activeTab]);
+
+  // Use useEffect to handle quotation fetching when stage changes
+// Replace this useEffect with a more controlled approach
+useEffect(() => {
+  const fetchQuotationForStage = async () => {
+    if ((currentStage === "order-status" || currentStage === "quotation-validation") && 
+        formData.enquiryNo) {
+      const quotationNumber = await fetchLatestQuotationNumber(formData.enquiryNo, activeTab);
+      
+      // Only update if we got a different quotation number
+      if (quotationNumber) {
+        if (currentStage === "order-status" && orderStatusData.orderStatusQuotationNumber !== quotationNumber) {
+          setOrderStatusData(prev => ({
+            ...prev,
+            orderStatusQuotationNumber: quotationNumber
+          }));
+        } else if (currentStage === "quotation-validation" && validationData.validationQuotationNumber !== quotationNumber) {
+          setValidationData(prev => ({
+            ...prev,
+            validationQuotationNumber: quotationNumber
+          }));
+        }
+      }
+    }
+  };
+
+  fetchQuotationForStage();
+}, [currentStage, formData.enquiryNo, activeTab, fetchLatestQuotationNumber, orderStatusData.orderStatusQuotationNumber, validationData.validationQuotationNumber]);
+
+
+ useEffect(() => {
+    const handleStageChange = async () => {
+      if ((currentStage === "order-status" || currentStage === "quotation-validation") && 
+          formData.enquiryNo) {
+        const quotationNumber = await fetchLatestQuotationNumber(formData.enquiryNo, activeTab);
+        if (quotationNumber) {
+          if (currentStage === "order-status") {
+            setOrderStatusData(prev => ({
+              ...prev,
+              orderStatusQuotationNumber: quotationNumber
+            }));
+          } else if (currentStage === "quotation-validation") {
+            setValidationData(prev => ({
+              ...prev,
+              validationQuotationNumber: quotationNumber
+            }));
+          }
+        }
+      }
+    };
+
+    handleStageChange();
+  }, [currentStage, formData.enquiryNo, activeTab, fetchLatestQuotationNumber]);
   // Add this function inside the NewCallTracker component
-const fetchLatestQuotationNumber = async (enquiryNo) => {
-  try {
-    const scriptUrl = "https://script.google.com/macros/s/AKfycbzTPj_x_0Sh6uCNnMDi-KlwVzkGV3nC4tRF6kGUNA1vXG0Ykx4Lq6ccR9kYv6Cst108aQ/exec"
-    const params = {
-      action: "getQuotationNumber",
-      enquiryNo: enquiryNo
-    }
+// const fetchLatestQuotationNumber = async (enquiryNo, activeTab) => {
+//   try {
+//     let tableName, columnName, filterColumn;
 
-    const urlParams = new URLSearchParams()
-    for (const key in params) {
-      urlParams.append(key, params[key])
-    }
+//     // Determine table and column based on active tab
+//     if (activeTab === "pending") {
+//       tableName = "leads_to_order";
+//       columnName = "Quotation_Number";
+//       filterColumn = "LD-Lead-No"; // Column name for lead ID in leads_to_order table
+//     } else if (activeTab === "directEnquiry") {
+//       tableName = "enquiry_to_order";
+//       columnName = "quotation_number";
+//       filterColumn = "enquiry_no"; // Column name for enquiry number in enquiry_to_order table
+//     } else {
+//       console.error("Invalid active tab:", activeTab);
+//       return "";
+//     }
 
-    const response = await fetch(scriptUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      body: urlParams
-    })
+//     // Fetch data from Supabase
+//     const { data, error } = await supabase
+//       .from(tableName)
+//       .select(columnName)
+//       .eq(filterColumn, enquiryNo)
+//       .limit(1);
 
-    const result = await response.json()
-    if (result.success && result.quotationNumber) {
-      return result.quotationNumber
-    }
-    return ""
-  } catch (error) {
-    console.error("Error fetching quotation number:", error)
-    return ""
-  }
-}
+//     if (error) {
+//       console.error(`Supabase error fetching from ${tableName}:`, error);
+//       return "";
+//     }
 
+//     if (data && data.length > 0) {
+//       return data[0][columnName];
+//     }
+    
+//     return "";
+//   } catch (error) {
+//     console.error("Error fetching quotation number:", error);
+//     return "";
+//   }
+// };
   // Fetch dropdown options from DROPDOWN sheet column G
  useEffect(() => {
   const fetchDropdownOptions = async () => {
@@ -222,26 +319,13 @@ const fetchLatestQuotationNumber = async (enquiryNo) => {
 
   // Handler for order status form data updates
 // Handler for order status form data updates
+// Handler for order status form data updates
 const handleOrderStatusChange = (field, value) => {
-  // Define which fields should be numeric
-  const numericFields = [
-    'creditLimit' 
-  ];
-  
-  // Convert numeric fields from string to number or null
-  if (numericFields.includes(field)) {
-    const numericValue = value === '' ? null : Number(value);
-    setOrderStatusData(prev => ({
-      ...prev,
-      [field]: numericValue
-    }));
-  } else {
-    // For non-numeric fields, keep as is
-    setOrderStatusData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  }
+  // For all fields including creditLimit, store as string (text)
+  setOrderStatusData(prev => ({
+    ...prev,
+    [field]: value // Keep all values as strings
+  }));
 }
 
   // Function to format date as dd/mm/yyyy
@@ -353,21 +437,15 @@ const handleOrderStatusChange = (field, value) => {
           "Is_Order_Received?_Status": null,
           Acceptance_Via: null,
           Payment_Mode: null,
-         "Payment_Terms _In_Days": null,
+          "Payment_Terms _In_Days": null,
           Transport_Mode: null,
         });
         break;
 
       case "order-expected":
         Object.assign(updateData, {
-     "Next Call Date_1": formData.nextCallDate
-  ? new Date(formData.nextCallDate).toISOString().split("T")[0] // 'YYYY-MM-DD'
-  : null,
-"Next Call Time_1": formData.nextCallTime
-  ? formData.nextCallTime.toString() // e.g. '14:30'
-  : null,
-
-
+          "Next Call Date_1": formData.nextCallDate,
+          "Next Call Time_1": formData.nextCallTime,
 
           // reset quotation + order fields
           "Send_Quotation_No.": null,
@@ -402,7 +480,8 @@ const handleOrderStatusChange = (field, value) => {
             If_No_Then_Get_Relevant_Reason_Status: null,
             If_No_Then_Get_Relevant_Reason_Remark: null,
             CUSTOMER_ORDER_HOLD_REASON_CATEGORY: null,
-
+ "Credit_Limit":formData.creditLimit,
+ "Credit_Days":formData.creditDays,
             CONVEYED_FOR_REGISTRATION_FORM: toBoolean(formData.conveyedForRegistration),
 
             Offer: formData.orderVideo,
@@ -427,7 +506,8 @@ const handleOrderStatusChange = (field, value) => {
             "Po Number": null,
             "Payment_Terms _In_Days": null,
             Transport_Mode: null,
-
+ "Credit_Limit":null,
+ "Credit_Days":null,
             CONVEYED_FOR_REGISTRATION_FORM: toBoolean(formData.conveyedForRegistration),
 
             Offer: null,
@@ -442,7 +522,8 @@ const handleOrderStatusChange = (field, value) => {
             If_No_Then_Get_Relevant_Reason_Status: null,
             If_No_Then_Get_Relevant_Reason_Remark: null,
             CUSTOMER_ORDER_HOLD_REASON_CATEGORY: orderStatusData.holdReason || null,
-
+ "Credit_Limit":null,
+ "Credit_Days":null,
             Acceptance_Via: null,
             Payment_Mode: null,
             Destination: null,
@@ -480,7 +561,7 @@ const handleOrderStatusChange = (field, value) => {
     const { data, error } = await supabase
       .from("leads_to_order")
       .update(updateData)
-      .eq("LD-Lead-No", leadId)
+      .eq("LD-Lead-No", enquiryNo)
       .select()
       .single();
 
@@ -684,7 +765,7 @@ const updateEnquiryToOrderTable = async (enquiryNo, formData, currentStage) => {
 const validateNumericFields = (data) => {
   const numericFields = [
     'valueWithoutTax', 'valueWithTax', 'paymentTerms', 
-    'creditDays', 'creditLimit'
+    'creditDays'
   ];
   
   for (const field of numericFields) {
@@ -716,50 +797,57 @@ const handleSubmit = async (e) => {
   setIsSubmitting(true);
 
   try {
+     const currentDate = new Date();
+    const formattedDate = formatDate(currentDate);
     // Prepare the data object for Supabase
     const supabaseData = {
       "Enquiry No.": formData.enquiryNo,
       "Enquiry Status": formData.enquiryStatus,
       "What Did Customer Say": formData.customerFeedback,
       "Current Stage": currentStage,
+      "Sales Cordinator":sc_name,
     };
 
     // Add stage-specific data with proper numeric handling
-    if (currentStage === "make-quotation") {
+       if (currentStage === "make-quotation") {
       Object.assign(supabaseData, {
         "Send Quotation No.": quotationData.sendQuotationNo,
         "Quotation Shared By": quotationData.quotationSharedBy,
         "Quotation Number": quotationData.quotationNumber,
-        "Quotation Value Without Tax": quotationData.valueWithoutTax === "" ? null : Number(quotationData.valueWithoutTax),
-        "Quotation Value With Tax": quotationData.valueWithTax === "" ? null : Number(quotationData.valueWithTax),
+        "Quotation Value Without Tax": quotationData.valueWithoutTax,
+        "Quotation Value With Tax": quotationData.valueWithTax,
         "Quotation Remarks": quotationData.remarks,
       });
     } 
-    // ... rest of your stage handling code
-
-    // For order status stage
+    else if (currentStage === "order-expected") {
+      Object.assign(supabaseData, {
+        "Followup Status": orderExpectedData.followupStatus, // Current date as followup start
+        "Next Call Date": orderExpectedData.nextCallDate,
+        "Next Call Time": orderExpectedData.nextCallTime,
+      });
+    } 
     else if (currentStage === "order-status") {
       Object.assign(supabaseData, {
         "Quotation Number": orderStatusData.orderStatusQuotationNumber,
         "Is Order Received? Status": orderStatusData.orderStatus,
       });
 
+      // Add additional fields based on order status
       if (orderStatusData.orderStatus === "yes") {
         Object.assign(supabaseData, {
           "Acceptance Via": orderStatusData.acceptanceVia,
           "Payment Mode": orderStatusData.paymentMode,
           "Destination": orderStatusData.destination,
-          "PO Number": orderStatusData.poNumber, 
-          "Payment Terms (In Days)": orderStatusData.paymentTerms === "" ? null : Number(orderStatusData.paymentTerms),
+          "PO Number":orderStatusData.poNumber, 
+          "Payment Terms (In Days)": orderStatusData.paymentTerms,
           "Transport Mode": orderStatusData.transportMode,
-          "Credit Days": orderStatusData.creditDays === "" ? null : Number(orderStatusData.creditDays),
-          "Credit Limit": orderStatusData.creditLimit === "" ? null : Number(orderStatusData.creditLimit),
+          "Credit Days":orderStatusData.creditDays,
+          "Credit Limit":orderStatusData.creditLimit,
           "CONVEYED FOR REGISTRATION FORM": orderStatusData.conveyedForRegistration,
           "Offer": orderStatusData.orderVideo,
-          "Acceptance File Upload": "", 
+          "Acceptance File Upload": "", // You can add file upload logic here
           "Remark": orderStatusData.orderRemark,
         });
-      }
       } 
       else if (orderStatusData.orderStatus === "no") {
         Object.assign(supabaseData, {
@@ -775,6 +863,7 @@ const handleSubmit = async (e) => {
           "Hold Remark": orderStatusData.holdRemark,
         });
       }
+    }
     
 
     console.log("Supabase Data to be inserted:", supabaseData);
@@ -1048,6 +1137,11 @@ const handleSubmit = async (e) => {
     // }
   };
   
+
+   const handleStageChange = (stage) => {
+    setCurrentStage(stage);
+  };
+
   // Helper function to get the latest order number from the sheet
   const getLatestOrderNumber = async () => {
     try {
@@ -1225,34 +1319,25 @@ const handleSubmit = async (e) => {
         Order Expected
       </label>
     </div>
-    <div className="flex items-center space-x-2">
-      <input
-        type="radio"
-        id="order-status"
-        name="currentStage"
-        value="order-status"
-        checked={currentStage === "order-status"}
-        onChange={async (e) => {
-          const stage = e.target.value
-          setCurrentStage(stage)
-          
-          if (formData.enquiryNo) {
-            // Fetch the latest quotation number for this enquiry
-            const quotationNumber = await fetchLatestQuotationNumber(formData.enquiryNo)
-            if (quotationNumber) {
-              setOrderStatusData(prev => ({
-                ...prev,
-                orderStatusQuotationNumber: quotationNumber
-              }))
-            }
-          }
-        }}
-        className="h-4 w-4 text-purple-600 focus:ring-purple-500"
-      />
-      <label htmlFor="order-status" className="text-sm text-gray-700">
-        Order Status
-      </label>
-    </div>
+  <div className="flex items-center space-x-2">
+  <input
+    type="radio"
+    id="order-status"
+    name="currentStage"
+    value="order-status"
+    checked={currentStage === "order-status"}
+  onChange={(e) => {
+  const stage = e.target.value;
+  setCurrentStage(stage);
+  
+  // Use useEffect to handle the side effect instead
+}}
+    className="h-4 w-4 text-purple-600 focus:ring-purple-500"
+  />
+  <label htmlFor="order-status" className="text-sm text-gray-700">
+    Order Status
+  </label>
+</div>
   </div>
 </div>
 
@@ -1282,6 +1367,7 @@ const handleSubmit = async (e) => {
                 enquiryNo={formData.enquiryNo}
                 formData={orderStatusData}
                 onFieldChange={handleOrderStatusChange}
+                activeTab={activeTab}
               />
             )}
           </div>

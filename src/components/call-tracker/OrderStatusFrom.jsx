@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import supabase from "../../utils/supabase"
 
-function OrderStatusForm({ formData, onFieldChange, enquiryNo }) {
+function OrderStatusForm({ formData, onFieldChange, enquiryNo,activeTab }) {
   const [orderStatus, setOrderStatus] = useState(formData.orderStatus || "")
   const [acceptanceViaOptions, setAcceptanceViaOptions] = useState([])
   const [paymentModeOptions, setPaymentModeOptions] = useState([])
@@ -52,12 +52,10 @@ const [creditLimitOptions, setCreditLimitOptions] = useState([])
   const paymentTerms = extractOptions("payment_terms_in_days")
   const transport = extractOptions("transport_mode")
   const creditDays = extractOptions("credit_days")
-  let creditLimit = extractOptions("credit_limit")   // ⬅️ numeric now
+  const creditLimit = extractOptions("credit_limit")   // ⬅️ numeric now
 
   // ✅ If no credit limit data, fallback to [10, 20]
-  if (creditLimit.length === 0) {
-    creditLimit = [10, 20]
-  }
+
 
   const conveyed = extractOptions("conveyd_for_registration_form")
   const holdReasons = extractOptions("customer_order_hold_reason_category")
@@ -97,84 +95,69 @@ const [creditLimitOptions, setCreditLimitOptions] = useState([])
   }, [])
 
   // Fetch quotation numbers for the given enquiry number
-  useEffect(() => {
-    const fetchQuotationNumbers = async () => {
-      if (!enquiryNo) return
-      
-      try {
-        setIsLoadingQuotations(true)
-        
-        // First try fetching from FMS sheet (for pending enquiries)
-        const fmsUrl = "https://docs.google.com/spreadsheets/d/1TZVWkmASF7tG-QER17588sl4SvRgY7knFKFDtYFjB0Q/gviz/tq?tqx=out:json&sheet=FMS"
-        const fmsResponse = await fetch(fmsUrl)
-        const fmsText = await fmsResponse.text()
-        
-        // Extract the JSON part from the response
-        const fmsJsonStart = fmsText.indexOf('{')
-        const fmsJsonEnd = fmsText.lastIndexOf('}') + 1
-        const fmsJsonData = fmsText.substring(fmsJsonStart, fmsJsonEnd)
-        
-        const fmsData = JSON.parse(fmsJsonData)
-        
-        const matchingQuotations = []
-        
-        // Check FMS sheet first (for pending enquiries)
-        if (fmsData && fmsData.table && fmsData.table.rows) {
-          fmsData.table.rows.forEach(row => {
-            // Column B is index 1 (enquiry number) and column BI is index 60 (quotation number)
-            if (row.c && 
-                row.c[1] && 
-                row.c[1].v && 
-                row.c[1].v.toString() === enquiryNo.toString() &&
-                row.c[60] && 
-                row.c[60].v) {
-              matchingQuotations.push(row.c[60].v)
-            }
-          })
-        }
-        
-        // If no matches found in FMS, try ENQUIRY TO ORDER sheet (for direct enquiries)
-        if (matchingQuotations.length === 0) {
-          const enquiryUrl = "https://docs.google.com/spreadsheets/d/1TZVWkmASF7tG-QER17588sl4SvRgY7knFKFDtYFjB0Q/gviz/tq?tqx=out:json&sheet=ENQUIRY TO ORDER"
-          const enquiryResponse = await fetch(enquiryUrl)
-          const enquiryText = await enquiryResponse.text()
-          
-          const enquiryJsonStart = enquiryText.indexOf('{')
-          const enquiryJsonEnd = enquiryText.lastIndexOf('}') + 1
-          const enquiryJsonData = enquiryText.substring(enquiryJsonStart, enquiryJsonEnd)
-          
-          const enquiryData = JSON.parse(enquiryJsonData)
-          
-          if (enquiryData && enquiryData.table && enquiryData.table.rows) {
-            enquiryData.table.rows.forEach(row => {
-              // Column B is index 1 (enquiry number) and column AT is index 45 (quotation number)
-              if (row.c && 
-                  row.c[1] && 
-                  row.c[1].v && 
-                  row.c[1].v.toString() === enquiryNo.toString() &&
-                  row.c[45] && 
-                  row.c[45].v) {
-                matchingQuotations.push(row.c[45].v)
-              }
-            })
-          }
-        }
-        
-        setQuotationNumbers(matchingQuotations)
-        
-        // If we found matches and the form field is empty, auto-fill with the first match
-        if (matchingQuotations.length > 0 && !formData.orderStatusQuotationNumber) {
-          onFieldChange('orderStatusQuotationNumber', matchingQuotations[0])
-        }
-      } catch (error) {
-        console.error("Error fetching quotation numbers:", error)
-      } finally {
-        setIsLoadingQuotations(false)
-      }
-    }
+ useEffect(() => {
+  const fetchQuotationNumbers = async () => {
+  if (!enquiryNo) return;
+  
+  try {
+    setIsLoadingQuotations(true);
     
-    fetchQuotationNumbers()
-  }, [enquiryNo, formData.orderStatusQuotationNumber, onFieldChange])
+    let tableName, columnName, filterColumn;
+
+    if (activeTab === "pending") {
+      tableName = "leads_to_order";
+      columnName = "Quotation_Number";
+      filterColumn = "LD-Lead-No";
+    } else if (activeTab === "directEnquiry") {
+      tableName = "enquiry_to_order";
+      columnName = "quotation_number";
+      filterColumn = "enquiry_no";
+    } else {
+      console.error("Invalid active tab:", activeTab);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from(tableName)
+      .select(columnName)
+      .eq(filterColumn, enquiryNo);
+
+    if (error) {
+      console.error(`Supabase error fetching from ${tableName}:`, error);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      const uniqueQuotations = [...new Set(data.map(item => item[columnName]).filter(item => item))];
+      setQuotationNumbers(uniqueQuotations);
+      
+      // Auto-select only if we don't already have a value
+      if (uniqueQuotations.length > 0 && !formData.orderStatusQuotationNumber) {
+        onFieldChange('orderStatusQuotationNumber', uniqueQuotations[0]);
+      }
+    } else {
+      setQuotationNumbers([]);
+    }
+  } catch (error) {
+    console.error("Error fetching quotation numbers:", error);
+  } finally {
+    setIsLoadingQuotations(false);
+  }
+}
+    
+    fetchQuotationNumbers();
+  }, [enquiryNo, formData.orderStatusQuotationNumber, onFieldChange, activeTab]);
+
+   const stableOnFieldChange = useCallback(onFieldChange, [onFieldChange])
+
+
+    //  useEffect(() => {
+    //    if (quotationNumbers.length > 0 && !formData.orderStatusQuotationNumber) {
+    //      stableOnFieldChange('orderStatusQuotationNumber', quotationNumbers[0]);
+    //    }
+    //  }, [quotationNumbers, formData.orderStatusQuotationNumber, stableOnFieldChange]);
+   
+   
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -206,7 +189,7 @@ const [creditLimitOptions, setCreditLimitOptions] = useState([])
       <h3 className="text-lg font-medium">Order Status</h3>
       <hr className="border-gray-200" />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <label htmlFor="orderStatusQuotationNumber" className="block text-sm font-medium text-gray-700">
             Quotation Number
@@ -225,6 +208,20 @@ const [creditLimitOptions, setCreditLimitOptions] = useState([])
               />
               <div className="text-sm text-gray-500">Loading...</div>
             </div>
+          ) : quotationNumbers.length > 0 ? (
+            <select
+              id="orderStatusQuotationNumber"
+              name="orderStatusQuotationNumber"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              value={formData.orderStatusQuotationNumber || ""}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select quotation number</option>
+              {quotationNumbers.map((quotation, index) => (
+                <option key={index} value={quotation}>{quotation}</option>
+              ))}
+            </select>
           ) : (
             <input
               id="orderStatusQuotationNumber"
@@ -248,7 +245,6 @@ const [creditLimitOptions, setCreditLimitOptions] = useState([])
           )}
         </div>
       </div>
-
       <div className="space-y-2">
         <label className="block text-sm font-medium text-gray-700">Is Order Received? Status</label>
         <div className="space-y-1">
@@ -423,23 +419,23 @@ const [creditLimitOptions, setCreditLimitOptions] = useState([])
   </select>
 </div>
 
-<div className="space-y-2">
-  <label htmlFor="creditLimit" className="block text-sm font-medium text-gray-700">
-    Credit Limit
-  </label>
-  <select
-    id="creditLimit"
-    name="creditLimit"
-    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-    value={formData.creditLimit || ""}
-    onChange={handleChange}
-  >
-    <option value="">Select credit limit</option>
-    {creditLimitOptions.map((option, index) => (
-      <option key={index} value={option}>{option}</option>
-    ))}
-  </select>
-</div>
+   <div className="space-y-2">
+              <label htmlFor="creditLimit" className="block text-sm font-medium text-gray-700">
+                Credit Limit
+              </label>
+              <select
+                id="creditLimit"
+                name="creditLimit"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                value={formData.creditLimit || ""}
+                onChange={handleChange}
+              >
+                <option value="">Select credit limit</option>
+                {creditLimitOptions.map((option, index) => (
+                  <option key={index} value={option}>{option.toLocaleString()}</option>
+                ))}
+              </select>
+            </div>
 
             <div className="space-y-2">
               <label htmlFor="conveyedForRegistration" className="block text-sm font-medium text-gray-700">

@@ -5,23 +5,25 @@ import supabase from "../utils/supabase"
 
 const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
   const [leadSources, setLeadSources] = useState([])
-  const [scNameOptions, setScNameOptions] = useState([]) // Added SC Name options
+  const [scNameOptions, setScNameOptions] = useState([])
   const [enquiryStates, setEnquiryStates] = useState([])
   const [nobOptions, setNobOptions] = useState([])
   const [salesTypes, setSalesTypes] = useState([])
-  const [enquiryApproachOptions, setEnquiryApproachOptions] = useState([])
+  const [enquiryApproachOptions, setEnquiryApproachOptions] =useState([])
   const [productCategories, setProductCategories] = useState([])
   const [companyOptions, setCompanyOptions] = useState([])
   const [companyDetailsMap, setCompanyDetailsMap] = useState({})
   const [lastEnquiryNo, setLastEnquiryNo] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [receiverOptions, setReceiverOptions] = useState([])
-const [assignToProjectOptions, setAssignToProjectOptions] = useState([])
+  const [assignToProjectOptions, setAssignToProjectOptions] = useState([])
+  const [showCompanyDropdown, setShowCompanyDropdown] = useState(false)
+  const [filteredCompanies, setFilteredCompanies] = useState([])
 
   const [newCallTrackerData, setNewCallTrackerData] = useState({
     enquiryNo: "",
     leadSource: "",
-    scName: "", // Added SC Name field
+    scName: "",
     companyName: "",
     phoneNumber: "",
     salesPersonName: "",
@@ -31,7 +33,7 @@ const [assignToProjectOptions, setAssignToProjectOptions] = useState([])
     enquiryReceiverName: "",
     enquiryAssignToProject: "",
     gstNumber: "",
-    isCompanyAutoFilled: true // Added to track auto-fill status
+    isCompanyAutoFilled: true
   })
 
   const [enquiryFormData, setEnquiryFormData] = useState({
@@ -45,11 +47,17 @@ const [assignToProjectOptions, setAssignToProjectOptions] = useState([])
   const [items, setItems] = useState([{ id: "1", name: "", quantity: "" }])
   const [isCompanyAutoFilled, setIsCompanyAutoFilled] = useState(false);
 
-  const [expectedFormData, setExpectedFormData] = useState({
-    nextAction: "",
-    nextCallDate: "",
-    nextCallTime: "",
-  })
+  // Filter companies based on search input
+  useEffect(() => {
+    if (newCallTrackerData.companyName) {
+      const filtered = companyOptions.filter(company =>
+        company.toLowerCase().includes(newCallTrackerData.companyName.toLowerCase())
+      )
+      setFilteredCompanies(filtered)
+    } else {
+      setFilteredCompanies(companyOptions)
+    }
+  }, [newCallTrackerData.companyName, companyOptions])
 
   // Fetch dropdown data, company data, and last enquiry number when component mounts
   useEffect(() => {
@@ -59,219 +67,192 @@ const [assignToProjectOptions, setAssignToProjectOptions] = useState([])
   }, [])
 
   // Function to fetch the last enquiry number from Supabase
-const fetchLastEnquiryNumber = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('enquiry_to_order') // Changed to enquiry_tracker to match your table name
-      .select('enquiry_no')
-      .order('created_at', { ascending: false }) // Using created_at instead of id
-      .limit(1)
-      .single()
+  const fetchLastEnquiryNumber = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('enquiry_to_order')
+        .select('enquiry_no')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
 
-    if (error) {
-      // Handle different error cases
-      if (error.code === 'PGRST116') {
-        // No rows found - this is normal for empty table
-        console.log("No existing records found, starting with En-01");
-        setLastEnquiryNo("En-01");
-        setNewCallTrackerData(prev => ({
-          ...prev,
-          enquiryNo: "En-01"
-        }));
-        return;
-      } else if (error.code === '42P01') {
-        // Table doesn't exist
-        console.log("Table doesn't exist yet, starting with En-01");
-        setLastEnquiryNo("En-01");
-        setNewCallTrackerData(prev => ({
-          ...prev,
-          enquiryNo: "En-01"
-        }));
-        return;
-      } else {
-        // Other errors
-        console.error("Error fetching last enquiry number:", error);
-        setLastEnquiryNo("En-01");
-        setNewCallTrackerData(prev => ({
-          ...prev,
-          enquiryNo: "En-01"
-        }));
-        return;
+      if (error) {
+        if (error.code === 'PGRST116') {
+          setLastEnquiryNo("En-01");
+          setNewCallTrackerData(prev => ({
+            ...prev,
+            enquiryNo: "En-01"
+          }));
+          return;
+        } else if (error.code === '42P01') {
+          setLastEnquiryNo("En-01");
+          setNewCallTrackerData(prev => ({
+            ...prev,
+            enquiryNo: "En-01"
+          }));
+          return;
+        } else {
+          console.error("Error fetching last enquiry number:", error);
+          setLastEnquiryNo("En-01");
+          setNewCallTrackerData(prev => ({
+            ...prev,
+            enquiryNo: "En-01"
+          }));
+          return;
+        }
       }
-    }
 
-    if (data && data.enquiry_no) {
-      // Extract the number part and increment
-      const match = data.enquiry_no.match(/En-(\d+)/);
-      if (match && match[1]) {
-        const nextNumber = parseInt(match[1]) + 1;
-        const nextEnquiryNo = `En-${nextNumber.toString().padStart(2, "0")}`;
-        setLastEnquiryNo(nextEnquiryNo);
-        setNewCallTrackerData(prev => ({
-          ...prev,
-          enquiryNo: nextEnquiryNo
-        }));
+      if (data && data.enquiry_no) {
+        const match = data.enquiry_no.match(/En-(\d+)/);
+        if (match && match[1]) {
+          const nextNumber = parseInt(match[1]) + 1;
+          const nextEnquiryNo = `En-${nextNumber.toString().padStart(2, "0")}`;
+          setLastEnquiryNo(nextEnquiryNo);
+          setNewCallTrackerData(prev => ({
+            ...prev,
+            enquiryNo: nextEnquiryNo
+          }));
+        } else {
+          setLastEnquiryNo("En-01");
+          setNewCallTrackerData(prev => ({
+            ...prev,
+            enquiryNo: "En-01"
+          }));
+        }
       } else {
-        // Default to "En-01" if format doesn't match
         setLastEnquiryNo("En-01");
         setNewCallTrackerData(prev => ({
           ...prev,
           enquiryNo: "En-01"
         }));
       }
-    } else {
-      // Default to "En-01" if no data found
+    } catch (error) {
+      console.error("Error fetching last enquiry number:", error);
       setLastEnquiryNo("En-01");
       setNewCallTrackerData(prev => ({
         ...prev,
         enquiryNo: "En-01"
       }));
     }
-  } catch (error) {
-    console.error("Error fetching last enquiry number:", error);
-    // Default to "En-01" if there's an error
-    setLastEnquiryNo("En-01");
-    setNewCallTrackerData(prev => ({
-      ...prev,
-      enquiryNo: "En-01"
-    }));
   }
-}
 
-  // Function to fetch dropdown data from DROPDOWN sheet with updated column references
- const fetchDropdownData = async () => {
-  try {
-    // Fetch each column individually with not null condition
-    const [
-      { data: leadSourcesData, error: leadSourcesError },
-      { data: scNamesData, error: scNamesError },
-      { data: companyData, error: companyError },
-      { data: statesData, error: statesError },
-      { data: nobData, error: nobError },
-      { data: salesTypeData, error: salesTypeError },
-      { data: approachData, error: approachError },
-      { data: productData, error: productError },
-      { data: receiversData, error: receiversError },
-      { data: assignToData, error: assignToError }
-    ] = await Promise.all([
-      supabase.from("dropdown").select("lead_source").not("lead_source", "is", null),
-      supabase.from("dropdown").select("sales_co_ordinator_name").not("sales_co_ordinator_name", "is", null),
-      supabase.from("dropdown").select("direct_enquiry_company_name").not("direct_enquiry_company_name", "is", null),
-      supabase.from("dropdown").select("direct_enquiry_state").not("direct_enquiry_state", "is", null),
-      supabase.from("dropdown").select("nob").not("nob", "is", null),
-      supabase.from("dropdown").select("sales_type").not("sales_type", "is", null),
-      supabase.from("dropdown").select("enquiry_approach").not("enquiry_approach", "is", null),
-      supabase.from("dropdown").select("item_name").not("item_name", "is", null),
-      supabase.from("dropdown").select("lead_receiver_name").not("lead_receiver_name", "is", null),
-      supabase.from("dropdown").select("enquiry_assign_to").not("enquiry_assign_to", "is", null)
-    ]);
+  // Function to fetch dropdown data from DROPDOWN sheet
+  const fetchDropdownData = async () => {
+    try {
+      const [
+        { data: leadSourcesData, error: leadSourcesError },
+        { data: scNamesData, error: scNamesError },
+        { data: companyData, error: companyError },
+        { data: statesData, error: statesError },
+        { data: nobData, error: nobError },
+        { data: salesTypeData, error: salesTypeError },
+        { data: approachData, error: approachError },
+        { data: productData, error: productError },
+        { data: receiversData, error: receiversError },
+        { data: assignToData, error: assignToError }
+      ] = await Promise.all([
+        supabase.from("dropdown").select("lead_source").not("lead_source", "is", null),
+        supabase.from("dropdown").select("sales_co_ordinator_name").not("sales_co_ordinator_name", "is", null),
+        supabase.from("dropdown").select("direct_enquiry_company_name").not("direct_enquiry_company_name", "is", null),
+        supabase.from("dropdown").select("direct_enquiry_state").not("direct_enquiry_state", "is", null),
+        supabase.from("dropdown").select("nob").not("nob", "is", null),
+        supabase.from("dropdown").select("sales_type").not("sales_type", "is", null),
+        supabase.from("dropdown").select("enquiry_approach").not("enquiry_approach", "is", null),
+        supabase.from("dropdown").select("item_name").not("item_name", "is", null),
+        supabase.from("dropdown").select("lead_receiver_name").not("lead_receiver_name", "is", null),
+        supabase.from("dropdown").select("enquiry_assign_to").not("enquiry_assign_to", "is", null)
+      ]);
 
-    // Check for any errors
-    const errors = [
-      leadSourcesError, scNamesError, companyError, statesError, nobError, 
-      salesTypeError, approachError, productError, receiversError, assignToError
-    ].filter(error => error !== null);
+      const errors = [
+        leadSourcesError, scNamesError, companyError, statesError, nobError, 
+        salesTypeError, approachError, productError, receiversError, assignToError
+      ].filter(error => error !== null);
 
-    if (errors.length > 0) {
-      console.log("Errors fetching dropdown data:", errors);
-      throw new Error("Failed to fetch some dropdown data");
+      if (errors.length > 0) {
+        console.log("Errors fetching dropdown data:", errors);
+        throw new Error("Failed to fetch some dropdown data");
+      }
+
+      const sources = leadSourcesData.map(item => item.lead_source);
+      const scNames = scNamesData.map(item => item.sales_co_ordinator_name);
+      const companies = companyData.map(item => item.direct_enquiry_company_name);
+      const states = statesData.map(item => item.direct_enquiry_state);
+      const nobItems = nobData.map(item => item.nob);
+      const salesTypeOptions = salesTypeData.map(item => item.sales_type);
+      const approachOptions = approachData.map(item => item.enquiry_approach);
+      const productItems = productData.map(item => item.item_name);
+      const receivers = receiversData.map(item => item.lead_receiver_name);
+      const assignToProjects = assignToData.map(item => item.enquiry_assign_to);
+
+      setLeadSources([...new Set(sources)]);
+      setScNameOptions([...new Set(scNames)]);
+      setEnquiryStates([...new Set(states)]);
+      setNobOptions([...new Set(nobItems)]);
+      setSalesTypes([...new Set(salesTypeOptions)]);
+      setEnquiryApproachOptions([...new Set(approachOptions)]);
+      setProductCategories([...new Set(productItems)]);
+      setReceiverOptions([...new Set(receivers)]);
+      setAssignToProjectOptions([...new Set(assignToProjects)]);
+
+      console.log("Dropdown data fetched successfully");
+
+    } catch (error) {
+      console.error("Error fetching dropdown values:", error);
+      setLeadSources(["Website", "Justdial", "Sulekha", "Indiamart", "Referral", "Other"]);
+      setScNameOptions(["SC 1", "SC 2", "SC 3"]);
+      setCompanyOptions([]);
+      setEnquiryStates(["Maharashtra", "Gujarat", "Karnataka", "Tamil Nadu", "Delhi"]);
+      setNobOptions(["NOB 1", "NOB 2", "NOB 3"]);
+      setSalesTypes(["NBD", "CRR", "NBD_CRR"]);
+      setEnquiryApproachOptions(["Approach 1", "Approach 2", "Approach 3"]);
+      setProductCategories(["Product 1", "Product 2", "Product 3"]);
+      setReceiverOptions(["Receiver 1", "Receiver 2", "Receiver 3"]);
+      setAssignToProjectOptions(["Project 1", "Project 2", "Project 3"]);
     }
-
-    // Extract values from each column (already filtered for non-null)
-    const sources = leadSourcesData.map(item => item.lead_source);
-    const scNames = scNamesData.map(item => item.sales_co_ordinator_name);
-    const companies = companyData.map(item => item.direct_enquiry_company_name);
-    const states = statesData.map(item => item.direct_enquiry_state);
-    const nobItems = nobData.map(item => item.nob);
-    const salesTypeOptions = salesTypeData.map(item => item.sales_type);
-    const approachOptions = approachData.map(item => item.enquiry_approach);
-    const productItems = productData.map(item => item.item_name);
-    const receivers = receiversData.map(item => item.lead_receiver_name);
-    const assignToProjects = assignToData.map(item => item.enquiry_assign_to);
-
-    // Update state with fetched values (using unique values to prevent duplicates)
-    setLeadSources([...new Set(sources)]);
-    setScNameOptions([...new Set(scNames)]);
-    setEnquiryStates([...new Set(states)]);
-    setNobOptions([...new Set(nobItems)]);
-    setSalesTypes([...new Set(salesTypeOptions)]);
-    setEnquiryApproachOptions([...new Set(approachOptions)]);
-    setProductCategories([...new Set(productItems)]);
-    setReceiverOptions([...new Set(receivers)]);
-    setAssignToProjectOptions([...new Set(assignToProjects)]);
-
-    console.log("Dropdown data fetched successfully");
-
-  } catch (error) {
-    console.error("Error fetching dropdown values:", error);
-    // Fallback to empty arrays if there's an error
-    setLeadSources(["Website", "Justdial", "Sulekha", "Indiamart", "Referral", "Other"]);
-    setScNameOptions(["SC 1", "SC 2", "SC 3"]);
-    setCompanyOptions([]); // Empty array for companies
-    setEnquiryStates(["Maharashtra", "Gujarat", "Karnataka", "Tamil Nadu", "Delhi"]);
-    setNobOptions(["NOB 1", "NOB 2", "NOB 3"]);
-    setSalesTypes(["NBD", "CRR", "NBD_CRR"]);
-    setEnquiryApproachOptions(["Approach 1", "Approach 2", "Approach 3"]);
-    setProductCategories(["Product 1", "Product 2", "Product 3"]);
-    setReceiverOptions(["Receiver 1", "Receiver 2", "Receiver 3"]);
-    setAssignToProjectOptions(["Project 1", "Project 2", "Project 3"]);
   }
-}
+
   // Function to fetch company data
-// Function to fetch company data
-const fetchCompanyData = async () => {
-  try {
-    // Fetch company data from your Supabase table
-    const { data, error } = await supabase
-      .from("dropdown")
-      .select("direct_enquiry_company_name, direct_enquiry_client_name, direct_enquiry_client_contact_no, direct_enquiry_state, direct_enquiry_gstin_uin, direct_enquiry_billing_address")
-      .order("direct_enquiry_company_name", { ascending: true });
+  const fetchCompanyData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("dropdown")
+        .select("direct_enquiry_company_name, direct_enquiry_client_name, direct_enquiry_client_contact_no, direct_enquiry_state, direct_enquiry_gstin_uin, direct_enquiry_billing_address")
+        .order("direct_enquiry_company_name", { ascending: true });
 
-    if (error) {
+      if (error) {
+        console.error("Error fetching company data:", error);
+        return;
+      }
+
+      if (data) {
+        const companies = [];
+        const detailsMap = {};
+        
+        data.forEach(company => {
+          if (company.direct_enquiry_company_name) {
+            companies.push(company.direct_enquiry_company_name);
+            
+            detailsMap[company.direct_enquiry_company_name] = {
+              phoneNumber: company.direct_enquiry_client_contact_no || "",
+              salesPersonName: company.direct_enquiry_client_name || "",
+              location: company.direct_enquiry_billing_address || "",
+              gstNumber: company.direct_enquiry_gstin_uin || "",
+              enquiryState: company.direct_enquiry_state || ""
+            };
+          }
+        });
+        
+        setCompanyOptions(companies);
+        setFilteredCompanies(companies);
+        setCompanyDetailsMap(detailsMap);
+      }
+    } catch (error) {
       console.error("Error fetching company data:", error);
-      return;
+      setCompanyOptions([]);
+      setFilteredCompanies([]);
+      setCompanyDetailsMap({});
     }
-
-    if (data) {
-      // Create company options array and details mapping
-      const companies = [];
-      const detailsMap = {};
-      
-      data.forEach(company => {
-        if (company.direct_enquiry_company_name) { // Changed from company_name to direct_enquiry_company_name
-          companies.push(company.direct_enquiry_company_name);
-          
-          // Map company details for auto-fill
-          detailsMap[company.direct_enquiry_company_name] = {
-            phoneNumber: company.direct_enquiry_client_contact_no || "",
-            salesPersonName: company.direct_enquiry_client_name || "",
-            location: company.direct_enquiry_billing_address || "",
-            gstNumber: company.direct_enquiry_gstin_uin || "",
-            enquiryState: company.direct_enquiry_state || ""
-          };
-        }
-      });
-      
-      setCompanyOptions(companies);
-      setCompanyDetailsMap(detailsMap);
-      //console.log("Company data loaded:", companies); // Debug log
-    }
-  } catch (error) {
-    console.error("Error fetching company data:", error);
-    setCompanyOptions([]);
-    setCompanyDetailsMap({});
   }
-}
-
-// Add this useEffect to debug the company options
-// useEffect(() => {
-//   console.log("Company options updated:", companyOptions);
-// }, [companyOptions]);
-
-// // Add this useEffect to debug the fetched data
-// useEffect(() => {
-//   console.log("Company details map:", companyDetailsMap);
-// }, [companyDetailsMap]);
 
   // Handle company name change and auto-fill other fields
   const handleCompanyChange = (companyName) => {
@@ -301,13 +282,13 @@ const fetchCompanyData = async () => {
         }));
       }
     }
+    
+    setShowCompanyDropdown(false);
   }
-
-
 
   // Function to handle adding a new item
   const addItem = () => {
-    if (items.length < 300) { // Only add if less than 10 items
+    if (items.length < 300) {
       const newId = (items.length + 1).toString()
       setItems([...items, { id: newId, name: "", quantity: "" }])
     }
@@ -325,19 +306,18 @@ const fetchCompanyData = async () => {
     setItems(items.map((item) => (item.id === id ? { ...item, [field]: value } : item)))
   }
 
-  // Helper function to format date to DD/MM/YYYY
-  const formatDateToDDMMYYYY = (dateValue) => {
-    if (!dateValue) return ""
+  const formatDateToISO = (dateValue) => {
+    if (!dateValue) return "";
 
     try {
-      const date = new Date(dateValue)
+      const date = new Date(dateValue);
       if (!isNaN(date.getTime())) {
-        return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}/${date.getFullYear()}`
+        return date.toISOString().split('T')[0];
       }
-      return dateValue
+      return dateValue;
     } catch (error) {
-      console.error("Error formatting date:", error)
-      return dateValue // Return the original value if formatting fails
+      console.error("Error formatting date:", error);
+      return dateValue;
     }
   }
 
@@ -348,93 +328,76 @@ const fetchCompanyData = async () => {
     }, 0)
   }
 
+  // Function to handle form submission
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    
+    try {
+      // Prepare the first 10 items in individual columns
+      const itemColumns = {};
+      const first10Items = items.slice(0, 10);
+      
+      first10Items.forEach((item, index) => {
+        itemColumns[`item_name${index + 1}`] = item.name || "";
+        itemColumns[`quantity${index + 1}`] = item.quantity || "0";
+      });
+      
+      // Prepare additional items beyond 10 as JSON
+      const additionalItems = items.length > 10 
+        ? items.slice(10).map(item => ({
+            name: item.name || "",
+            quantity: item.quantity || "0"
+          }))
+        : [];
+      
+      // Prepare data for Supabase insertion
+      const rowData = { 
+        enquiry_no: newCallTrackerData.enquiryNo,
+        lead_source: newCallTrackerData.leadSource,
+        sales_coordinator_name: newCallTrackerData.scName,
+        company_name: newCallTrackerData.companyName,
+        phone_number: newCallTrackerData.phoneNumber,
+        sales_person_name: newCallTrackerData.salesPersonName,
+        location: newCallTrackerData.location,
+        email: newCallTrackerData.emailAddress,
+        shipping_address: newCallTrackerData.shippingAddress,
+        enquiry_receiver_name: newCallTrackerData.enquiryReceiverName,
+        enquiry_assign_to_project: newCallTrackerData.enquiryAssignToProject,
+        gst_number: newCallTrackerData.gstNumber,
+        enquiry_date: enquiryFormData.enquiryDate ? formatDateToISO(enquiryFormData.enquiryDate) : "",
+        enquiry_for_state: enquiryFormData.enquiryState,
+        project_name: enquiryFormData.projectName,
+        sales_type: enquiryFormData.salesType,
+        enquiry_approach: enquiryFormData.enquiryApproach,
+        // Add the first 10 items as individual columns
+        ...itemColumns,
+        // Add additional items as JSON
+        item_qty: additionalItems.length > 0 ? JSON.stringify(additionalItems) : null,
+        total_qty: calculateTotalQuantity(),
+      };
 
-// Replace the formatDateToDDMMYYYY function with this:
-const formatDateToISO = (dateValue) => {
-  if (!dateValue) return "";
+      console.log("Data to be submitted to Supabase:", rowData);
 
-  try {
-    const date = new Date(dateValue);
-    if (!isNaN(date.getTime())) {
-      return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD
+      // Insert data into Supabase
+      const { data, error } = await supabase
+        .from("enquiry_to_order")
+        .insert([rowData]);
+
+      if (error) {
+        console.error("Error inserting data:", error.message);
+        alert("Error saving data: " + error.message);
+      } else {
+        console.log("Inserted successfully:", data);
+        alert("Call tracker updated successfully");
+        onClose();
+      }
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      alert("Error saving data: " + err.message);
+    } finally {
+      setIsSubmitting(false);
     }
-    return dateValue;
-  } catch (error) {
-    console.error("Error formatting date:", error);
-    return dateValue;
   }
-}
-
-// Function to handle form submission
-const handleSubmit = async () => {
-  setIsSubmitting(true);
-  
-  try {
-    // Prepare the first 10 items in individual columns
-    const itemColumns = {};
-    const first10Items = items.slice(0, 10);
-    
-    first10Items.forEach((item, index) => {
-      itemColumns[`item_name${index + 1}`] = item.name || "";
-      itemColumns[`quantity${index + 1}`] = item.quantity || "0";
-    });
-    
-    // Prepare additional items beyond 10 as JSON
-    const additionalItems = items.length > 10 
-      ? items.slice(10).map(item => ({
-          name: item.name || "",
-          quantity: item.quantity || "0"
-        }))
-      : [];
-    
-    // Prepare data for Supabase insertion
-    const rowData = { 
-      enquiry_no: newCallTrackerData.enquiryNo,
-      lead_source: newCallTrackerData.leadSource,
-      sales_coordinator_name: newCallTrackerData.scName,
-      company_name: newCallTrackerData.companyName,
-      phone_number: newCallTrackerData.phoneNumber,
-      sales_person_name: newCallTrackerData.salesPersonName,
-      location: newCallTrackerData.location,
-      email: newCallTrackerData.emailAddress,
-      shipping_address: newCallTrackerData.shippingAddress,
-      enquiry_receiver_name: newCallTrackerData.enquiryReceiverName,
-      enquiry_assign_to_project: newCallTrackerData.enquiryAssignToProject,
-      gst_number: newCallTrackerData.gstNumber,
-      enquiry_date: enquiryFormData.enquiryDate ? formatDateToISO(enquiryFormData.enquiryDate) : "",
-      enquiry_for_state: enquiryFormData.enquiryState,
-      project_name: enquiryFormData.projectName,
-      sales_type: enquiryFormData.salesType,
-      enquiry_approach: enquiryFormData.enquiryApproach,
-      // Add the first 10 items as individual columns
-      ...itemColumns,
-      // Add additional items as JSON
-      item_qty: additionalItems.length > 0 ? JSON.stringify(additionalItems) : null,
-      total_qty: calculateTotalQuantity(),
-    };
-
-    console.log("Data to be submitted to Supabase:", rowData);
-
-    // Insert data into Supabase
-    const { data, error } = await supabase
-      .from("enquiry_to_order")
-      .insert([rowData]);
-
-    if (error) {
-      console.error("Error inserting data:", error.message);
-      alert("Error saving data: " + error.message);
-    } else {
-      console.log("Inserted successfully:", data);
-      alert("Call tracker updated successfully");
-      onClose(); // Close the form after successful submission
-    }
-  } catch (err) {
-    console.error("Unexpected error:", err);
-    alert("Error saving data: " + err.message);
-  } finally {
-    setIsSubmitting(false);
-  }
-}
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -449,7 +412,6 @@ const handleSubmit = async () => {
                   onClose();
                 } catch (error) {
                   console.error("Error closing form:", error);
-                  // Fallback close method if onClose fails
                   const modal = document.querySelector('.fixed.inset-0');
                   if (modal) {
                     modal.style.display = 'none';
@@ -493,7 +455,6 @@ const handleSubmit = async () => {
               </select>
             </div>
 
-            {/* Added SC Name field after Lead Source */}
             <div className="space-y-2">
               <label htmlFor="scName" className="block text-sm font-medium text-gray-700">
                 SC Name
@@ -509,30 +470,49 @@ const handleSubmit = async () => {
                 {scNameOptions.map((scName, index) => (
                   <option key={index} value={scName}>
                     {scName}
-                  </option>
+                    </option>
                 ))}
               </select>
             </div>
 
-            <div className="space-y-2">
-  <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
-    Company Name
-  </label>
-  <input
-    list="companyOptions"
-    id="companyName"
-    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-    value={newCallTrackerData.companyName}
-    onChange={(e) => handleCompanyChange(e.target.value)}
-    required
-  />
-  <datalist id="companyOptions">
-    {companyOptions.map((company, index) => (
-      <option key={index} value={company} />
-    ))}
-  </datalist>
-</div>
-
+            {/* Searchable Company Name dropdown */}
+            <div className="space-y-2 relative">
+              <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
+                Company Name
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  id="companyName"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  value={newCallTrackerData.companyName}
+                  onChange={(e) => {
+                    setNewCallTrackerData(prev => ({
+                      ...prev,
+                      companyName: e.target.value,
+                      isCompanyAutoFilled: false
+                    }));
+                    setShowCompanyDropdown(true);
+                  }}
+                  onFocus={() => setShowCompanyDropdown(true)}
+                  placeholder="Type to search companies"
+                  required
+                />
+                {showCompanyDropdown && filteredCompanies.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    {filteredCompanies.map((company, index) => (
+                      <div
+                        key={index}
+                        className="px-4 py-2 cursor-pointer hover:bg-gray-100"
+                        onClick={() => handleCompanyChange(company)}
+                      >
+                        {company}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
 
             <div className="space-y-2">
               <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
@@ -595,89 +575,88 @@ const handleSubmit = async () => {
             </div>
 
             <div className="space-y-2">
-            <label htmlFor="shippingAddress" className="block text-sm font-medium text-gray-700">
-              Shipping Address
-            </label>
-            <input
-              id="shippingAddress"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="Enter shipping address"
-              value={newCallTrackerData.shippingAddress}
-              onChange={(e) => setNewCallTrackerData({ 
-                ...newCallTrackerData, 
-                shippingAddress: e.target.value,
-                isCompanyAutoFilled: false // Allow manual editing
-              })}
-              readOnly={isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
-            />
-          </div>
+              <label htmlFor="shippingAddress" className="block text-sm font-medium text-gray-700">
+                Shipping Address
+              </label>
+              <input
+                id="shippingAddress"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Enter shipping address"
+                value={newCallTrackerData.shippingAddress}
+                onChange={(e) => setNewCallTrackerData({ 
+                  ...newCallTrackerData, 
+                  shippingAddress: e.target.value,
+                  isCompanyAutoFilled: false
+                })}
+                readOnly={isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
+              />
+            </div>
 
-          <div className="space-y-2">
-  <label htmlFor="enquiryReceiverName" className="block text-sm font-medium text-gray-700">
-    Enquiry Receiver Name
-  </label>
-  <select
-    id="enquiryReceiverName"
-    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-    value={newCallTrackerData.enquiryReceiverName}
-    onChange={(e) => setNewCallTrackerData({ 
-      ...newCallTrackerData, 
-      enquiryReceiverName: e.target.value,
-      isCompanyAutoFilled: false // Allow manual selection
-    })}
-    disabled={isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
-  >
-    <option value="">Select receiver</option>
-    {receiverOptions.map((receiver, index) => (
-      <option key={index} value={receiver}>
-        {receiver}
-      </option>
-    ))}
-  </select>
-</div>
+            <div className="space-y-2">
+              <label htmlFor="enquiryReceiverName" className="block text-sm font-medium text-gray-700">
+                Enquiry Receiver Name
+              </label>
+              <select
+                id="enquiryReceiverName"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                value={newCallTrackerData.enquiryReceiverName}
+                onChange={(e) => setNewCallTrackerData({ 
+                  ...newCallTrackerData, 
+                  enquiryReceiverName: e.target.value,
+                  isCompanyAutoFilled: false
+                })}
+                disabled={isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
+              >
+                <option value="">Select receiver</option>
+                {receiverOptions.map((receiver, index) => (
+                  <option key={index} value={receiver}>
+                    {receiver}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-<div className="space-y-2">
-  <label htmlFor="enquiryAssignToProject" className="block text-sm font-medium text-gray-700">
-    Enquiry Assign to Project
-  </label>
-  <select
-    id="enquiryAssignToProject"
-    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-    value={newCallTrackerData.enquiryAssignToProject}
-    onChange={(e) => setNewCallTrackerData({ 
-      ...newCallTrackerData, 
-      enquiryAssignToProject: e.target.value,
-      isCompanyAutoFilled: false // Allow manual selection
-    })}
-    disabled={isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
-  >
-    <option value="">Select project</option>
-    {assignToProjectOptions.map((project, index) => (
-      <option key={index} value={project}>
-        {project}
-      </option>
-    ))}
-  </select>
-</div>
+            <div className="space-y-2">
+              <label htmlFor="enquiryAssignToProject" className="block text-sm font-medium text-gray-700">
+                Enquiry Assign to Project
+              </label>
+              <select
+                id="enquiryAssignToProject"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                value={newCallTrackerData.enquiryAssignToProject}
+                onChange={(e) => setNewCallTrackerData({ 
+                  ...newCallTrackerData, 
+                  enquiryAssignToProject: e.target.value,
+                  isCompanyAutoFilled: false
+                })}
+                disabled={isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
+              >
+                <option value="">Select project</option>
+                {assignToProjectOptions.map((project, index) => (
+                  <option key={index} value={project}>
+                    {project}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-
-          <div className="space-y-2">
-            <label htmlFor="gstNumber" className="block text-sm font-medium text-gray-700">
-              GST Number
-            </label>
-            <input
-              id="gstNumber"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="Enter GST number"
-              value={newCallTrackerData.gstNumber}
-              onChange={(e) => setNewCallTrackerData({ 
-                ...newCallTrackerData, 
-                gstNumber: e.target.value,
-                isCompanyAutoFilled: false // Allow manual editing
-              })}
-              readOnly={newCallTrackerData.isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
-            />
-          </div>
+            <div className="space-y-2">
+              <label htmlFor="gstNumber" className="block text-sm font-medium text-gray-700">
+                GST Number
+              </label>
+              <input
+                id="gstNumber"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Enter GST number"
+                value={newCallTrackerData.gstNumber}
+                onChange={(e) => setNewCallTrackerData({ 
+                  ...newCallTrackerData, 
+                  gstNumber: e.target.value,
+                  isCompanyAutoFilled: false
+                })}
+                readOnly={newCallTrackerData.isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
+              />
+            </div>
 
           </div>
 
@@ -786,36 +765,35 @@ const handleSubmit = async () => {
               <div className="flex items-center justify-between">
                 <h4 className="font-medium">Items</h4>
                 <button
-  type="button"
-  onClick={addItem}
-  disabled={items.length >= 300}
-  className={`px-3 py-1 text-xs border border-amber-200 text-amber-600 hover:bg-amber-50 rounded-md ${items.length >= 300 ? 'opacity-50 cursor-not-allowed' : ''}`}
->
-  + Add Item {items.length >= 300 ? '(Max reached)' : ''}
-</button>
+                  type="button"
+                  onClick={addItem}
+                  disabled={items.length >= 300}
+                  className={`px-3 py-1 text-xs border border-amber-200 text-amber-600 hover:bg-amber-50 rounded-md ${items.length >= 300 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  + Add Item {items.length >= 300 ? '(Max reached)' : ''}
+                </button>
               </div>
 
               {items.map((item) => (
                 <div key={item.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                   <div className="md:col-span-5 space-y-2">
-  <label htmlFor={`itemName-${item.id}`} className="block text-sm font-medium text-gray-700">
-    Item Name
-  </label>
-  <input
-    list={`item-options-${item.id}`}
-    id={`itemName-${item.id}`}
-    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
-    value={item.name}
-    onChange={(e) => updateItem(item.id, "name", e.target.value)}
-    required
-  />
-  <datalist id={`item-options-${item.id}`}>
-    {productCategories.map((category, index) => (
-      <option key={index} value={category} />
-    ))}
-  </datalist>
-</div>
-
+                    <label htmlFor={`itemName-${item.id}`} className="block text-sm font-medium text-gray-700">
+                      Item Name
+                    </label>
+                    <input
+                      list={`item-options-${item.id}`}
+                      id={`itemName-${item.id}`}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      value={item.name}
+                      onChange={(e) => updateItem(item.id, "name", e.target.value)}
+                      required
+                    />
+                    <datalist id={`item-options-${item.id}`}>
+                      {productCategories.map((category, index) => (
+                        <option key={index} value={category} />
+                      ))}
+                    </datalist>
+                  </div>
 
                   <div className="md:col-span-5 space-y-2">
                     <label htmlFor={`quantity-${item.id}`} className="block text-sm font-medium text-gray-700">
@@ -870,7 +848,6 @@ const handleSubmit = async () => {
                 onClose();
               } catch (error) {
                 console.error("Error closing form:", error);
-                // Fallback close method if onClose fails
                 const modal = document.querySelector('.fixed.inset-0');
                 if (modal) {
                   modal.style.display = 'none';

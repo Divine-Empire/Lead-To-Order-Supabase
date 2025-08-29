@@ -1,12 +1,14 @@
 "use client"
 
 import { useState, useContext, useEffect } from "react"
-import { useNavigate, useSearchParams } from "react-router-dom"
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom"
 import { AuthContext } from "../App"
 import supabase from "../utils/supabase"
 
 function NewFollowUp() {
   const navigate = useNavigate()
+   const location = useLocation();
+    const scName = location.state;
   const [searchParams] = useSearchParams()
   const leadId = searchParams.get("leadId")
   const leadNo = searchParams.get("leadNo")
@@ -24,6 +26,7 @@ function NewFollowUp() {
     customerFeedback: "",
     enquiryApproach: "", // Add this new field
   })
+console.log(scName);
 
   const [leadStatus, setLeadStatus] = useState("")
 
@@ -171,6 +174,7 @@ const handleSubmit = async (e) => {
     const insertData = {
       "LD-Lead-No": formData.leadNo,
       "What_Did_The_Customer_say?": document.getElementById("customerFeedback").value,
+      "SC_Name":scName,
       "Enquiry_Received_Status": enquiryStatus === "yes" ? "Yes" : 
                                 enquiryStatus === "expected" ? "Expected" : 
                                 enquiryStatus === "not-interested" ? "Not Interested" : enquiryStatus,
@@ -199,7 +203,7 @@ const handleSubmit = async (e) => {
       insertData["Enquiry_Type"] = document.getElementById("salesType").value
       insertData["Enquiry_Approach"] = formData.enquiryApproach
       insertData["Leads_Tracking_Status"] = document.getElementById("leadsTrackingStatus").value
-
+ insertData["lead_status"] = leadStatus
       // Handle first 5 items
       const first5Items = items.slice(0, 5)
       first5Items.forEach((item, index) => {
@@ -214,11 +218,23 @@ const handleSubmit = async (e) => {
         insertData[`Quantity${i}`] = "0"
       }
 
+      // NEW: Store remaining items (after first 5) in JSON format
+      const remainingItems = items.slice(5)
+      if (remainingItems.length > 0) {
+        // Create an array of objects with name and quantity
+        const itemsJson = remainingItems.map(item => ({
+          name: item.name || "",
+          quantity: item.quantity || "0"
+        }))
+        insertData["Item_Qty"] = JSON.stringify(itemsJson)
+      } else {
+        insertData["Item_Qty"] = null // or "[]" if you prefer empty array
+      }
+
       // Calculate total quantity for project approximate value
       const totalQuantity = calculateTotalQuantity()
-      insertData["Project_Approximate_Value"] = totalQuantity.toString()
+      insertData["Total_Qty"] = totalQuantity.toString()
     }
-
     console.log("Data to be inserted:", insertData)
 
     // Insert data into Supabase leads_tracker table
@@ -276,12 +292,30 @@ const handleSubmit = async (e) => {
     // Map the fields that need to be updated
     updateData["What_Did_The_Customer say?"] = insertData["What_Did_The_Customer_say?"]
     updateData["Enquiry_Received_Status"] = insertData["Enquiry_Received_Status"]
-    
+     updateData["Status"] = insertData["lead_status"]
+    if (leadStatus === "Not Relevant") {
+  const now = new Date();
+
+  const pad = (n) => n.toString().padStart(2, "0");
+
+  const formatted =
+    pad(now.getDate()) + "/" +
+    pad(now.getMonth() + 1) + "/" +   // months are 0-based
+    now.getFullYear() + " " +
+    pad(now.getHours()) + ":" +
+    pad(now.getMinutes()) + ":" +
+    pad(now.getSeconds());
+
+  updateData["Actual"] = formatted;
+}
+
     if (enquiryStatus === "expected") {
       updateData["Next_Action"] = insertData["Next_Action"]
       updateData["Next_Call_Date"] = insertData["Next_Call_Date"]
       updateData["Next_Call_Time"] = insertData["Next_Call_Time"]
     }
+
+
     
     if (enquiryStatus === "yes") {
       updateData["Enquiry_Received_Date"] = insertData["Enquiry_Received_Date"]
@@ -298,6 +332,12 @@ const handleSubmit = async (e) => {
         updateData[`Quantity${i}`] = insertData[`Quantity${i}`] || "0"
       }
     }
+
+      // NEW: Update the JSON field for remaining items
+      updateData["Item/qty"] = insertData["Item_Qty"] || null
+        updateData["Total Order Qty"] = insertData["Total_Qty"] || null
+  
+
 
     // Update the leads_to_order table with new data
     const { data: updateResult, error: updateError } = await supabase

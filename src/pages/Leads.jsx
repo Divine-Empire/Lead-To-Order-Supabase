@@ -11,6 +11,7 @@ function Leads() {
     source: "",
     companyName: "",
     phoneNumber: "",
+      scName: "",
     salespersonName: "",
     location: "",
     email: "",
@@ -26,7 +27,10 @@ function Leads() {
     notes: "",
   })
   const [receiverNames, setReceiverNames] = useState([])
+  const [showScNameDropdown, setShowScNameDropdown] = useState(false);
   const [leadSources, setLeadSources] = useState([])
+  const [searchScName, setSearchScName] = useState("")
+  const [scNames, setScNames] = useState([])
   const [companyOptions, setCompanyOptions] = useState([])
   const [companyDetailsMap, setCompanyDetailsMap] = useState({})
   const [nextLeadNumber, setNextLeadNumber] = useState("")
@@ -63,8 +67,7 @@ function Leads() {
     fetchInitialData()
   }, [])
 
-  // NEW: Fetch dropdown data from Supabase dropdown table
-  const fetchDropdownData = async () => {
+ const fetchDropdownData = async () => {
     try {
       const { data, error } = await supabase.from("dropdown").select("*")
 
@@ -76,6 +79,7 @@ function Leads() {
         // Extract unique values for each dropdown using correct column names
         const receivers = [...new Set(data.map((row) => row.lead_receiver_name).filter(Boolean))]
         const sources = [...new Set(data.map((row) => row.lead_source).filter(Boolean))]
+        const scNames = [...new Set(data.map((row) => row.sales_co_ordinator_name).filter(Boolean))] // NEW: SC Names
         const states = [...new Set(data.map((row) => row.state).filter(Boolean))]
         const creditDays = [...new Set(data.map((row) => row.credit_days).filter(Boolean))]
         const creditLimits = [...new Set(data.map((row) => row.credit_limit).filter(Boolean))]
@@ -85,6 +89,7 @@ function Leads() {
         // Filter out empty strings and null values, then sort
         setReceiverNames(receivers.filter((item) => item && item.trim() !== "").sort())
         setLeadSources(sources.filter((item) => item && item.trim() !== "").sort())
+        setScNames(scNames.filter((item) => item && item.trim() !== "").sort()) // NEW: Set SC Names
         setStateOptions(states.filter((item) => item && item.trim() !== "").sort())
         setCreditDaysOptions(creditDays.filter((item) => item && item.trim() !== "").sort())
         setCreditLimitOptions(creditLimits.filter((item) => item && item.trim() !== "").sort())
@@ -96,6 +101,7 @@ function Leads() {
       // Fallback to default values
       setReceiverNames(["John Smith", "Sarah Johnson", "Michael Brown"])
       setLeadSources(["Indiamart", "Justdial", "Social Media", "Website", "Referral", "Other"])
+      setScNames(["SC Person 1", "SC Person 2", "SC Person 3"]) // NEW: Default SC Names
       setStateOptions([
         "Andhra Pradesh",
         "Assam",
@@ -121,13 +127,26 @@ function Leads() {
     }
   }
 
+    const filteredScNames = scNames.filter(name => 
+    name.toLowerCase().includes(searchScName.toLowerCase())
+  );
+
+
+  const handleScNameChange = (name) => {
+  setFormData(prev => ({ ...prev, scName: name }));
+  setSearchScName(name);
+  setShowScNameDropdown(false);
+};
+
+
+
   // NEW: Fetch company data from Supabase dropdown table
   const fetchCompanyData = async () => {
     try {
       const { data, error } = await supabase
         .from("dropdown")
-        .select("lead_form_company_name, lead_form_person_name, phone_number, email, location")
-        .not("company_name", "is", null)
+        .select("lead_form_company_name, lead_form_person_name, lead_form_mobile_no, lead_form_email, lead_form_address")
+        .not("lead_form_company_name", "is", null)
 
       if (error) {
         throw error
@@ -269,6 +288,7 @@ function Leads() {
         Company_Name: formData.companyName,
         Phone_Number: formData.phoneNumber,
         Salesperson_Name: formData.salespersonName,
+        SC_Name:formData.scName,
         Location: formData.location,
         Email_Address: formData.email,
         State: formData.state,
@@ -407,6 +427,40 @@ function Leads() {
                   </div>
                 </div>
               </div>
+
+            <div className="space-y-2 relative">
+  <label htmlFor="scName" className="block text-sm font-medium text-gray-700">
+    SC Name
+  </label>
+  <div className="relative">
+    <input
+      type="text"
+      id="scName"
+      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+      value={searchScName}
+      onChange={(e) => {
+        setSearchScName(e.target.value);
+        setShowScNameDropdown(true);
+      }}
+      onFocus={() => setShowScNameDropdown(true)}
+      placeholder="Type to search SC names"
+      required
+    />
+    {showScNameDropdown && filteredScNames.length > 0 && (
+      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+        {filteredScNames.map((name, index) => (
+          <div
+            key={index}
+            className="px-4 py-2 cursor-pointer hover:bg-gray-100"
+            onClick={() => handleScNameChange(name)}
+          >
+            {name}
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+</div>
 
               <div className="space-y-2">
                 <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
