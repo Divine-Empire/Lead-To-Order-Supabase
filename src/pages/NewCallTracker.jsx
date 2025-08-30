@@ -328,34 +328,7 @@ const handleQuotationChange = async (field, value) => {
   }
 }
 
-  // Handler for quotation form data updates
-// Function to upload file to Supabase storage
-const uploadFileToSupabase = async (file, bucketName) => {
-  try {
-    // Generate a unique file name to avoid conflicts
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-    
-    // Upload the file to Supabase storage
-    const { data, error } = await supabase.storage
-      .from(bucketName)
-      .upload(fileName, file);
-
-    if (error) {
-      throw error;
-    }
-
-    // Get the public URL of the uploaded file
-    const { data: { publicUrl } } = supabase.storage
-      .from(bucketName)
-      .getPublicUrl(fileName);
-
-    return publicUrl;
-  } catch (error) {
-    console.error("Error uploading to Supabase storage:", error);
-    throw error;
-  }
-};
+  
 
   // Handler for validation form data updates
   const handleValidationChange = (field, value) => {
@@ -376,13 +349,13 @@ const uploadFileToSupabase = async (file, bucketName) => {
   // Handler for order status form data updates
 // Handler for order status form data updates
 // Handler for order status form data updates
-const handleOrderStatusChange = (field, value) => {
-  // For all fields including creditLimit, store as string (text)
-  setOrderStatusData(prev => ({
-    ...prev,
-    [field]: value // Keep all values as strings
-  }));
-}
+// const handleOrderStatusChange = (field, value) => {
+//   // For all fields including creditLimit, store as string (text)
+//   setOrderStatusData(prev => ({
+//     ...prev,
+//     [field]: value // Keep all values as strings
+//   }));
+// }
 
   // Function to format date as dd/mm/yyyy
   const formatDate = (date) => {
@@ -454,6 +427,77 @@ const handleOrderStatusChange = (field, value) => {
       throw error
     }
   }
+
+  const handleOrderStatusChange = async (field, value) => {
+  // Handle file upload for acceptance file
+  if (field === "acceptanceFile" && value) {
+    try {
+      setIsSubmitting(true);
+      const fileUrl = await uploadFileToSupabase(value, "acceptance_file_upload");
+      
+      setOrderStatusData(prev => ({
+        ...prev,
+        acceptanceFile: value,
+        acceptanceFileUrl: fileUrl
+      }));
+    } catch (error) {
+      console.error("Error uploading acceptance file:", error);
+      showNotification("Error uploading acceptance file: " + error.message, "error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  } else if (field === "apologyVideo" && value) {
+    try {
+      setIsSubmitting(true);
+      const fileUrl = await uploadFileToSupabase(value, "apology_videos");
+      
+      setOrderStatusData(prev => ({
+        ...prev,
+        apologyVideo: value,
+        apologyVideoUrl: fileUrl
+      }));
+    } catch (error) {
+      console.error("Error uploading apology video:", error);
+      showNotification("Error uploading apology video: " + error.message, "error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  } else {
+    // For other fields, update normally
+    setOrderStatusData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  }
+}
+
+// Function to upload file to Supabase storage
+const uploadFileToSupabase = async (file, bucketName) => {
+  try {
+    // Generate a unique file name to avoid conflicts
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+    
+    // Upload the file to Supabase storage
+    const { data, error } = await supabase.storage
+      .from(bucketName)
+      .upload(fileName, file);
+
+    if (error) {
+      throw error;
+    }
+
+    // Get the public URL of the uploaded file
+    const { data: { publicUrl } } = supabase.storage
+      .from(bucketName)
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  } catch (error) {
+    console.error("Error uploading to Supabase storage:", error);
+    throw error;
+  }
+};
 
 
  const updateLeadToOrderTable = async (enquiryNo, formData, currentStage, orderStatusData = {}) => {
@@ -541,7 +585,7 @@ const handleOrderStatusChange = (field, value) => {
             CONVEYED_FOR_REGISTRATION_FORM: toBoolean(formData.conveyedForRegistration),
 
             Offer: formData.orderVideo,
-            Acceptance_File_Upload: null, // handle upload later
+             Acceptance_File_Upload: formData.acceptanceFileUrl || "", // handle upload later
             REMARK: formData.orderRemark,
 
             // reset "no" + "hold" fields
@@ -551,7 +595,7 @@ const handleOrderStatusChange = (field, value) => {
           });
         } else if (formData.orderStatus?.toLowerCase() === "no") {
           Object.assign(updateData, {
-            Order_Lost_Apology_Video: null, // handle upload later
+             Order_Lost_Apology_Video: formData.apologyVideoUrl || "", // handle upload later
             If_No_Then_Get_Relevant_Reason_Status: orderStatusData.reasonStatus || null,
             If_No_Then_Get_Relevant_Reason_Remark: orderStatusData.reasonRemark || null,
             CUSTOMER_ORDER_HOLD_REASON_CATEGORY: null,
@@ -853,6 +897,37 @@ const handleSubmit = async (e) => {
   setIsSubmitting(true);
 
   try {
+
+    //   if (currentStage === "order-status" && 
+    //     orderStatusData.orderStatus === "yes" && 
+    //     orderStatusData.acceptanceFile && 
+    //     !orderStatusData.acceptanceFileUrl) {
+    //   showNotification("Uploading acceptance file...", "info");
+    //   const fileUrl = await uploadFileToSupabase(orderStatusData.acceptanceFile, "acceptance_file_upload");
+      
+    //   setOrderStatusData(prev => ({
+    //     ...prev,
+    //     acceptanceFileUrl: fileUrl
+    //   }));
+      
+    //   showNotification("Acceptance file uploaded successfully", "success");
+    // }
+    
+    // // Handle apology video upload if needed
+    // if (currentStage === "order-status" && 
+    //     orderStatusData.orderStatus === "no" && 
+    //     orderStatusData.apologyVideo && 
+    //     !orderStatusData.apologyVideoUrl) {
+    //   showNotification("Uploading apology video...", "info");
+    //   const fileUrl = await uploadFileToSupabase(orderStatusData.apologyVideo, "apology_videos");
+      
+    //   setOrderStatusData(prev => ({
+    //     ...prev,
+    //     apologyVideoUrl: fileUrl
+    //   }));
+      
+    //   showNotification("Apology video uploaded successfully", "success");
+    // }
   if (currentStage === "make-quotation" && quotationData.quotationFile && !quotationData.quotationFileUrl) {
       showNotification("Uploading quotation file...", "info");
       const fileUrl = await uploadFileToSupabase(quotationData.quotationFile, "make_quotation");

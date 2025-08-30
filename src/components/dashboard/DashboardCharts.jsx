@@ -108,7 +108,7 @@ function DashboardCharts() {
         const { count: ordersCount, error: ordersCountError } = await supabase
           .from('enquiry_tracker')
           .select('*', { count: 'exact', head: true })
-          .eq('Is Order Received? Status', 'yes')
+          .eq('"Is Order Received? Status"', 'yes')
         
         if (!ordersCountError) {
           totalOrders = ordersCount || 0
