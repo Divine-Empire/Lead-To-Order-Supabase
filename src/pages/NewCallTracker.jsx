@@ -293,13 +293,69 @@ useEffect(() => {
     }))
   }
 
+  const handleFileChange = (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    onFieldChange('quotationFile', file);
+  }
+};
+
   // Handler for quotation form data updates
-  const handleQuotationChange = (field, value) => {
+const handleQuotationChange = async (field, value) => {
+  if (field === "quotationFile" && value) {
+    // If it's a file upload, handle the upload first
+    try {
+      setIsSubmitting(true);
+      const fileUrl = await uploadFileToSupabase(value, "make_quotation");
+      
+      setQuotationData(prev => ({
+        ...prev,
+        quotationFile: value,
+        quotationFileUrl: fileUrl
+      }));
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      showNotification("Error uploading file: " + error.message, "error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  } else {
+    // For other fields, update normally
     setQuotationData(prev => ({
       ...prev,
       [field]: value
-    }))
+    }));
   }
+}
+
+  // Handler for quotation form data updates
+// Function to upload file to Supabase storage
+const uploadFileToSupabase = async (file, bucketName) => {
+  try {
+    // Generate a unique file name to avoid conflicts
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+    
+    // Upload the file to Supabase storage
+    const { data, error } = await supabase.storage
+      .from(bucketName)
+      .upload(fileName, file);
+
+    if (error) {
+      throw error;
+    }
+
+    // Get the public URL of the uploaded file
+    const { data: { publicUrl } } = supabase.storage
+      .from(bucketName)
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  } catch (error) {
+    console.error("Error uploading to Supabase storage:", error);
+    throw error;
+  }
+};
 
   // Handler for validation form data updates
   const handleValidationChange = (field, value) => {
@@ -797,6 +853,20 @@ const handleSubmit = async (e) => {
   setIsSubmitting(true);
 
   try {
+  if (currentStage === "make-quotation" && quotationData.quotationFile && !quotationData.quotationFileUrl) {
+      showNotification("Uploading quotation file...", "info");
+      const fileUrl = await uploadFileToSupabase(quotationData.quotationFile, "make_quotation");
+      
+      // Update the quotation data with the file URL
+      setQuotationData(prev => ({
+        ...prev,
+        quotationFileUrl: fileUrl
+      }));
+      
+      showNotification("Quotation file uploaded successfully", "success");
+    }
+
+
      const currentDate = new Date();
     const formattedDate = formatDate(currentDate);
     // Prepare the data object for Supabase
@@ -817,6 +887,7 @@ const handleSubmit = async (e) => {
         "Quotation Value Without Tax": quotationData.valueWithoutTax,
         "Quotation Value With Tax": quotationData.valueWithTax,
         "Quotation Remarks": quotationData.remarks,
+          "Quotation Upload": quotationData.quotationFileUrl || "",
       });
     } 
     else if (currentStage === "order-expected") {

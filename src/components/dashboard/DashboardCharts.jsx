@@ -56,205 +56,139 @@ function DashboardCharts() {
       try {
         setIsLoading(true)
         
-        // Fetch data from leads_to_order table for leads and lead sources
-        let leadsQuery = supabase
+        // Fetch counts for conversion funnel
+        let totalLeads = 0
+        let totalEnquiries = 0
+        let totalQuotations = 0
+        let totalOrders = 0
+        
+        // Get total leads count
+        let leadsCountQuery = supabase
           .from('leads_to_order')
-          .select('*')
+          .select('*', { count: 'exact', head: true })
         
-        // Apply user filter if not admin
+        // Apply user filter if not admin - use SC_Name field
         if (!isAdmin() && currentUser?.username) {
-          leadsQuery = leadsQuery.eq('Salesperson_Name', currentUser.username)
+          leadsCountQuery = leadsCountQuery.eq('SC_Name', currentUser.username)
         }
         
-        const { data: leadsData, error: leadsError } = await leadsQuery
+        const { count: leadsCount, error: leadsCountError } = await leadsCountQuery
+        if (!leadsCountError) {
+          totalLeads = leadsCount || 0
+        }
         
-        // Fetch data from leads_tracker table for enquiries
-        let leadsTrackerQuery = supabase
+        // Get total enquiries count (where Enquiry_Received_Status = "yes")
+        let enquiriesCountQuery = supabase
           .from('leads_tracker')
-          .select('*')
+          .select('*', { count: 'exact', head: true })
+          .eq('Enquiry_Received_Status', 'yes')
         
-        // Apply user filter if not admin (if there's an assigned user field)
+        // Apply user filter if not admin - use SC_Name field
         if (!isAdmin() && currentUser?.username) {
-          // Assuming there's an assigned_user field - adjust as needed
-          leadsTrackerQuery = leadsTrackerQuery.eq('assigned_user', currentUser.username)
+          enquiriesCountQuery = enquiriesCountQuery.eq('SC_Name', currentUser.username)
         }
         
-        const { data: leadsTrackerData, error: leadsTrackerError } = await leadsTrackerQuery
+        const { count: enquiriesCount, error: enquiriesCountError } = await enquiriesCountQuery
+        if (!enquiriesCountError) {
+          totalEnquiries = enquiriesCount || 0
+        }
         
-        // Fetch data from enquiry_tracker table for orders
-        let enquiryQuery = supabase
+        // Get total quotations count (rows with Quotation Number not null)
+        const { count: quotationsCount, error: quotationsCountError } = await supabase
           .from('enquiry_tracker')
-          .select('*')
+          .select('*', { count: 'exact', head: true })
+          .not('Quotation Number', 'is', null)
+          .neq('Quotation Number', '')
+        
+        if (!quotationsCountError) {
+          totalQuotations = quotationsCount || 0
+        }
+        
+        // Get total orders count (where "Is Order Received? Status" = "yes")
+        const { count: ordersCount, error: ordersCountError } = await supabase
+          .from('enquiry_tracker')
+          .select('*', { count: 'exact', head: true })
+          .eq('Is Order Received? Status', 'yes')
+        
+        if (!ordersCountError) {
+          totalOrders = ordersCount || 0
+        }
+        
+        // Create conversion data
+        const newConversionData = [
+          { name: "Leads", value: totalLeads, color: "#4f46e5" },
+          { name: "Enquiries", value: totalEnquiries, color: "#8b5cf6" },
+          { name: "Quotations", value: totalQuotations, color: "#d946ef" },
+          { name: "Orders", value: totalOrders, color: "#ec4899" }
+        ]
+        
+        setConversionData(newConversionData)
+        
+        // For lead sources, we need to fetch the Lead_Source field to count by source
+        let leadSourcesQuery = supabase
+          .from('leads_to_order')
+          .select('Lead_Source')
         
         // Apply user filter if not admin
         if (!isAdmin() && currentUser?.username) {
-          enquiryQuery = enquiryQuery.eq('Quotation Shared By', currentUser.username)
+          leadSourcesQuery = leadSourcesQuery.eq('SC_Name', currentUser.username)
         }
         
-        const { data: enquiryData, error: enquiryError } = await enquiryQuery
+        const { data: leadSourcesData, error: leadSourcesError } = await leadSourcesQuery
         
-        // Process data for the Overview chart (monthly data)
-        if (leadsData && leadsTrackerData && enquiryData) {
-          // Initialize counters by month
-          const monthlyData = {
-            Jan: { leads: 0, enquiries: 0, orders: 0 },
-            Feb: { leads: 0, enquiries: 0, orders: 0 },
-            Mar: { leads: 0, enquiries: 0, orders: 0 },
-            Apr: { leads: 0, enquiries: 0, orders: 0 },
-            May: { leads: 0, enquiries: 0, orders: 0 },
-            Jun: { leads: 0, enquiries: 0, orders: 0 },
-            Jul: { leads: 0, enquiries: 0, orders: 0 },
-            Aug: { leads: 0, enquiries: 0, orders: 0 },
-            Sep: { leads: 0, enquiries: 0, orders: 0 },
-            Oct: { leads: 0, enquiries: 0, orders: 0 },
-            Nov: { leads: 0, enquiries: 0, orders: 0 },
-            Dec: { leads: 0, enquiries: 0, orders: 0 }
-          }
-          
-          // Count leads by month
-          leadsData.forEach(row => {
-            if (row.Timestamp) {
-              try {
-                const date = new Date(row.Timestamp)
-                const month = date.toLocaleString('en-US', { month: 'short' })
-                if (monthlyData[month]) {
-                  monthlyData[month].leads++
-                }
-              } catch (error) {
-                console.error("Error parsing lead date:", error)
-              }
-            }
-          })
-          
-          // Count enquiries by month (where Enquiry_Received_Status is "yes")
-          leadsTrackerData.forEach(row => {
-            if (row.Timestamp && row['Enquiry_Received_Status']?.toLowerCase() === "yes") {
-              try {
-                const date = new Date(row.Timestamp)
-                const month = date.toLocaleString('en-US', { month: 'short' })
-                if (monthlyData[month]) {
-                  monthlyData[month].enquiries++
-                }
-              } catch (error) {
-                console.error("Error parsing enquiry date:", error)
-              }
-            }
-          })
-          
-          // Count orders from enquiry_tracker (where "Is Order Received? Status" = "yes")
-          enquiryData.forEach(row => {
-            if (row.Timestamp && row['Is Order Received? Status']?.toLowerCase() === "yes") {
-              try {
-                const date = new Date(row.Timestamp)
-                const month = date.toLocaleString('en-US', { month: 'short' })
-                if (monthlyData[month]) {
-                  monthlyData[month].orders++
-                }
-              } catch (error) {
-                console.error("Error parsing order date:", error)
-              }
-            }
-          })
-          
-          // Convert to array format for the chart
-          const chartData = Object.entries(monthlyData).map(([month, data]) => ({
-            month,
-            leads: data.leads,
-            enquiries: data.enquiries,
-            orders: data.orders
-          }))
-          
-          // Filter to only include months with data
-          const nonEmptyMonths = chartData.filter(month => 
-            month.leads > 0 || month.enquiries > 0 || month.orders > 0
-          )
-          
-          // Update state if we have data
-          if (nonEmptyMonths.length > 0) {
-            setLeadData(nonEmptyMonths)
-          }
-        }
-        
-        // Process data for the Conversion Funnel
-        if (leadsData && leadsTrackerData && enquiryData) {
-          // Count total leads
-          const totalLeads = leadsData.length
-          
-          // Count total enquiries (where Enquiry_Received_Status = "yes")
-          const totalEnquiries = leadsTrackerData.filter(row => 
-            row['Enquiry_Received_Status']?.toLowerCase() === "yes"
-          ).length
-          
-          // Count total quotations (rows with Quotation Number)
-          const totalQuotations = enquiryData.filter(row => 
-            row['Quotation Number']
-          ).length
-          
-          // Count total orders (where "Is Order Received? Status" = "yes")
-          const totalOrders = enquiryData.filter(row => 
-            row['Is Order Received? Status']?.toLowerCase() === "yes"
-          ).length
-          
-          // Create conversion data
-          const newConversionData = [
-            { name: "Leads", value: totalLeads, color: "#4f46e5" },
-            { name: "Enquiries", value: totalEnquiries, color: "#8b5cf6" },
-            { name: "Quotations", value: totalQuotations, color: "#d946ef" },
-            { name: "Orders", value: totalOrders, color: "#ec4899" }
-          ]
-          
-          setConversionData(newConversionData)
-        }
-        
-        // Process data for the Lead Sources chart
-        if (leadsData) {
+        if (!leadSourcesError && leadSourcesData) {
           // Count leads by source
           const sourceCounter = {}
           
-          // Define a color palette that will cycle through different colors
+          // Define a color palette
           const colorPalette = [
-            "#06b6d4", // cyan
-            "#0ea5e9", // sky
-            "#3b82f6", // blue
-            "#6366f1", // indigo
-            "#8b5cf6", // violet
-            "#a855f7", // purple
-            "#d946ef", // fuchsia
-            "#ec4899", // pink
-            "#f43f5e", // rose
-            "#ef4444", // red
-            "#f97316", // orange
-            "#f59e0b", // amber
-            "#eab308", // yellow
-            "#84cc16", // lime
-            "#22c55e", // green
-            "#10b981", // emerald
-            "#14b8a6", // teal
+            "#06b6d4", "#0ea5e9", "#3b82f6", "#6366f1", "#8b5cf6", 
+            "#a855f7", "#d946ef", "#ec4899", "#f43f5e", "#ef4444", 
+            "#f97316", "#f59e0b", "#eab308", "#84cc16", "#22c55e", 
+            "#10b981", "#14b8a6",
           ]
           
-          leadsData.forEach(row => {
+          leadSourcesData.forEach(row => {
             if (row.Lead_Source) {
               const source = row.Lead_Source
               sourceCounter[source] = (sourceCounter[source] || 0) + 1
             }
           })
           
-          // Convert to array format for the chart with dynamic color assignment
+          // Convert to array format for the chart
           const sourceNames = Object.keys(sourceCounter)
           const newSourceData = sourceNames.map((name, index) => ({
             name,
             value: sourceCounter[name],
-            color: colorPalette[index % colorPalette.length] // Cycle through colors
+            color: colorPalette[index % colorPalette.length]
           }))
           
           // Sort by value (descending)
           newSourceData.sort((a, b) => b.value - a.value)
           
-          // Update state if we have data
           if (newSourceData.length > 0) {
             setSourceData(newSourceData)
           }
         }
+        
+        // For monthly data, we'll use a simplified approach with current counts
+        // Since we're optimizing for performance, we'll keep it simple for now
+        const currentMonth = new Date().toLocaleString('en-US', { month: 'short' })
+        const simplifiedMonthlyData = [{
+          month: currentMonth,
+          leads: totalLeads,
+          enquiries: totalEnquiries,
+          orders: totalOrders
+        }]
+        
+        setLeadData(simplifiedMonthlyData)
+        
+        console.log('Chart data calculated for user:', currentUser?.username, {
+          totalLeads,
+          totalEnquiries,
+          totalQuotations,
+          totalOrders
+        })
         
       } catch (error) {
         console.error("Error fetching chart data:", error)

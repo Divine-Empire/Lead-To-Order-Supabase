@@ -349,6 +349,7 @@ const columnOptions = [
       "Calling_Days": item["Calling_Days"] || "",
       priority: determinePriority(item["Lead_Source"] || ""),
        itemQty: item['Item/qty'] || "",
+        totalQty: item['Total Order Qty'] || "",
       sc_name: item['SC_Name'] || ""
     }));
       setPendingData(transformedData); 
@@ -1252,7 +1253,7 @@ const filterCounts = calculateFilterCounts();
               <p className="text-slate-500">Loading Enquiry tracker data...</p>
             </div>
           ) : */}
-           (
+           
             <>
               {activeTab === "pending" && (
                 <div className="rounded-md border overflow-x-auto">
@@ -1320,6 +1321,12 @@ const filterCounts = calculateFilterCounts();
   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
 >
   Item/Qty
+</th>
+  <th
+  scope="col"
+  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+>
+ Total Qty
 </th>
                       </tr>
                     </thead>
@@ -1390,12 +1397,14 @@ const filterCounts = calculateFilterCounts();
                             )}
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
   <div
-    className="min-w-[300px] break-words whitespace-normal"
+    className="min-w-[100px] break-words whitespace-normal"
     title={(tracker.itemQty)}
   >
     {(tracker.itemQty)}
   </div>
-</td>
+</td> <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {tracker.totalQty}
+                            </td>
                           </tr>
                         ))
                       ) : (
@@ -1463,6 +1472,12 @@ const filterCounts = calculateFilterCounts();
 >
   Item/Qty
 </th>
+  <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Total Qty
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -1518,12 +1533,14 @@ const filterCounts = calculateFilterCounts();
                            
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
   <div
-    className="min-w-[300px] break-words whitespace-normal"
+    className="min-w-[100px] break-words whitespace-normal"
     title={(tracker.item_qty)}
   >
     {(tracker.item_qty)}
   </div>
-</td>
+</td>    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {tracker.total_qty}
+                            </td>
                           </tr>
                         ))
                       ) : (
@@ -1825,7 +1842,7 @@ const filterCounts = calculateFilterCounts();
   </div>
 )}
             </>
-          )
+          
         </div>
       </div>
 

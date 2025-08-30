@@ -257,6 +257,8 @@ const formatItemQty = (itemQtyString) => {
     }
   }
 
+
+
   // Function to fetch data from FMS and Leads Tracker sheets
 useEffect(() => {
   let isMounted = true;
@@ -285,7 +287,11 @@ useEffect(() => {
       // Process pending data
       const pendingData = pendingResponse.data || [];
       const filteredPending = pendingData
-        .filter(row => isAdmin() || (currentUser && (row.assigned_user || "") === currentUser.username))
+        .filter(row => {
+          // Use SC_Name field for filtering, matching the CallTracker pattern
+          const assignedUser = row.SC_Name || row.assigned_user || "";
+          return isAdmin() || (currentUser && assignedUser === currentUser.username);
+        })
         .map(row => ({
           timestamp: row.Next_Call_Date ? formatDateToDDMMYYYY(row.Next_Call_Date) : "",
           id: row.id || "",
@@ -300,44 +306,48 @@ useEffect(() => {
           createdAt: row['Created_At'] || "",
           nextCallDate: row['Next_Call_Date'] || "",
           priority: determinePriority(row['Lead_Source'] || ""),
-          assignedTo: row['SC_Name'] || "",
+          assignedTo: row['SC_Name'] || row['assigned_user'] || "", // Use SC_Name first
           itemQty: row['Item_Qty'] || ""
         }));
 
       // Process history data
-     const historyData = historyResponse.data || [];
-const filteredHistory = historyData
-  .filter(row => isAdmin() || (currentUser && (row.assigned_user || "") === currentUser.username))
-  .map(row => ({
-    timestamp: row["Timestamp"] ? formatDateToDDMMYYYY(row["Timestamp"]) : "",
-    leadNo: row["LD-Lead-No"] || "",
-    companyName: "", // No company name field in leads_tracker, will need to join or leave empty
-    customerSay: row["What_Did_The_Customer_say?"] || "",
-    status: row["Leads_Tracking_Status"] || "",
-    enquiryReceivedStatus: row["Enquiry_Received_Status"] || "",
-    enquiryReceivedDate: row["Enquiry_Received_Date"] ? formatDateToDDMMYYYY(row["Enquiry_Received_Date"]) : "",
-    enquiryState: row["Enquiry_for_State"] || "",
-    projectName: row["Project_Name"] || "",
-    salesType: row["Enquiry_Type"] || "",
-    requiredProductDate: "", // No required product date field in leads_tracker
-    projectApproxValue: row["Project_Approximate_Value"] || "",
-    itemName1: row["Item_Name1"] || "",
-    quantity1: row["Quantity1"] || "",
-    itemName2: row["Item_Name2"] || "",
-    quantity2: row["Quantity2"] || "",
-    itemName3: row["Item_Name3"] || "",
-    quantity3: row["Quantity3"] || "",
-    itemName4: row["Item_Name4"] || "",
-    quantity4: row["Quantity4"] || "",
-    itemName5: row["Item_Name5"] || "",
-    quantity5: row["Quantity5"] || "",
-    nextAction: row["Next_Action"] || "",
-    nextCallDate: row["Next_Call_Date"] ? formatDateToDDMMYYYY(row["Next_Call_Date"]) : "",
-    nextCallTime: row["Next_Call_Time"] ? formatNextCallTime(row["Next_Call_Time"]) : "",
-    historyDateFilter: "", // You may need to add this logic based on your requirements
-    assignedTo: row.assigned_user || "",
-    itemQty: row.item_qty || "" // Add this if it exists in your table
-  }));
+      const historyData = historyResponse.data || [];
+      const filteredHistory = historyData
+        .filter(row => {
+          // Use SC_Name field for filtering, matching the CallTracker pattern
+          const assignedUser = row.SC_Name || row.assigned_user || "";
+          return isAdmin() || (currentUser && assignedUser === currentUser.username);
+        })
+        .map(row => ({
+          timestamp: row["Timestamp"] ? formatDateToDDMMYYYY(row["Timestamp"]) : "",
+          leadNo: row["LD-Lead-No"] || "",
+          companyName: "", // No company name field in leads_tracker, will need to join or leave empty
+          customerSay: row["What_Did_The_Customer_say?"] || "",
+          status: row["Leads_Tracking_Status"] || "",
+          enquiryReceivedStatus: row["Enquiry_Received_Status"] || "",
+          enquiryReceivedDate: row["Enquiry_Received_Date"] ? formatDateToDDMMYYYY(row["Enquiry_Received_Date"]) : "",
+          enquiryState: row["Enquiry_for_State"] || "",
+          projectName: row["Project_Name"] || "",
+          salesType: row["Enquiry_Type"] || "",
+          requiredProductDate: "", // No required product date field in leads_tracker
+          projectApproxValue: row["Project_Approximate_Value"] || "",
+          itemName1: row["Item_Name1"] || "",
+          quantity1: row["Quantity1"] || "",
+          itemName2: row["Item_Name2"] || "",
+          quantity2: row["Quantity2"] || "",
+          itemName3: row["Item_Name3"] || "",
+          quantity3: row["Quantity3"] || "",
+          itemName4: row["Item_Name4"] || "",
+          quantity4: row["Quantity4"] || "",
+          itemName5: row["Item_Name5"] || "",
+          quantity5: row["Quantity5"] || "",
+          nextAction: row["Next_Action"] || "",
+          nextCallDate: row["Next_Call_Date"] ? formatDateToDDMMYYYY(row["Next_Call_Date"]) : "",
+          nextCallTime: row["Next_Call_Time"] ? formatNextCallTime(row["Next_Call_Time"]) : "",
+          historyDateFilter: "", // You may need to add this logic based on your requirements
+          assignedTo: row.SC_Name || row.assigned_user || "", // Use SC_Name first
+          itemQty: row.item_qty || "" // Add this if it exists in your table
+        }));
 
       if (isMounted) {
         setPendingFollowUps(filteredPending);

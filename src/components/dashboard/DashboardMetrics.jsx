@@ -1,4 +1,4 @@
-// DashboardMetrics.jsx - Updated to use Supabase instead of Google Sheets
+// DashboardMetrics.jsx - Optimized to fetch only counts instead of full data
 
 import { useState, useEffect, useContext } from "react"
 import { UsersIcon, PhoneCallIcon, FileTextIcon, ShoppingCartIcon, TrendingUpIcon, AlertCircleIcon } from "../Icons"
@@ -30,79 +30,107 @@ function DashboardMetrics() {
         let totalEnquiry = 0
         let pendingEnquiry = 0
         
-        // Fetch data from leads_to_order table for total leads and pending follow-ups
-        let leadsQuery = supabase
+        // Fetch COUNT from leads_to_order table for total leads
+        let leadsCountQuery = supabase
           .from('leads_to_order')
-          .select('*')
+          .select('*', { count: 'exact', head: true })
+        
+        // Apply user filter if not admin - use SC_Name field like in FollowUp component
+        if (!isAdmin() && currentUser?.username) {
+          leadsCountQuery = leadsCountQuery.eq('SC_Name', currentUser.username)
+        }
+        
+        const { count: leadsCount, error: leadsCountError } = await leadsCountQuery
+        
+        if (leadsCountError) {
+          console.error('Error fetching leads count:', leadsCountError)
+        } else {
+          totalLeads = leadsCount || 0
+        }
+        
+        // Fetch COUNT from leads_to_order table for pending follow-ups (Planned not null and Actual is null)
+        let pendingFollowupsQuery = supabase
+          .from('leads_to_order')
+          .select('*', { count: 'exact', head: true })
+          .not('Planned', 'is', null)
+          .is('Actual', null)
         
         // Apply user filter if not admin
         if (!isAdmin() && currentUser?.username) {
-          leadsQuery = leadsQuery.eq('Salesperson_Name', currentUser.username)
+          pendingFollowupsQuery = pendingFollowupsQuery.eq('SC_Name', currentUser.username)
         }
         
-        const { data: leadsData, error: leadsError } = await leadsQuery
+        const { count: pendingCount, error: pendingCountError } = await pendingFollowupsQuery
         
-        if (leadsError) {
-          console.error('Error fetching leads:', leadsError)
-        } else if (leadsData) {
-          // Count total leads
-          totalLeads = leadsData.length
-          
-          // Count pending follow-ups (where Planned is not null and Actual is null)
-          pendingFollowups = leadsData.filter(row => 
-            row.Planned && !row.Actual
-          ).length
+        if (pendingCountError) {
+          console.error('Error fetching pending follow-ups count:', pendingCountError)
+        } else {
+          pendingFollowups = pendingCount || 0
         }
         
-        // Fetch data from enquiry_tracker table for quotations sent and orders received
-        let enquiryQuery = supabase
+        // Fetch COUNT from enquiry_tracker table for quotations sent (rows with Quotation Number)
+        let quotationsQuery = supabase
           .from('enquiry_tracker')
-          .select('*')
+          .select('*', { count: 'exact', head: true })
+          .not('Quotation Number', 'is', null)
+          .neq('Quotation Number', '')
         
-        // Apply user filter if not admin (assuming there's a user assignment field)
-        if (!isAdmin() && currentUser?.username) {
-          enquiryQuery = enquiryQuery.eq('Quotation Shared By', currentUser.username)
+        // No user filtering for quotations - show all data
+        
+        const { count: quotationsCount, error: quotationsError } = await quotationsQuery
+        
+        if (quotationsError) {
+          console.error('Error fetching quotations count:', quotationsError)
+        } else {
+          quotationsSent = quotationsCount || 0
         }
         
-        const { data: enquiryData, error: enquiryError } = await enquiryQuery
+        // Fetch COUNT from enquiry_tracker table for orders received (where "Is Order Received? Status" = "yes")
+        let ordersQuery = supabase
+          .from('enquiry_tracker')
+          .select('*', { count: 'exact', head: true })
+          .eq('"Is Order Received? Status"', 'yes')
         
-        if (enquiryError) {
-          console.error('Error fetching enquiry data:', enquiryError)
-        } else if (enquiryData) {
-          // Count quotations sent (rows with Quotation Number)
-          quotationsSent = enquiryData.filter(row => 
-            row['Quotation Number']
-          ).length
-          
-          // Count orders received (where "Is Order Received? Status" = "yes")
-          ordersReceived = enquiryData.filter(row => 
-            row['Is Order Received? Status'] && 
-            row['Is Order Received? Status'].toLowerCase() === 'yes'
-          ).length
+        // No user filtering for orders - show all data
+        
+        const { count: ordersCount, error: ordersError } = await ordersQuery
+        
+        if (ordersError) {
+          console.error('Error fetching orders count:', ordersError)
+        } else {
+          ordersReceived = ordersCount || 0
         }
         
-        // Fetch data from enquiry_to_order table for total enquiry and pending enquiry
-        let enquiryToOrderQuery = supabase
+        // Fetch COUNT from enquiry_to_order table for total enquiry
+        let totalEnquiryQuery = supabase
           .from('enquiry_to_order')
-          .select('*')
+          .select('*', { count: 'exact', head: true })
         
-        // Apply user filter if not admin
-        if (!isAdmin() && currentUser?.username) {
-          enquiryToOrderQuery = enquiryToOrderQuery.eq('sales_coordinator_name', currentUser.username)
+        // No user filtering - show all enquiries for everyone
+        
+        const { count: totalEnquiryCount, error: totalEnquiryError } = await totalEnquiryQuery
+        
+        if (totalEnquiryError) {
+          console.error('Error fetching total enquiry count:', totalEnquiryError)
+        } else {
+          totalEnquiry = totalEnquiryCount || 0
         }
         
-        const { data: enquiryToOrderData, error: enquiryToOrderError } = await enquiryToOrderQuery
+        // Fetch COUNT from enquiry_to_order table for pending enquiry (where planned1 is not null and actual1 is null)
+        let pendingEnquiryQuery = supabase
+          .from('enquiry_to_order')
+          .select('*', { count: 'exact', head: true })
+          .not('planned1', 'is', null)
+          .is('actual1', null)
         
-        if (enquiryToOrderError) {
-          console.error('Error fetching enquiry to order data:', enquiryToOrderError)
-        } else if (enquiryToOrderData) {
-          // Count total enquiries
-          totalEnquiry = enquiryToOrderData.length
-          
-          // Count pending enquiries (where planned1 is not null and actual1 is null)
-          pendingEnquiry = enquiryToOrderData.filter(row => 
-            row.planned1 && !row.actual1
-          ).length
+        // No user filtering - show all data
+        
+        const { count: pendingEnquiryCount, error: pendingEnquiryError } = await pendingEnquiryQuery
+        
+        if (pendingEnquiryError) {
+          console.error('Error fetching pending enquiry count:', pendingEnquiryError)
+        } else {
+          pendingEnquiry = pendingEnquiryCount || 0
         }
         
         // Update metrics state
@@ -113,6 +141,15 @@ function DashboardMetrics() {
           ordersReceived: ordersReceived.toString(),
           totalEnquiry: totalEnquiry.toString(),
           pendingEnquiry: pendingEnquiry.toString()
+        })
+        
+        console.log('Metrics calculated for user:', currentUser?.username, {
+          totalLeads,
+          pendingFollowups,
+          quotationsSent,
+          ordersReceived,
+          totalEnquiry,
+          pendingEnquiry
         })
         
       } catch (error) {
