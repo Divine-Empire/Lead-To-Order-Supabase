@@ -305,6 +305,7 @@ useEffect(() => {
           enquiryStatus: row['Enquiry_Status'] || "",
           createdAt: row['Created_At'] || "",
           nextCallDate: row['Next_Call_Date'] || "",
+          callingDays: row['Calling_Days'] || "",
           priority: determinePriority(row['Lead_Source'] || ""),
           assignedTo: row['SC_Name'] || row['assigned_user'] || "", // Use SC_Name first
           itemQty: row['Item_Qty'] || ""
@@ -567,7 +568,9 @@ useEffect(() => {
 
     // Calculate counts for pending follow-ups
     pendingFollowUps.forEach((followUp) => {
-      const columnCLValue = followUp.nextCallDate
+      console.log(followUp.callingDays);
+      
+      const columnCLValue = followUp.callingDays
       if (!columnCLValue) return
 
       const columnCLText = String(columnCLValue).toLowerCase()
