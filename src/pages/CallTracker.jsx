@@ -1365,94 +1365,86 @@ const filterCounts = calculateFilterCounts();
 </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredPendingCallTrackers.length > 0 ? (
-                        filteredPendingCallTrackers.map((tracker,index) => (
-                          <tr key={index} className="hover:bg-slate-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              <div className="flex space-x-2">
-                                <Link  state={{ activeTab: activeTab, sc_name: tracker.sc_name }} to={`/call-tracker/new?leadId=${tracker.lead_no}`}>
-                                  <button className="px-3 py-1 text-xs border border-purple-200 text-purple-600 hover:bg-purple-50 rounded-md">
-                                    Process <ArrowRightIcon className="ml-1 h-3 w-3 inline" />
-                                  </button>
-                                </Link>
-                                {/* <button
-                                  onClick={() => {
-                                    setSelectedTracker(tracker)
-                                    setShowPopup(true)
-                                  }}
-                                  className="px-3 py-1 text-xs border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-md"
-                                >
-                                  View
-                                </button> */}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-  {tracker.Timestamp}
-</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {tracker.lead_no}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {tracker.Lead_Receiver_Name}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                  tracker.priority === "High"
-                                    ? "bg-red-100 text-red-800"
-                                    : tracker.priority === "Medium"
-                                      ? "bg-amber-100 text-amber-800"
-                                      : "bg-slate-100 text-slate-800"
-                                }`}
-                              >
-                                {tracker.Lead_Source}
-                              </span>
-                            </td>
-                            <td className="px-4 py-4 text-sm text-gray-500">{tracker.Phone_Number}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {tracker.salesperson_Name}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              <div className="flex items-center">
-                                <BuildingIcon className="h-4 w-4 mr-2 text-slate-400" />
-                                {tracker.Company_Name}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {tracker.Current_Stage}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {tracker.Calling_Days}
-                            </td>
-                            {isAdmin() && (
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {tracker.sc_name}
-                              </td>
-                            )}
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-  <div
-    className="min-w-[100px] break-words whitespace-normal"
-    title={(tracker.itemQty)}
-  >
-    {(tracker.itemQty)}
-  </div>
-</td> <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {tracker.totalQty}
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td
-  colSpan={isAdmin() ? 11 : 10} // Updated to include the new Item/Qty column
-  className="px-6 py-4 text-center text-sm text-slate-500"
->
-                            No pending call trackers found
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
+              <tbody className="bg-white divide-y divide-gray-200">
+  {filteredPendingCallTrackers.length > 0 ? (
+    filteredPendingCallTrackers.map((tracker, index) => (
+      <tr key={index} className="hover:bg-slate-50">
+        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+          <div className="flex space-x-2">
+            <Link state={{ activeTab: activeTab, sc_name: tracker.sc_name }} to={`/call-tracker/new?leadId=${tracker.lead_no}`}>
+              <button className="px-3 py-1 text-xs border border-purple-200 text-purple-600 hover:bg-purple-50 rounded-md">
+                Process <ArrowRightIcon className="ml-1 h-3 w-3 inline" />
+              </button>
+            </Link>
+          </div>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          {tracker.Timestamp}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+          {tracker.lead_no}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          {tracker.Lead_Receiver_Name}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              tracker.priority === "High"
+                ? "bg-red-100 text-red-800"
+                : tracker.priority === "Medium"
+                  ? "bg-amber-100 text-amber-800"
+                  : "bg-slate-100 text-slate-800"
+            }`}
+          >
+            {tracker.Lead_Source}
+          </span>
+        </td>
+        <td className="px-4 py-4 text-sm text-gray-500">{tracker.Phone_Number}</td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          {tracker.salesperson_Name}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          <div className="flex items-center">
+            <BuildingIcon className="h-4 w-4 mr-2 text-slate-400" />
+            {tracker.Company_Name}
+          </div>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          {tracker.Current_Stage}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          {tracker.Calling_Days}
+        </td>
+        {isAdmin() && (
+          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            {tracker.sc_name}
+          </td>
+        )}
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          <div
+            className="min-w-[100px] break-words whitespace-normal"
+            title={tracker.itemQty}
+          >
+            {tracker.itemQty}
+          </div>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          {tracker.totalQty}
+        </td>
+      </tr>
+    ))
+  ) : (
+    <tr>
+      <td
+        colSpan={isAdmin() ? 13 : 12} // Fixed: 12 base columns + 1 for admin column
+        className="px-6 py-4 text-center text-sm text-slate-500"
+      >
+        No pending call trackers found
+      </td>
+    </tr>
+  )}
+</tbody>
                   </table>
                 </div>
               )}

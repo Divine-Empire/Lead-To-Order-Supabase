@@ -349,9 +349,12 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
             quantity: item.quantity || "0"
           }))
         : [];
+
+        const currentDate = new Date().toISOString().split('T')[0];
       
       // Prepare data for Supabase insertion
       const rowData = { 
+        timestamp: currentDate,  // Add this line
         enquiry_no: newCallTrackerData.enquiryNo,
         lead_source: newCallTrackerData.leadSource,
         sales_coordinator_name: newCallTrackerData.scName,
