@@ -3,11 +3,9 @@
 import { useState, useEffect, useContext } from "react"
 import { Link } from "react-router-dom"
 import { PlusIcon, SearchIcon, ArrowRightIcon, BuildingIcon } from "../components/Icons"
-import { AuthContext } from "../App" // Import AuthContext just like in the FollowUp component
-import CallTrackerForm from "./Call-Tracker-Form" // Add this import
-// import supabase from "../SupaBaseClient"
+import { AuthContext } from "../App"
+import CallTrackerForm from "./Call-Tracker-Form"
 import supabase from "../utils/supabase"
-
 
 // Animation classes
 const slideIn = "animate-in slide-in-from-right duration-300"
@@ -16,7 +14,7 @@ const fadeIn = "animate-in fade-in duration-300"
 const fadeOut = "animate-out fade-out duration-300"
 
 function CallTracker() {
-  const { currentUser, userType, isAdmin } = useContext(AuthContext) // Get user info and admin function
+  const { currentUser, userType, isAdmin } = useContext(AuthContext)
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("pending")
   const [pendingCallTrackers, setPendingCallTrackers] = useState([])
@@ -34,6 +32,11 @@ function CallTracker() {
   const [currentStageFilter, setCurrentStageFilter] = useState([])
   const [availableEnquiryNos, setAvailableEnquiryNos] = useState([])
   const [loading, setLoading] = useState(true)
+  
+  // NEW: Add serial number filter state
+  const [serialFilter, setSerialFilter] = useState([])
+  const [showSerialDropdown, setShowSerialDropdown] = useState(false)
+  
   // Dropdown visibility states
   const [showCallingDaysDropdown, setShowCallingDaysDropdown] = useState(false)
   const [showEnquiryNoDropdown, setShowEnquiryNoDropdown] = useState(false)
@@ -95,28 +98,21 @@ function CallTracker() {
     if (!dateValue) return ""
 
     try {
-      // Check if it's a Date object-like string (e.g. "Date(2025,3,22)")
       if (typeof dateValue === "string" && dateValue.startsWith("Date(")) {
-        // Extract the parts from Date(YYYY,MM,DD) format
         const dateString = dateValue.substring(5, dateValue.length - 1)
         const [year, month, day] = dateString.split(",").map((part) => Number.parseInt(part.trim()))
-
-        // JavaScript months are 0-indexed, but we need to display them as 1-indexed
-        // Also ensure day and month are padded with leading zeros if needed
         return `${day.toString().padStart(2, "0")}/${(month + 1).toString().padStart(2, "0")}/${year}`
       }
 
-      // Handle other date formats if needed
       const date = new Date(dateValue)
       if (!isNaN(date.getTime())) {
         return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}/${date.getFullYear()}`
       }
 
-      // If it's already in the correct format, return as is
       return dateValue
     } catch (error) {
       console.error("Error formatting date:", error)
-      return dateValue // Return the original value if formatting fails
+      return dateValue
     }
   }
 
@@ -125,43 +121,30 @@ function CallTracker() {
     if (!timeValue) return ""
 
     try {
-      // Check if it's a Date object-like string (e.g. "Date(1899,11,30,17,9,0)")
       if (typeof timeValue === "string" && timeValue.startsWith("Date(")) {
-        // Extract the parts from Date(YYYY,MM,DD,HH,MM,SS) format
         const dateString = timeValue.substring(5, timeValue.length - 1)
         const parts = dateString.split(",")
 
-        // If we have at least 5 parts (year, month, day, hour, minute)
         if (parts.length >= 5) {
           const hour = Number.parseInt(parts[3].trim())
           const minute = Number.parseInt(parts[4].trim())
-
-          // Convert to 12-hour format
           const period = hour >= 12 ? "PM" : "AM"
-          const displayHour = hour % 12 || 12 // Convert 0 to 12 for 12 AM
-
-          // Format as h:mm AM/PM with leading zero for minutes when needed
+          const displayHour = hour % 12 || 12
           return `${displayHour}:${minute.toString().padStart(2, "0")} ${period}`
         }
       }
 
-      // Handle HH:MM:SS format
       if (typeof timeValue === "string" && timeValue.includes(":")) {
         const [hour, minute] = timeValue.split(":").map((part) => Number.parseInt(part))
-
-        // Convert to 12-hour format
         const period = hour >= 12 ? "PM" : "AM"
-        const displayHour = hour % 12 || 12 // Convert 0 to 12 for 12 AM
-
-        // Format as h:mm AM/PM
+        const displayHour = hour % 12 || 12
         return `${displayHour}:${minute.toString().padStart(2, "0")} ${period}`
       }
 
-      // If it's already in the correct format or we can't parse it, return as is
       return timeValue
     } catch (error) {
       console.error("Error formatting time:", error)
-      return timeValue // Return the original value if formatting fails
+      return timeValue
     }
   }
 
@@ -169,7 +152,7 @@ function CallTracker() {
   const isToday = (dateStr) => {
     if (!dateStr) return false
     try {
-      const date = new Date(dateStr.split("/").reverse().join("-")) // Convert DD/MM/YYYY to YYYY-MM-DD
+      const date = new Date(dateStr.split("/").reverse().join("-"))
       const today = new Date()
       return date.toDateString() === today.toDateString()
     } catch {
@@ -212,38 +195,36 @@ function CallTracker() {
         .join(", ")
     } catch (error) {
       console.error("Error parsing item quantity:", error)
-      return itemQtyString // Return original string if parsing fails
+      return itemQtyString
     }
   }
-  
 
-// Replace the matchesCallingDaysFilter function with this updated version
-const matchesCallingDaysFilter = (dateStr, activeTab) => {
+const matchesCallingDaysFilter = (callingDaysValue, activeTab) => {
   if (callingDaysFilter.length === 0) return true;
   
-  // Convert to lowercase for case-insensitive comparison
-  const dateText = dateStr ? dateStr.toLowerCase() : '';
+  // Handle the calling_days column value directly
+  const callingDaysText = callingDaysValue ? callingDaysValue.toLowerCase() : '';
   
   return callingDaysFilter.some((filter) => {
     if (activeTab === "history") {
-      // Special handling for history tab
+      // For history tab, check if it matches actual dates
       switch (filter) {
         case "today":
-          return isToday(dateStr); // Use the isToday helper function
+          return callingDaysText.includes("today") || isToday(callingDaysValue);
         case "older":
-          return !isToday(dateStr); // Older days call
+          return !callingDaysText.includes("today") && !isToday(callingDaysValue);
         default:
           return false;
       }
     } else {
-      // Original handling for other tabs
+      // For pending/directEnquiry tabs, check the calling_days text content
       switch (filter) {
         case "today":
-          return dateText.includes("today");
+          return callingDaysText.includes("today");
         case "overdue":
-          return dateText.includes("overdue");
+          return callingDaysText.includes("overdue");
         case "upcoming":
-          return dateText.includes("upcoming");
+          return callingDaysText.includes("upcoming");
         default:
           return false;
       }
@@ -251,58 +232,58 @@ const matchesCallingDaysFilter = (dateStr, activeTab) => {
   });
 };
 
-const handleColumnToggle = (columnKey) => {
-  setVisibleColumns((prev) => ({
-    ...prev,
-    [columnKey]: !prev[columnKey],
-  }))
-}
+  const handleColumnToggle = (columnKey) => {
+    setVisibleColumns((prev) => ({
+      ...prev,
+      [columnKey]: !prev[columnKey],
+    }))
+  }
 
-const handleSelectAll = () => {
-  const allSelected = Object.values(visibleColumns).every(Boolean)
-  const newState = Object.fromEntries(Object.keys(visibleColumns).map((key) => [key, !allSelected]))
-  setVisibleColumns(newState)
-}
+  const handleSelectAll = () => {
+    const allSelected = Object.values(visibleColumns).every(Boolean)
+    const newState = Object.fromEntries(Object.keys(visibleColumns).map((key) => [key, !allSelected]))
+    setVisibleColumns(newState)
+  }
 
-const columnOptions = [
-  { key: "timestamp", label: "Timestamp" },
-  { key: "enquiryNo", label: "Enquiry No." },
-  { key: "enquiryStatus", label: "Enquiry Status" },
-  { key: "customerFeedback", label: "What Did Customer Say" },
-  { key: "currentStage", label: "Current Stage" },
-  { key: "sendQuotationNo", label: "Send Quotation No." },
-  { key: "quotationSharedBy", label: "Quotation Shared By" },
-  { key: "quotationNumber", label: "Quotation Number" },
-  { key: "valueWithoutTax", label: "Value Without Tax" },
-  { key: "valueWithTax", label: "Value With Tax" },
-  { key: "quotationUpload", label: "Quotation Upload" },
-  { key: "quotationRemarks", label: "Quotation Remarks" },
-  { key: "validatorName", label: "Validator Name" },
-  { key: "sendStatus", label: "Send Status" },
-  { key: "validationRemark", label: "Validation Remark" },
-  { key: "faqVideo", label: "FAQ Video" },
-  { key: "productVideo", label: "Product Video" },
-  { key: "offerVideo", label: "Offer Video" },
-  { key: "productCatalog", label: "Product Catalog" },
-  { key: "productImage", label: "Product Image" },
-  { key: "nextCallDate", label: "Next Call Date" },
-  { key: "nextCallTime", label: "Next Call Time" },
-  { key: "orderStatus", label: "Order Status" },
-  { key: "acceptanceVia", label: "Acceptance Via" },
-  { key: "paymentMode", label: "Payment Mode" },
-  { key: "paymentTerms", label: "Payment Terms" },
-  { key: "transportMode", label: "Transport Mode" },
-  { key: "registrationFrom", label: "Registration From" },
-  { key: "orderVideo", label: "Order Video" },
-  { key: "acceptanceFile", label: "Acceptance File" },
-  { key: "orderRemark", label: "Remark" },
-  { key: "apologyVideo", label: "Apology Video" },
-  { key: "reasonStatus", label: "Reason Status" },
-  { key: "reasonRemark", label: "Reason Remark" },
-  { key: "holdReason", label: "Hold Reason" },
-  { key: "holdingDate", label: "Holding Date" },
-  { key: "holdRemark", label: "Hold Remark" },
-]
+  const columnOptions = [
+    { key: "timestamp", label: "Timestamp" },
+    { key: "enquiryNo", label: "Enquiry No." },
+    { key: "enquiryStatus", label: "Enquiry Status" },
+    { key: "customerFeedback", label: "What Did Customer Say" },
+    { key: "currentStage", label: "Current Stage" },
+    { key: "sendQuotationNo", label: "Send Quotation No." },
+    { key: "quotationSharedBy", label: "Quotation Shared By" },
+    { key: "quotationNumber", label: "Quotation Number" },
+    { key: "valueWithoutTax", label: "Value Without Tax" },
+    { key: "valueWithTax", label: "Value With Tax" },
+    { key: "quotationUpload", label: "Quotation Upload" },
+    { key: "quotationRemarks", label: "Quotation Remarks" },
+    { key: "validatorName", label: "Validator Name" },
+    { key: "sendStatus", label: "Send Status" },
+    { key: "validationRemark", label: "Validation Remark" },
+    { key: "faqVideo", label: "FAQ Video" },
+    { key: "productVideo", label: "Product Video" },
+    { key: "offerVideo", label: "Offer Video" },
+    { key: "productCatalog", label: "Product Catalog" },
+    { key: "productImage", label: "Product Image" },
+    { key: "nextCallDate", label: "Next Call Date" },
+    { key: "nextCallTime", label: "Next Call Time" },
+    { key: "orderStatus", label: "Order Status" },
+    { key: "acceptanceVia", label: "Acceptance Via" },
+    { key: "paymentMode", label: "Payment Mode" },
+    { key: "paymentTerms", label: "Payment Terms" },
+    { key: "transportMode", label: "Transport Mode" },
+    { key: "registrationFrom", label: "Registration From" },
+    { key: "orderVideo", label: "Order Video" },
+    { key: "acceptanceFile", label: "Acceptance File" },
+    { key: "orderRemark", label: "Remark" },
+    { key: "apologyVideo", label: "Apology Video" },
+    { key: "reasonStatus", label: "Reason Status" },
+    { key: "reasonRemark", label: "Reason Remark" },
+    { key: "holdReason", label: "Hold Reason" },
+    { key: "holdingDate", label: "Holding Date" },
+    { key: "holdRemark", label: "Hold Remark" },
+  ]
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -312,6 +293,7 @@ const columnOptions = [
         setShowEnquiryNoDropdown(false)
         setShowCurrentStageDropdown(false)
         setShowColumnDropdown(false)
+        setShowSerialDropdown(false) // NEW: Close serial dropdown
       }
     }
     
@@ -321,19 +303,15 @@ const columnOptions = [
     }
   }, [])
 
-
-
-
-
   // Function for fetching data
+  // Replace your existing fetchPendingData function with this:
 const fetchPendingData = async () => {
   let query = supabase
     .from("leads_to_order")
     .select("*")
-    .not("Planned1", "is", null)  // planned IS NOT NULL
+    .not("Planned1", "is", null)
     .is("Actual1", null);
 
-  // If not admin, filter by current user's username
   if (!isAdmin() && currentUser && currentUser.username) {
     query = query.eq("SC_Name", currentUser.username);
   }
@@ -343,8 +321,16 @@ const fetchPendingData = async () => {
   if (error) {
     console.error("Error fetching leads:", error.message);
   } else {
-    const transformedData = data.map((item, index) => ({
+    // Sort data by Lead Number before assigning serial numbers
+    const sortedData = data.sort((a, b) => {
+      const leadNoA = a["LD-Lead-No"] || "";
+      const leadNoB = b["LD-Lead-No"] || "";
+      return leadNoA.localeCompare(leadNoB, undefined, { numeric: true });
+    });
+
+    const transformedData = sortedData.map((item, index) => ({
       id: index + 1,
+      serialNo: index + 1, // Now this will be in proper sequence
       Timestamp: formatDateToDDMMYYYY(item.Timestamp) || "",
       lead_no: item["LD-Lead-No"] || "",
       Lead_Receiver_Name: item["Lead_Receiver_Name"] || "",
@@ -365,13 +351,12 @@ const fetchPendingData = async () => {
   setLoading(false);
 };
 
-// Replace the existing fetchHistoryData function
+// Replace your existing fetchHistoryData function with this:
 const fetchHistoryData = async () => {
   let query = supabase
     .from("enquiry_tracker")
     .select("*");
 
-  // If not admin, filter by current user's username
   if (!isAdmin() && currentUser && currentUser.username) {
     query = query.eq("Sales Cordinator", currentUser.username);
   }
@@ -381,8 +366,16 @@ const fetchHistoryData = async () => {
   if (error) {
     console.error("Error fetching enquiry tracker:", error.message);
   } else {
-    const transformedData = data.map((item, index) => ({
+    // Sort data by Enquiry Number before assigning serial numbers
+    const sortedData = data.sort((a, b) => {
+      const enquiryNoA = a["Enquiry No."] || "";
+      const enquiryNoB = b["Enquiry No."] || "";
+      return enquiryNoA.localeCompare(enquiryNoB, undefined, { numeric: true });
+    });
+
+    const transformedData = sortedData.map((item, index) => ({
       id: index + 1,
+      serialNo: index + 1, // Now this will be in proper sequence
       Timestamp: formatDateToDDMMYYYY(item.Timestamp) || "",
       enquiryNo: item["Enquiry No."] || "",
       enquiryStatus: item["Enquiry Status"] || "",
@@ -426,7 +419,7 @@ const fetchHistoryData = async () => {
       credit_limit: item["Credit Limit"] || "",
       calling_days: item["Calling Days"] || "",
       order_no: item["Order No."] || "",
-      sc_name: item["Sales Cordinator"] || "", // Using Sales Cordinator for SC name
+      sc_name: item["Sales Cordinator"] || "",
       destination: item["Destination"] || "",
       po_number: item["PO Number"] || "",
       priority: determinePriority(item["Enquiry Status"] || "")
@@ -439,15 +432,14 @@ const fetchHistoryData = async () => {
   setLoading(false);
 };
 
-// Replace the existing fetchDirectEnquiryData function
+// Replace your existing fetchDirectEnquiryData function with this:
 const fetchDirectEnquiryData = async () => {
   let query = supabase
     .from("enquiry_to_order")
     .select("*")
-    .not("planned1", "is", null)  // planned IS NOT NULL
+    .not("planned1", "is", null)
     .is("actual1", null);
 
-  // If not admin, filter by current user's username
   if (!isAdmin() && currentUser && currentUser.username) {
     query = query.eq("sales_coordinator_name", currentUser.username);
   }
@@ -457,8 +449,16 @@ const fetchDirectEnquiryData = async () => {
   if (error) {
     console.error("Error fetching direct enquiry:", error.message);
   } else {
-    const transformedData = data.map((item, index) => ({
+    // Sort data by Enquiry Number before assigning serial numbers
+    const sortedData = data.sort((a, b) => {
+      const enquiryNoA = a.enquiry_no || "";
+      const enquiryNoB = b.enquiry_no || "";
+      return enquiryNoA.localeCompare(enquiryNoB, undefined, { numeric: true });
+    });
+
+    const transformedData = sortedData.map((item, index) => ({
       id: index + 1,
+      serialNo: index + 1, // Now this will be in proper sequence
       timestamp: formatDateToDDMMYYYY(item.planned1) || "",
       enquiry_no: item.enquiry_no || "",
       lead_receiver_name: item.enquiry_receiver_name || "",
@@ -487,298 +487,7 @@ const fetchDirectEnquiryData = async () => {
     fetchDirectEnquiryData();
   }, []);
 
-
-  // Function to fetch data from FMS and Enquiry Tracker sheets
-//   useEffect(() => {
-//     const fetchCallTrackerData = async () => {
-//       try {
-//         setIsLoading(true)
-
-//         // Fetch data from FMS sheet for Pending Call Trackers
-//         const pendingUrl =
-//           "https://docs.google.com/spreadsheets/d/1TZVWkmASF7tG-QER17588sl4SvRgY7knFKFDtYFjB0Q/gviz/tq?tqx=out:json&sheet=FMS"
-//         const pendingResponse = await fetch(pendingUrl)
-//         const pendingText = await pendingResponse.text()
-
-//         // Extract the JSON part from the FMS sheet response
-//         const pendingJsonStart = pendingText.indexOf("{")
-//         const pendingJsonEnd = pendingText.lastIndexOf("}") + 1
-//         const pendingJsonData = pendingText.substring(pendingJsonStart, pendingJsonEnd)
-
-//         const pendingData = JSON.parse(pendingJsonData)
-
-//         // Fetch data from Enquiry Tracker sheet for History
-//         const historyUrl =
-//           "https://docs.google.com/spreadsheets/d/1TZVWkmASF7tG-QER17588sl4SvRgY7knFKFDtYFjB0Q/gviz/tq?tqx=out:json&sheet=Enquiry Tracker"
-//         const historyResponse = await fetch(historyUrl)
-//         const historyText = await historyResponse.text()
-
-//         // Extract the JSON part from the Enquiry Tracker sheet response
-//         const historyJsonStart = historyText.indexOf("{")
-//         const historyJsonEnd = historyText.lastIndexOf("}") + 1
-//         const historyJsonData = historyText.substring(historyJsonStart, historyJsonEnd)
-
-//         const historyData = JSON.parse(historyJsonData)
-
-//         // Fetch data from ENQUIRY TO ORDER sheet for Direct Enquiry Pending
-//         const directEnquiryUrl =
-//           "https://docs.google.com/spreadsheets/d/1TZVWkmASF7tG-QER17588sl4SvRgY7knFKFDtYFjB0Q/gviz/tq?tqx=out:json&sheet=ENQUIRY TO ORDER"
-//         const directEnquiryResponse = await fetch(directEnquiryUrl)
-//         const directEnquiryText = await directEnquiryResponse.text()
-
-//         // Extract the JSON part from the ENQUIRY TO ORDER sheet response
-//         const directEnquiryJsonStart = directEnquiryText.indexOf("{")
-//         const directEnquiryJsonEnd = directEnquiryText.lastIndexOf("}") + 1
-//         const directEnquiryJsonData = directEnquiryText.substring(directEnquiryJsonStart, directEnquiryJsonEnd)
-
-//         const directEnquiryData = JSON.parse(directEnquiryJsonData)
-
-//         // Process Pending Call Trackers from FMS sheet
-//         let pendingCallTrackerData = []
-//         if (pendingData && pendingData.table && pendingData.table.rows) {
-//           pendingCallTrackerData = []
-
-//           // Skip the header row (index 0)
-//           pendingData.table.rows.slice(2).forEach((row, index) => {
-//             // Only show rows where column AJ (index 35) is not null and column AK (index 36) is null
-//             if (row.c && row.c[52] && row.c[52].v && (!row.c[53] || !row.c[53].v)) {
-//               // Get the assigned user from column CC (index 88) like in the FollowUp component
-//               const assignedUser = row.c[88] ? row.c[88].v : ""
-
-//               // For admin users, include all rows; for regular users, filter by their username
-//               const shouldInclude = isAdmin() || (currentUser && assignedUser === currentUser.username)
-
-//               if (shouldInclude) {
-//                 const callTrackerItem = {
-//                   id: index + 1,
-//                   timestamp: row.c[52] ? formatDateToDDMMYYYY(row.c[52].v) : "", // Column AB - Timestamp
-//                   leadId: row.c[1] ? row.c[1].v : "", // Column B - Lead Number
-//                   receiverName: row.c[2] ? row.c[2].v : "", // Column C - Lead Receiver Name
-//                   leadSource: row.c[3] ? row.c[3].v : "", // Column D - Lead Source
-//                   salespersonName: row.c[6] ? row.c[6].v : "", // Column E - Salesperson Name
-//                   phoneNumber: row.c[5] ? row.c[5].v : "", // Added phone number from column F (index 5)
-//                   companyName: row.c[4] ? row.c[4].v : "", // Column G - Company Name
-//                   createdAt: row.c[0] ? formatDateToDDMMYYYY(row.c[0].v) : "", // Using date from column A
-//                   status: "Expected", // Default status for pending
-//                   priority: determinePriority(row.c[3] ? row.c[3].v : ""), // Determine priority based on source
-//                   stage: "Pending", // Default stage
-//                   dueDate: "", // You might want to add logic to calculate due date
-//                   assignedTo: assignedUser, // Add assigned user to the tracker item
-//                   currentStage: row.c[57] ? row.c[57].v : "", // Column BF - Current Stage
-//                   // callingDate: row.c[90] ? formatDateToDDMMYYYY(row.c[90].v) : "", // Column CM - Calling Date
-//                   callingDate: row.c[90] ? String(row.c[90].v).toLowerCase() : "", // Column CM - Calling Date 
-//                   itemQty: row.c[96] ? row.c[96].v : "", 
-//                 }
-
-//                 pendingCallTrackerData.push(callTrackerItem)
-//               }
-//             }
-//           })
-
-//          // setPendingCallTrackers(pendingCallTrackerData)
-//         }
-
-//         // Process History Call Trackers from Enquiry Tracker sheet
-//         let historyCallTrackerData = []
-//       // Process History Call Trackers from Enquiry Tracker sheet
-// if (historyData && historyData.table && historyData.table.rows) {
-//   const historyCallTrackerData = []
-
-//   // Start from index 1 to skip header row
-//   historyData.table.rows.slice(0).forEach((row, index) => {
-//     if (row.c) {
-//       // Get the assigned user from column AL (index 37)
-//       const assignedUser = row.c[37] ? row.c[37].v : ""
-      
-//       // For admin users, include all rows; for regular users, filter by their username
-//       const shouldInclude = isAdmin() || (currentUser && assignedUser === currentUser.username)
-
-//       if (shouldInclude) {
-//         const callTrackerItem = {
-//           id: index + 1,
-//           timestamp: formatDateToDDMMYYYY(row.c[0] ? row.c[0].v : ""), // Column A - Timestamp
-//           enquiryNo: row.c[1] ? row.c[1].v : "", // Column B - Enquiry No
-//           enquiryStatus: row.c[2] ? row.c[2].v : "", // Column C - Enquiry Status
-//           customerFeedback: row.c[3] ? row.c[3].v : "", // Column D - What Did Customer Say
-//           currentStage: row.c[4] ? row.c[4].v : "", // Column E - Current Stage
-//           sendQuotationNo: row.c[5] ? row.c[5].v : "", // Column F - Send Quotation No
-//           quotationSharedBy: row.c[6] ? row.c[6].v : "", // Column G - Quotation Shared By
-//           quotationNumber: row.c[7] ? row.c[7].v : "", // Column H - Quotation Number
-//           valueWithoutTax: row.c[8] ? row.c[8].v : "", // Column I - Value Without Tax
-//           valueWithTax: row.c[9] ? row.c[9].v : "", // Column J - Value With Tax
-//           quotationUpload: row.c[10] ? row.c[10].v : "", // Column K - Quotation Upload
-//           quotationRemarks: row.c[11] ? row.c[11].v : "", // Column L - Quotation Remarks
-//           // validatorName: row.c[12] ? row.c[12].v : "", // Column M - Validator Name
-//           // sendStatus: row.c[13] ? row.c[13].v : "", // Column N - Send Status
-//           // validationRemark: row.c[14] ? row.c[14].v : "", // Column O - Validation Remark
-//           // faqVideo: row.c[15] ? row.c[15].v : "", // Column P - FAQ Video
-//           // productVideo: row.c[16] ? row.c[16].v : "", // Column Q - Product Video
-//           // offerVideo: row.c[17] ? row.c[17].v : "", // Column R - Offer Video
-//           // productCatalog: row.c[18] ? row.c[18].v : "", // Column S - Product Catalog
-//           // productImage: row.c[19] ? row.c[19].v : "", // Column T - Product Image
-//           nextCallDate: formatDateToDDMMYYYY(row.c[20] ? row.c[20].v : ""), // Column U - Next Call Date
-//           nextCallTime: formatTimeTo12Hour(row.c[21] ? row.c[21].v : ""), // Column V - Next Call Time
-//           orderStatus: row.c[22] ? row.c[22].v : "", // Column W - Is Order Received? Status
-//           acceptanceVia: row.c[23] ? row.c[23].v : "", // Column X - Acceptance Via
-//           paymentMode: row.c[24] ? row.c[24].v : "", // Column Y - Payment Mode
-//           paymentTerms: row.c[25] ? row.c[25].v : "", // Column Z - Payment Terms
-//           transportMode: row.c[26] ? row.c[26].v : "", // Column AA - Transport Mode
-//           registrationFrom: row.c[27] ? row.c[27].v : "", // Column AB - Registration From
-//           orderVideo: row.c[28] ? row.c[28].v : "", // Column AC - Order Video
-//           acceptanceFile: row.c[29] ? row.c[29].v : "", // Column AD - Acceptance File
-//           orderRemark: row.c[30] ? row.c[30].v : "", // Column AE - Remark
-//           apologyVideo: row.c[31] ? row.c[31].v : "", // Column AF - Apology Video
-//           reasonStatus: row.c[32] ? row.c[32].v : "", // Column AG - Reason Status
-//           reasonRemark: row.c[33] ? row.c[33].v : "", // Column AH - Reason Remark
-//           holdReason: row.c[34] ? row.c[34].v : "", // Column AI - Hold Reason
-//           holdingDate: formatDateToDDMMYYYY(row.c[35] ? row.c[35].v : ""), // Column AJ - Holding Date
-//           holdRemark: row.c[36] ? row.c[36].v : "", // Column AK - Hold Remark
-//           priority: determinePriority(row.c[2] ? row.c[2].v : ""), // Determine priority based on status
-//           // callingDate: formatDateToDDMMYYYY(row.c[41] ? row.c[41].v : ""), // Column AP - Calling Date
-//           callingDate: row.c[41] ? String(row.c[41].v).toLowerCase() : "", // Column AP - Calling Date 
-//           assignedTo: assignedUser, // Add assigned user to the history item
-//           itemQty: row.c[28] ? row.c[28].v : "",
-//         }
-
-//         historyCallTrackerData.push(callTrackerItem)
-//       }
-//     }
-//   })
-
-//   setHistoryCallTrackers(historyCallTrackerData)
-// }
-
-//         // Process Direct Enquiry Pending from ENQUIRY TO ORDER sheet
-//         let directEnquiryPendingData = []
-//         if (directEnquiryData && directEnquiryData.table && directEnquiryData.table.rows) {
-//           directEnquiryPendingData = []
-
-//           // Skip the header row (index 0)
-//           directEnquiryData.table.rows.slice(1).forEach((row, index) => {
-//             // Only show rows where column AH (index 37) is not null and column AI (index 38) is null
-//             if (row.c && row.c[37] && row.c[37].v && (!row.c[38] || !row.c[38].v)) {
-//               // Get the assigned user from column BX (index 75)
-//               const assignedUser = row.c[75] ? row.c[75].v : ""
-
-//               // For admin users, include all rows; for regular users, filter by their username
-//               const shouldInclude = isAdmin() || (currentUser && assignedUser === currentUser.username)
-
-//               if (shouldInclude) {
-//                 const directEnquiryItem = {
-//                   id: index + 1,
-//                    timestamp: row.c[37] ? formatDateToDDMMYYYY(row.c[37].v) : "", // Column AL - Timestamp
-//                   leadId: row.c[1] ? row.c[1].v : "", // Column B - Lead Number
-//                   receiverName: row.c[2] ? row.c[2].v : "", // Column C - Lead Receiver Name
-//                   leadSource: row.c[3] ? row.c[3].v : "", // Column D - Lead Source
-//                   salespersonName: row.c[41] ? row.c[41].v : "", // Column E - Salesperson Name
-//                   companyName: row.c[42] ? row.c[42].v : "", // Column G - Company Name
-//                   createdAt: row.c[0] ? formatDateToDDMMYYYY(row.c[0].v) : "", // Using date from column A
-//                   status: "Expected", // Default status for pending
-//                   priority: determinePriority(row.c[3] ? row.c[3].v : ""), // Determine priority based on source
-//                   stage: "Pending", // Default stage
-//                   dueDate: "", // You might want to add logic to calculate due date
-//                   assignedTo: assignedUser, // Add assigned user to the tracker item
-//                   currentStage: row.c[42] ? row.c[42].v : "", // Column AQ - Current Stage
-//                   // callingDate: row.c[76] ? formatDateToDDMMYYYY(row.c[76].v) : "", // Column BY - Calling Date
-//                   callingDate1: row.c[58] ? formatDateToDDMMYYYY(row.c[58].v) : "", // Column BY - Calling Date as text
-                  
-//                   callingDate: row.c[76] ? String(row.c[76].v).toLowerCase() : "", // Column BY - Calling Date as text
-//                   itemQty: row.c[79] ? row.c[79].v : "",
-//                 }
-
-//                 directEnquiryPendingData.push(directEnquiryItem)
-//               }
-//             }
-//           })
-
-//           setDirectEnquiryPendingTrackers(directEnquiryPendingData)
-//         }
-
-//         // Extract unique enquiry numbers for filter dropdown
-//         const allEnquiryNos = new Set()
-
-//         // Add enquiry numbers from pending data
-//         pendingCallTrackerData.forEach((item) => {
-//           if (item.leadId) allEnquiryNos.add(item.leadId)
-//         })
-
-//         // Add enquiry numbers from direct enquiry data
-//         directEnquiryPendingData.forEach((item) => {
-//           if (item.leadId) allEnquiryNos.add(item.leadId)
-//         })
-
-//         // Add enquiry numbers from history data
-//         historyCallTrackerData.forEach((item) => {
-//           if (item.enquiryNo) allEnquiryNos.add(item.enquiryNo)
-//         })
-
-//         setAvailableEnquiryNos(Array.from(allEnquiryNos).sort())
-//       } catch (error) {
-//         console.error("Error fetching call tracker data:", error)
-//         // Fallback to mock data if fetch fails
-//         setPendingCallTrackers([
-//           {
-//             id: "1",
-//             leadId: "En-001",
-//             receiverName: "John Doe",
-//             leadSource: "Website",
-//             salespersonName: "Jane Smith",
-//             phoneNumber: "9876543210", // Added sample phone number
-//             companyName: "Sample Corp",
-//             status: "Expected",
-//             priority: "Medium",
-//             stage: "Pending",
-//             dueDate: "2023-05-20",
-//             currentStage: "make-quotation",
-//             callingDate: "15/05/2023",
-//           },
-//         ])
-
-//         setHistoryCallTrackers([
-//           {
-//             id: "2",
-//             timestamp: "10/05/2023",
-//             enquiryNo: "En-002",
-//             enquiryStatus: "Cold",
-//             customerFeedback: "Will think about it",
-//             currentStage: "Order Status",
-//             priority: "Low",
-//             nextCallDate: "15/05/2023",
-//             nextCallTime: "5:30 PM",
-//             holdingDate: "20/05/2023",
-//             callingDate: "12/05/2023",
-//           },
-//         ])
-
-//         setDirectEnquiryPendingTrackers([
-//           {
-//             id: "3",
-//             leadId: "En-003",
-//             receiverName: "Alice Brown",
-//             leadSource: "Referral",
-//             salespersonName: "Bob Johnson",
-//             companyName: "Test Corp",
-//             createdAt: "05/05/2023",
-//             status: "Expected",
-//             priority: "High",
-//             stage: "Pending",
-//             currentStage: "quotation-validation",
-//             callingDate: "18/05/2023",
-//           },
-//         ])
-
-//         setAvailableEnquiryNos(["En-001", "En-002", "En-003"])
-//       } finally {
-//         setIsLoading(false)
-//       }
-//     }
-
-//     fetchCallTrackerData()
-//   }, [currentUser, isAdmin]) // Add isAdmin to dependencies like in FollowUp
-
-
-
-  // Enhanced filter function for search and dropdown filters
+  // NEW: Enhanced filter function that includes serial number filtering
   const filterTrackers = (tracker, searchTerm, activeTab) => {
     // Search term filter
     if (searchTerm) {
@@ -789,23 +498,29 @@ const fetchDirectEnquiryData = async () => {
       if (!matchesSearch) return false
     }
 
+    // NEW: Serial number filter
+    if (serialFilter.length > 0) {
+      if (!serialFilter.includes(tracker.serialNo)) return false
+    }
+
     // Enquiry number filter
     if (enquiryNoFilter.length > 0) {
-      const enquiryNo = activeTab === "history" ? tracker.enquiryNo : tracker.leadId
+      const enquiryNo = activeTab === "history" ? tracker.enquiryNo : 
+                       activeTab === "pending" ? tracker.lead_no : tracker.enquiry_no
       if (!enquiryNoFilter.includes(enquiryNo)) return false
     }
 
     // Current stage filter
     if (currentStageFilter.length > 0) {
-      const currentStage = tracker.currentStage || ""
+      const currentStage = tracker.currentStage || tracker.Current_Stage || tracker.current_stage || ""
       if (!currentStageFilter.includes(currentStage)) return false
     }
 
     // Calling days filter
     if (callingDaysFilter.length > 0) {
-      const callingDate = tracker.callingDate || ""
-      if (!matchesCallingDaysFilter(callingDate, activeTab)) return false
-    }
+  const callingDaysValue = tracker.calling_days || tracker.Calling_Days || tracker.callingDate || ""
+  if (!matchesCallingDaysFilter(callingDaysValue, activeTab)) return false
+}
 
     return true
   }
@@ -822,12 +537,32 @@ const fetchDirectEnquiryData = async () => {
     filterTrackers(tracker, searchTerm, "directEnquiry"),
   )
 
-  // Toggle dropdown visibility
+  // NEW: Get available serial numbers based on active tab
+  const getAvailableSerialNumbers = () => {
+    let data = []
+    switch (activeTab) {
+      case "pending":
+        data = pendingData
+        break
+      case "directEnquiry":
+        data = directEnquiryData
+        break
+      case "history":
+        data = historyData
+        break
+      default:
+        data = []
+    }
+    return data.map(item => item.serialNo).sort((a, b) => a - b)
+  }
+
+  // Toggle dropdown visibility functions
   const toggleCallingDaysDropdown = (e) => {
     e.stopPropagation()
     setShowCallingDaysDropdown(!showCallingDaysDropdown)
     setShowEnquiryNoDropdown(false)
     setShowCurrentStageDropdown(false)
+    setShowSerialDropdown(false) // NEW
   }
 
   const toggleEnquiryNoDropdown = (e) => {
@@ -835,6 +570,7 @@ const fetchDirectEnquiryData = async () => {
     setShowEnquiryNoDropdown(!showEnquiryNoDropdown)
     setShowCallingDaysDropdown(false)
     setShowCurrentStageDropdown(false)
+    setShowSerialDropdown(false) // NEW
   }
 
   const toggleCurrentStageDropdown = (e) => {
@@ -842,6 +578,16 @@ const fetchDirectEnquiryData = async () => {
     setShowCurrentStageDropdown(!showCurrentStageDropdown)
     setShowCallingDaysDropdown(false)
     setShowEnquiryNoDropdown(false)
+    setShowSerialDropdown(false) // NEW
+  }
+
+  // NEW: Toggle serial dropdown
+  const toggleSerialDropdown = (e) => {
+    e.stopPropagation()
+    setShowSerialDropdown(!showSerialDropdown)
+    setShowCallingDaysDropdown(false)
+    setShowEnquiryNoDropdown(false)
+    setShowCurrentStageDropdown(false)
   }
 
   // Handle checkbox changes
@@ -869,37 +615,50 @@ const fetchDirectEnquiryData = async () => {
     }
   }
 
+  // NEW: Handle serial number filter change
+  const handleSerialChange = (value) => {
+    if (serialFilter.includes(value)) {
+      setSerialFilter(serialFilter.filter(item => item !== value))
+    } else {
+      setSerialFilter([...serialFilter, value])
+    }
+  }
+
   // Add this function inside your CallTracker component
   const calculateFilterCounts = () => {
-    const counts = {
-      today: 0,
-      overdue: 0,
-      upcoming: 0,
-      older: 0
-    };
-  
-    // Calculate counts based on active tab
-    if (activeTab === "pending" || activeTab === "directEnquiry") {
-      const trackers = activeTab === "pending" ? pendingCallTrackers : directEnquiryPendingTrackers;
-      
-      trackers.forEach(tracker => {
-        const dateStr = tracker.callingDate ? tracker.callingDate.toLowerCase() : "";
-        if (dateStr.includes("today")) counts.today++;
-        else if (dateStr.includes("overdue")) counts.overdue++;
-        else if (dateStr.includes("upcoming")) counts.upcoming++;
-      });
-    } else if (activeTab === "history") {
-      historyCallTrackers.forEach(tracker => {
-        const dateStr = tracker.callingDate;
-        if (isToday(dateStr)) counts.today++;
-        else counts.older++;
-      });
-    }
-  
-    return counts;
+  const counts = {
+    today: 0,
+    overdue: 0,
+    upcoming: 0,
+    older: 0
   };
 
-const filterCounts = calculateFilterCounts();
+  if (activeTab === "pending") {
+    pendingData.forEach(tracker => {
+      const callingDaysText = (tracker.Calling_Days || "").toLowerCase();
+      if (callingDaysText.includes("today")) counts.today++;
+      else if (callingDaysText.includes("overdue")) counts.overdue++;
+      else if (callingDaysText.includes("upcoming")) counts.upcoming++;
+    });
+  } else if (activeTab === "directEnquiry") {
+    directEnquiryData.forEach(tracker => {
+      const callingDaysText = (tracker.calling_days || "").toLowerCase();
+      if (callingDaysText.includes("today")) counts.today++;
+      else if (callingDaysText.includes("overdue")) counts.overdue++;
+      else if (callingDaysText.includes("upcoming")) counts.upcoming++;
+    });
+  } else if (activeTab === "history") {
+    historyData.forEach(tracker => {
+      const callingDaysText = (tracker.calling_days || "").toLowerCase();
+      if (callingDaysText.includes("today") || isToday(tracker.nextCallDate)) counts.today++;
+      else counts.older++;
+    });
+  }
+
+  return counts;
+};
+
+  const filterCounts = calculateFilterCounts();
 
   return (
     <div className="container mx-auto py-10 px-4">
