@@ -199,37 +199,37 @@ function CallTracker() {
     }
   }
 
-const matchesCallingDaysFilter = (callingDaysValue, activeTab) => {
+// Replace your matchesCallingDaysFilter function with this:
+const matchesCallingDaysFilter = (dateValue, activeTab) => {
   if (callingDaysFilter.length === 0) return true;
   
-  // Handle the calling_days column value directly
-  const callingDaysText = callingDaysValue ? callingDaysValue.toLowerCase() : '';
-  
-  return callingDaysFilter.some((filter) => {
-    if (activeTab === "history") {
-      // For history tab, check if it matches actual dates
+  // For pending and directEnquiry tabs, we need to check the actual date values
+  if (activeTab === "pending" || activeTab === "directEnquiry") {
+    return callingDaysFilter.some((filter) => {
       switch (filter) {
         case "today":
-          return callingDaysText.includes("today") || isToday(callingDaysValue);
-        case "older":
-          return !callingDaysText.includes("today") && !isToday(callingDaysValue);
-        default:
-          return false;
-      }
-    } else {
-      // For pending/directEnquiry tabs, check the calling_days text content
-      switch (filter) {
-        case "today":
-          return callingDaysText.includes("today");
+          return isToday(dateValue);
         case "overdue":
-          return callingDaysText.includes("overdue");
+          return isOverdue(dateValue);
         case "upcoming":
-          return callingDaysText.includes("upcoming");
+          return isUpcoming(dateValue);
         default:
           return false;
       }
-    }
-  });
+    });
+  } else {
+    // For history tab, check if it matches actual dates
+    return callingDaysFilter.some((filter) => {
+      switch (filter) {
+        case "today":
+          return isToday(dateValue);
+        case "older":
+          return !isToday(dateValue) && dateValue !== "";
+        default:
+          return false;
+      }
+    });
+  }
 };
 
   const handleColumnToggle = (columnKey) => {
@@ -342,7 +342,9 @@ const fetchPendingData = async () => {
       Calling_Days: item["Calling_Days"] || "",
       priority: determinePriority(item["Lead_Source"] || ""),
       itemQty: formatItemQty(item["Item/qty"]) || "",
-      sc_name: item['SC_Name'] || ""
+      sc_name: item['SC_Name'] || "",
+      nextCallDate: item['Next_Call_Date']|| "",
+        nextCallDate1: item['Next Call Date_1']|| "",
     }));
     setPendingData(transformedData);
     console.log("Pending leads:", transformedData);
@@ -459,7 +461,7 @@ const fetchDirectEnquiryData = async () => {
     const transformedData = sortedData.map((item, index) => ({
       id: index + 1,
       serialNo: index + 1, // Now this will be in proper sequence
-      timestamp: formatDateToDDMMYYYY(item.planned1) || "",
+      timestamp: formatDateToDDMMYYYY(item.timestamp) || "",
       enquiry_no: item.enquiry_no || "",
       lead_receiver_name: item.enquiry_receiver_name || "",
       lead_source: item.lead_source || "",
@@ -470,7 +472,8 @@ const fetchDirectEnquiryData = async () => {
       calling_days: item.calling_days || "",
       priority: determinePriority(item.lead_source || ""),
       item_qty: formatItemQty(item.item_qty) || "",
-      sc_name: item.sales_coordinator_name || ""
+      sc_name: item.sales_coordinator_name || "",
+      nextCallDate:item.next_call_date||"",
     }));
 
     setDirectEnquiryData(transformedData);
@@ -517,9 +520,18 @@ const fetchDirectEnquiryData = async () => {
     }
 
     // Calling days filter
-    if (callingDaysFilter.length > 0) {
-  const callingDaysValue = tracker.calling_days || tracker.Calling_Days || tracker.callingDate || ""
-  if (!matchesCallingDaysFilter(callingDaysValue, activeTab)) return false
+   // In your filterTrackers function, replace the calling days filter section with:
+if (callingDaysFilter.length > 0) {
+  let dateValue = "";
+  if (activeTab === "pending") {
+    dateValue = tracker.nextCallDate1 || tracker.Calling_Days || "";
+  } else if (activeTab === "directEnquiry") {
+    dateValue = tracker.nextCallDate || tracker.calling_days || "";
+  } else if (activeTab === "history") {
+    dateValue = tracker.nextCallDate || "";
+  }
+  
+  if (!matchesCallingDaysFilter(dateValue, activeTab)) return false;
 }
 
     return true
@@ -625,7 +637,8 @@ const fetchDirectEnquiryData = async () => {
   }
 
   // Add this function inside your CallTracker component
-  const calculateFilterCounts = () => {
+// Replace your calculateFilterCounts function with this:
+const calculateFilterCounts = () => {
   const counts = {
     today: 0,
     overdue: 0,
@@ -635,23 +648,24 @@ const fetchDirectEnquiryData = async () => {
 
   if (activeTab === "pending") {
     pendingData.forEach(tracker => {
-      const callingDaysText = (tracker.Calling_Days || "").toLowerCase();
-      if (callingDaysText.includes("today")) counts.today++;
-      else if (callingDaysText.includes("overdue")) counts.overdue++;
-      else if (callingDaysText.includes("upcoming")) counts.upcoming++;
+      const nextCallDate1 = tracker.nextCallDate1 || tracker.Calling_Days || "";
+      if (isToday(nextCallDate1)) counts.today++;
+      else if (isOverdue(nextCallDate1)) counts.overdue++;
+      else if (isUpcoming(nextCallDate1)) counts.upcoming++;
     });
   } else if (activeTab === "directEnquiry") {
     directEnquiryData.forEach(tracker => {
-      const callingDaysText = (tracker.calling_days || "").toLowerCase();
-      if (callingDaysText.includes("today")) counts.today++;
-      else if (callingDaysText.includes("overdue")) counts.overdue++;
-      else if (callingDaysText.includes("upcoming")) counts.upcoming++;
+      const nextCallDate = tracker.nextCallDate || tracker.calling_days || "";
+      if (isToday(nextCallDate)) counts.today++;
+      else if (isOverdue(nextCallDate)) counts.overdue++;
+      else if (isUpcoming(nextCallDate)) counts.upcoming++;
     });
   } else if (activeTab === "history") {
     historyData.forEach(tracker => {
-      const callingDaysText = (tracker.calling_days || "").toLowerCase();
-      if (callingDaysText.includes("today") || isToday(tracker.nextCallDate)) counts.today++;
-      else counts.older++;
+      const nextCallDate = tracker.nextCallDate || "";
+      if (isToday(nextCallDate)) counts.today++;
+      else if (isOverdue(nextCallDate)) counts.older++;
+      else if (nextCallDate) counts.older++; // Any date that's not today
     });
   }
 
@@ -1173,7 +1187,7 @@ const fetchDirectEnquiryData = async () => {
           {tracker.Current_Stage}
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-          {tracker.Calling_Days}
+          {formatDateToDDMMYYYY(tracker.nextCallDate1)}
         </td>
         {isAdmin() && (
           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -1314,19 +1328,20 @@ const fetchDirectEnquiryData = async () => {
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {tracker.calling_days}
-                            </td>
-                           
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {formatDateToDDMMYYYY(tracker.nextCallDate)}
+                         </td>
+<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
   <div
     className="min-w-[100px] break-words whitespace-normal"
-    title={(tracker.item_qty)}
+    title={tracker.item_qty}
   >
-    {(tracker.item_qty)}
+    {tracker.item_qty}
   </div>
-</td>    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {tracker.total_qty}
-                            </td>
+</td>
+<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+  {tracker.total_qty}
+</td>
+
                           </tr>
                         ))
                       ) : (
@@ -1547,7 +1562,7 @@ const fetchDirectEnquiryData = async () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.productImage}</td>
               )}
               {visibleColumns.nextCallDate && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.nextCallDate}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDateToDDMMYYYY(tracker.nextCallDate)}</td>
               )}
               {visibleColumns.nextCallTime && (
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.nextCallTime}</td>

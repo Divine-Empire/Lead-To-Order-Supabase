@@ -275,6 +275,75 @@ useEffect(() => {
 }, [])
 
 
+// Add this function to fetch all existing order numbers
+// Fix the column name escaping
+const fetchExistingOrderNumbers = async () => {
+  try {
+    const { data, error } = await supabase
+      .from("enquiry_tracker")
+      .select('"Order No."') // Use double quotes to escape column name with space
+      .not('"Order No."', 'is', null); // Also escape in the filter
+
+    if (error) {
+      console.error("Error fetching order numbers:", error);
+      return [];
+    }
+
+    // Extract order numbers and filter out null/empty values
+    return data
+      .map(item => item["Order No."])
+      .filter(orderNo => orderNo && orderNo.trim() !== "");
+  } catch (error) {
+    console.error("Exception fetching order numbers:", error);
+    return [];
+  }
+};
+
+// Add this function to generate the next order number
+const generateNextOrderNumber = async () => {
+  try {
+    // Fetch all existing order numbers
+    const existingOrderNumbers = await fetchExistingOrderNumbers();
+    
+    // Extract numeric parts and find the maximum
+    const orderNumbers = existingOrderNumbers
+      .map(orderNo => {
+        const match = orderNo.match(/DO-(\d+)/i);
+        return match ? parseInt(match[1], 10) : 0;
+      })
+      .filter(num => !isNaN(num) && num > 0);
+    
+    // Find the maximum order number
+    const maxOrderNumber = orderNumbers.length > 0 ? Math.max(...orderNumbers) : 0;
+    
+    // Generate the next order number
+    const nextNumber = maxOrderNumber + 1;
+    const paddedNumber = String(nextNumber).padStart(2, "0");
+    
+    return `DO-${paddedNumber}`;
+  } catch (error) {
+    console.error("Error generating order number:", error);
+    // Fallback: generate based on current date/time
+    const timestamp = Date.now().toString().slice(-4);
+    return `DO-${timestamp}`;
+  }
+};
+
+// useEffect(() => {
+//   const generateOrderNumber = async () => {
+//     try {
+//       const orderNumber = await generateNextOrderNumber();
+//       console.log("Generated order number:", orderNumber);
+//       // If you need to store this order number in state, do it here:
+//       // setGeneratedOrderNumber(orderNumber);
+//     } catch (error) {
+//       console.error("Error generating order number:", error);
+//     }
+//   };
+
+//   generateOrderNumber();
+// }, []); // Empty dependency array means this runs once on mount
+
   // Update form data when leadId changes
   useEffect(() => {
     if (leadId) {
@@ -459,6 +528,17 @@ const uploadFileToSupabase = async (file, bucketName) => {
 };
 
 const handleOrderStatusChange = async (field, value) => {
+
+
+    if (field === "orderStatus" && value === "yes") {
+    // Pre-generate order number for display
+    const orderNumber = await generateNextOrderNumber();
+    setOrderStatusData(prev => ({
+      ...prev,
+      generatedOrderNumber: orderNumber
+    }));
+  }
+  
   // Handle file upload for acceptance file
   if (field === "acceptanceFile" && value) {
     try {
@@ -501,6 +581,8 @@ const handleOrderStatusChange = async (field, value) => {
 
 
  const updateLeadToOrderTable = async (enquiryNo, formData, currentStage, orderStatusData = {}) => {
+
+  
   try {
     // ✅ Helper: safely convert any value to boolean
     const toBoolean = (value) => {
@@ -906,6 +988,12 @@ const handleSubmit = async (e) => {
 
   try {
 
+      let orderNumber = "";
+    if (currentStage === "order-status" && orderStatusData.orderStatus === "yes") {
+      orderNumber = await generateNextOrderNumber();
+      console.log("Generated order number:", orderNumber);
+    }
+
     if (currentStage === "order-status" && 
         orderStatusData.orderStatus === "yes" && 
         orderStatusData.acceptanceFile && 
@@ -1005,6 +1093,7 @@ const handleSubmit = async (e) => {
             ? orderStatusData.acceptanceFile 
             : "",// You can add file upload logic here
           "Remark": orderStatusData.orderRemark,
+          "Order No.":orderNumber,
         });
       } 
       else if (orderStatusData.orderStatus === "no") {
@@ -1337,19 +1426,19 @@ const handleSubmit = async (e) => {
   };
   
   // Helper function to generate the next order number
-  const generateNextOrderNumber = (latestOrderNumber) => {
-    // Extract the numeric part
-    const match = latestOrderNumber.match(/DO-(\d+)/);
-    let nextNumber = 1;
+  // const generateNextOrderNumber = (latestOrderNumber) => {
+  //   // Extract the numeric part
+  //   const match = latestOrderNumber.match(/DO-(\d+)/);
+  //   let nextNumber = 1;
   
-    if (match && match[1]) {
-      nextNumber = parseInt(match[1], 10) + 1;
-    }
+  //   if (match && match[1]) {
+  //     nextNumber = parseInt(match[1], 10) + 1;
+  //   }
   
-    // Format with leading zeros
-    const paddedNumber = String(nextNumber).padStart(2, "0");
-    return `DO-${paddedNumber}`;
-  };
+  //   // Format with leading zeros
+  //   const paddedNumber = String(nextNumber).padStart(2, "0");
+  //   return `DO-${paddedNumber}`;
+  // };
 
   return (
     <div className="container mx-auto py-10 px-4">
