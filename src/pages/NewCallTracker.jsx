@@ -614,13 +614,13 @@ const handleOrderStatusChange = async (field, value) => {
           Quotation_Remarks: formData.remarks,
 
           // reset followup + order fields
-          "Next Call Date_1": null,
-          "Next Call Time_1": null,
-          "Is_Order_Received?_Status": null,
-          Acceptance_Via: null,
-          Payment_Mode: null,
-          "Payment_Terms _In_Days": null,
-          Transport_Mode: null,
+          // "Next Call Date_1": null,
+          // "Next Call Time_1": null,
+          // "Is_Order_Received?_Status": null,
+          // Acceptance_Via: null,
+          // Payment_Mode: null,
+          // "Payment_Terms _In_Days": null,
+          // Transport_Mode: null,
         });
         break;
 
@@ -630,18 +630,18 @@ const handleOrderStatusChange = async (field, value) => {
           "Next Call Time_1": formData.nextCallTime,
 
           // reset quotation + order fields
-          "Send_Quotation_No.": null,
-          Quotation_Shared_By: null,
-          Quotation_Number: null,
-          Quotation_Value_Without_Tax: null,
-          Quotation_Value_With_Tax: null,
-          Quotation_Upload: null,
-          Quotation_Remarks: null,
-          "Is_Order_Received?_Status": null,
-          Acceptance_Via: null,
-          Payment_Mode: null,
-          "Payment_Terms _In_Days": null,
-          Transport_Mode: null,
+          // "Send_Quotation_No.": null,
+          // Quotation_Shared_By: null,
+          // Quotation_Number: null,
+          // Quotation_Value_Without_Tax: null,
+          // Quotation_Value_With_Tax: null,
+          // Quotation_Upload: null,
+          // Quotation_Remarks: null,
+          // "Is_Order_Received?_Status": null,
+          // Acceptance_Via: null,
+          // Payment_Mode: null,
+          // "Payment_Terms _In_Days": null,
+          // Transport_Mode: null,
         });
         break;
 
@@ -659,9 +659,9 @@ const handleOrderStatusChange = async (field, value) => {
             "Po Number": formData.poNumber,
             "Payment_Terms _In_Days": formData.paymentTerms,
             Transport_Mode: formData.transportMode,
-            If_No_Then_Get_Relevant_Reason_Status: null,
-            If_No_Then_Get_Relevant_Reason_Remark: null,
-            CUSTOMER_ORDER_HOLD_REASON_CATEGORY: null,
+            // If_No_Then_Get_Relevant_Reason_Status: null,
+            // If_No_Then_Get_Relevant_Reason_Remark: null,
+            // CUSTOMER_ORDER_HOLD_REASON_CATEGORY: null,
  "Credit_Limit":formData.creditLimit,
  "Credit_Days":formData.creditDays,
             CONVEYED_FOR_REGISTRATION_FORM: toBoolean(formData.conveyedForRegistration),
@@ -673,9 +673,9 @@ const handleOrderStatusChange = async (field, value) => {
             REMARK: formData.orderRemark,
 
             // reset "no" + "hold" fields
-            Order_Lost_Apology_Video: null,
-            HOLDING_DATE: null,
-            HOLD_REMARK: null,
+            // Order_Lost_Apology_Video: null,
+            // HOLDING_DATE: null,
+            // HOLD_REMARK: null,
           });
         } else if (formData.orderStatus?.toLowerCase() === "no") {
           Object.assign(updateData, {
@@ -686,57 +686,57 @@ const handleOrderStatusChange = async (field, value) => {
             If_No_Then_Get_Relevant_Reason_Remark: orderStatusData.reasonRemark || null,
             CUSTOMER_ORDER_HOLD_REASON_CATEGORY: null,
 
-            Acceptance_Via: null,
-            Payment_Mode: null,
-            Destination: null,
-            "Po Number": null,
-            "Payment_Terms _In_Days": null,
-            Transport_Mode: null,
- "Credit_Limit":null,
- "Credit_Days":null,
-            CONVEYED_FOR_REGISTRATION_FORM: toBoolean(formData.conveyedForRegistration),
+//             Acceptance_Via: null,
+//             Payment_Mode: null,
+//             Destination: null,
+//             "Po Number": null,
+//             "Payment_Terms _In_Days": null,
+//             Transport_Mode: null,
+//  "Credit_Limit":null,
+//  "Credit_Days":null,
+           // CONVEYED_FOR_REGISTRATION_FORM: toBoolean(formData.conveyedForRegistration),
 
-            Offer: null,
-            Acceptance_File_Upload: null,
-            HOLDING_DATE: null,
-            HOLD_REMARK: null,
+            // Offer: null,
+            // Acceptance_File_Upload: null,
+            // HOLDING_DATE: null,
+            // HOLD_REMARK: null,
           });
         } else if (formData.orderStatus?.toLowerCase() === "hold") {
           Object.assign(updateData, {
             HOLDING_DATE: formData.holdingDate,
             HOLD_REMARK: formData.holdRemark,
-            If_No_Then_Get_Relevant_Reason_Status: null,
-            If_No_Then_Get_Relevant_Reason_Remark: null,
+            // If_No_Then_Get_Relevant_Reason_Status: null,
+            // If_No_Then_Get_Relevant_Reason_Remark: null,
             CUSTOMER_ORDER_HOLD_REASON_CATEGORY: orderStatusData.holdReason || null,
- "Credit_Limit":null,
- "Credit_Days":null,
-            Acceptance_Via: null,
-            Payment_Mode: null,
-            Destination: null,
-            "Po Number": null,
-            "Payment_Terms _In_Days": null,
-            Transport_Mode: null,
+//  "Credit_Limit":null,
+//  "Credit_Days":null,
+//             Acceptance_Via: null,
+//             Payment_Mode: null,
+//             Destination: null,
+//             "Po Number": null,
+//             "Payment_Terms _In_Days": null,
+//             Transport_Mode: null,
 
-            CONVEYED_FOR_REGISTRATION_FORM: toBoolean(formData.conveyedForRegistration),
+           // CONVEYED_FOR_REGISTRATION_FORM: toBoolean(formData.conveyedForRegistration),
 
-            Offer: null,
-            Acceptance_File_Upload: null,
-            Order_Lost_Apology_Video: null,
+            // Offer: null,
+            // Acceptance_File_Upload: null,
+            // Order_Lost_Apology_Video: null,
           });
         }
 
         // reset quotation + followup fields
-        Object.assign(updateData, {
-          "Send_Quotation_No.": null,
-          Quotation_Shared_By: null,
-          Quotation_Number: null,
-          Quotation_Value_Without_Tax: null,
-          Quotation_Value_With_Tax: null,
-          Quotation_Upload: null,
-          Quotation_Remarks: null,
-          "Next Call Date_1": null,
-          "Next Call Time_1": null,
-        });
+        // Object.assign(updateData, {
+        //   "Send_Quotation_No.": null,
+        //   Quotation_Shared_By: null,
+        //   Quotation_Number: null,
+        //   Quotation_Value_Without_Tax: null,
+        //   Quotation_Value_With_Tax: null,
+        //   Quotation_Upload: null,
+        //   Quotation_Remarks: null,
+        //   "Next Call Date_1": null,
+        //   "Next Call Time_1": null,
+        // });
         break;
 
       default:
@@ -799,13 +799,13 @@ const updateEnquiryToOrderTable = async (enquiryNo, formData, currentStage) => {
           quotation_remarks: formData.remarks,
 
           // reset followup + order fields
-          next_call_date: null,
-          next_call_time: null,
-          is_order_received_status: null,
-          acceptance_via: null,
-          payment_mode: null,
-          payment_terms_days: null,
-          transport_mode: null,
+          // next_call_date: null,
+          // next_call_time: null,
+          // is_order_received_status: null,
+          // acceptance_via: null,
+          // payment_mode: null,
+          // payment_terms_days: null,
+          // transport_mode: null,
         });
         break;
 
@@ -816,18 +816,18 @@ const updateEnquiryToOrderTable = async (enquiryNo, formData, currentStage) => {
           next_call_time: formData.nextCallTime,
 
           // reset quotation + order fields
-          send_quotation_no: null,
-          quotation_shared_by: null,
-          quotation_number: null,
-          quotation_value_without_tax: null,
-          quotation_value_with_tax: null,
-          quotation_upload: null,
-          quotation_remarks: null,
-          is_order_received_status: null,
-          acceptance_via: null,
-          payment_mode: null,
-          payment_terms_days: null,
-          transport_mode: null,
+          // send_quotation_no: null,
+          // quotation_shared_by: null,
+          // quotation_number: null,
+          // quotation_value_without_tax: null,
+          // quotation_value_with_tax: null,
+          // quotation_upload: null,
+          // quotation_remarks: null,
+          // is_order_received_status: null,
+          // acceptance_via: null,
+          // payment_mode: null,
+          // payment_terms_days: null,
+          // transport_mode: null,
         });
         break;
 
@@ -845,9 +845,9 @@ const updateEnquiryToOrderTable = async (enquiryNo, formData, currentStage) => {
             po_number: formData.poNumber,
             payment_terms_days: formData.paymentTerms,
             transport_mode: formData.transportMode,
-            if_no_reason_status: null,
-            if_no_reason_remark: null,
-            customer_order_hold_reason_category: null,
+            // if_no_reason_status: null,
+            // if_no_reason_remark: null,
+            // customer_order_hold_reason_category: null,
 
             // ✅ Use the helper function for boolean conversion
             conveyed_for_registration_form: toBoolean(formData.conveyedForRegistration),
@@ -858,71 +858,72 @@ const updateEnquiryToOrderTable = async (enquiryNo, formData, currentStage) => {
       : "", // handle upload later
             remark: formData.orderRemark,
 
-            // reset "no" + "hold" fields
-            order_lost_apology_video: null,
-            holding_date: null,
-            hold_remark: null,
+            // // reset "no" + "hold" fields
+            // order_lost_apology_video: null,
+            // holding_date: null,
+            // hold_remark: null,
           });
         } else if (formData.orderStatus?.toLowerCase() === "no") {
           Object.assign(updateData, {
+             actual1: new Date().toISOString(),
             order_lost_apology_video:typeof formData.apologyVideo === "string" 
       ? formData.apologyVideo 
       : "", // handle upload later
             if_no_reason_status: orderStatusData.reasonStatus,
             if_no_reason_remark: orderStatusData.reasonRemark,
-            customer_order_hold_reason_category: null,
-            // reset "yes" + "hold" fields
-            acceptance_via: null,
-            payment_mode: null,
-            destination: null,
-            po_number: null,
-            payment_terms_days: null,
-            transport_mode: null,
+            // customer_order_hold_reason_category: null,
+            // // reset "yes" + "hold" fields
+            // acceptance_via: null,
+            // payment_mode: null,
+            // destination: null,
+            // po_number: null,
+            // payment_terms_days: null,
+            // transport_mode: null,
           
             // ✅ Use the helper function for boolean conversion
-            conveyed_for_registration_form: toBoolean(formData.conveyedForRegistration),
+           // conveyed_for_registration_form: toBoolean(formData.conveyedForRegistration),
 
-            offer: null,
-            acceptance_file_upload: null,
+            // offer: null,
+            // acceptance_file_upload: null,
            
-            holding_date: null,
-            hold_remark: null,
+            // holding_date: null,
+            // hold_remark: null,
           });
         } else if (formData.orderStatus?.toLowerCase() === "hold") {
           Object.assign(updateData, {
             holding_date: formData.holdingDate,
             hold_remark: formData.holdRemark,
-            if_no_reason_status: null,
-            if_no_reason_remark: null,
+            // if_no_reason_status: null,
+            // if_no_reason_remark: null,
             customer_order_hold_reason_category: orderStatusData.holdReason,
             // reset "yes" + "no" fields
-            acceptance_via: null,
-            payment_mode: null,
-            destination: null,
-            po_number: null,
-            payment_terms_days: null,
-            transport_mode: null,
+            // acceptance_via: null,
+            // payment_mode: null,
+            // destination: null,
+            // po_number: null,
+            // payment_terms_days: null,
+            // transport_mode: null,
            
             // ✅ Use the helper function for boolean conversion
-            conveyed_for_registration_form: toBoolean(formData.conveyedForRegistration),
+            //conveyed_for_registration_form: toBoolean(formData.conveyedForRegistration),
 
-            offer: null,
-            acceptance_file_upload: null,
-            order_lost_apology_video: null,
+            // offer: null,
+            // acceptance_file_upload: null,
+            // order_lost_apology_video: null,
           });
         }
 
         // reset quotation + followup fields (like in your original code)
         Object.assign(updateData, {
-          send_quotation_no: null,
-          quotation_shared_by: null,
-          quotation_number: null,
-          quotation_value_without_tax: null,
-          quotation_value_with_tax: null,
-          quotation_upload: null,
-          quotation_remarks: null,
-          next_call_date: null,
-          next_call_time: null,
+          // send_quotation_no: null,
+          // quotation_shared_by: null,
+          // quotation_number: null,
+          // quotation_value_without_tax: null,
+          // quotation_value_with_tax: null,
+          // quotation_upload: null,
+          // quotation_remarks: null,
+          // next_call_date: null,
+          // next_call_time: null,
         });
 
         break;

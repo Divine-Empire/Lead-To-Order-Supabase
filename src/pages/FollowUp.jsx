@@ -131,34 +131,39 @@ function FollowUp() {
   }
 
   // Helper function to format date to DD/MM/YYYY
-  const formatDateToDDMMYYYY = (dateValue) => {
-    if (!dateValue) return ""
+  // Helper function to format date to DD/MM/YYYY
+const formatDateToDDMMYYYY = (dateValue) => {
+  if (!dateValue) return ""
 
-    try {
-      // Check if it's a Date object-like string (e.g. "Date(2025,3,22)")
-      if (typeof dateValue === "string" && dateValue.startsWith("Date(")) {
-        // Extract the parts from Date(YYYY,MM,DD) format
-        const dateString = dateValue.substring(5, dateValue.length - 1)
-        const [year, month, day] = dateString.split(",").map((part) => Number.parseInt(part.trim()))
-
-        // JavaScript months are 0-indexed, but we need to display them as 1-indexed
-        // Also ensure day and month are padded with leading zeros if needed
-        return `${day.toString().padStart(2, "0")}/${(month + 1).toString().padStart(2, "0")}/${year}`
-      }
-
-      // Handle other date formats if needed
-      const date = new Date(dateValue)
-      if (!isNaN(date.getTime())) {
-        return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}/${date.getFullYear()}`
-      }
-
-      // If it's already in the correct format, return as is
-      return dateValue
-    } catch (error) {
-      console.error("Error formatting date:", error)
-      return dateValue // Return the original value if formatting fails
+  try {
+    // Handle YYYY-MM-DD format (from database)
+    if (typeof dateValue === "string" && dateValue.includes('-')) {
+      const [year, month, day] = dateValue.split('-')
+      return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`
     }
+
+    // Check if it's a Date object-like string (e.g. "Date(2025,3,22)")
+    if (typeof dateValue === "string" && dateValue.startsWith("Date(")) {
+      // Extract the parts from Date(YYYY,MM,DD) format
+      const dateString = dateValue.substring(5, dateValue.length - 1)
+      const [year, month, day] = dateString.split(",").map((part) => Number.parseInt(part.trim()))
+
+      return `${day.toString().padStart(2, "0")}/${(month + 1).toString().padStart(2, "0")}/${year}`
+    }
+
+    // Handle other date formats if needed
+    const date = new Date(dateValue)
+    if (!isNaN(date.getTime())) {
+      return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}/${date.getFullYear()}`
+    }
+
+    // If it's already in the correct format, return as is
+    return dateValue
+  } catch (error) {
+    console.error("Error formatting date:", error)
+    return dateValue // Return the original value if formatting fails
   }
+}
 
   // Helper function to parse date from column CL and compare with today
   const getDateFromColumnCL = (dateValue) => {
@@ -212,20 +217,30 @@ const checkDateFilter = (followUp, filterType) => {
   if (!nextCallDate) return false
 
   try {
-    // Parse the date from DD/MM/YYYY format
-    const [day, month, year] = nextCallDate.split("/")
-    const followUpDate = new Date(year, month - 1, day)
+    let followUpDate;
+    
+    // Handle different date formats
+    if (nextCallDate.includes('-')) {
+      // YYYY-MM-DD format (from database)
+      const [year, month, day] = nextCallDate.split('-')
+      followUpDate = new Date(year, month - 1, day)
+    } else if (nextCallDate.includes('/')) {
+      // DD/MM/YYYY format
+      const [day, month, year] = nextCallDate.split('/')
+      followUpDate = new Date(year, month - 1, day)
+    } else {
+      // Try to parse as-is
+      followUpDate = new Date(nextCallDate)
+    }
+
     const today = new Date()
     today.setHours(0, 0, 0, 0) // Reset time part for accurate comparison
+    followUpDate.setHours(0, 0, 0, 0) // Also reset time for comparison
 
     // Compare dates
     switch (filterType) {
       case "today":
-        return (
-          followUpDate.getDate() === today.getDate() &&
-          followUpDate.getMonth() === today.getMonth() &&
-          followUpDate.getFullYear() === today.getFullYear()
-        )
+        return followUpDate.getTime() === today.getTime()
       case "overdue":
         return followUpDate < today
       case "upcoming":
@@ -234,12 +249,12 @@ const checkDateFilter = (followUp, filterType) => {
         return true
     }
   } catch (error) {
-    console.error("Error parsing date:", error)
+    console.error("Error parsing date:", error, "Date value:", nextCallDate)
     return false
   }
 }
 
-// Update the calculateDateFilterCounts function
+
 const calculateDateFilterCounts = () => {
   const counts = {
     today: 0,
@@ -247,22 +262,34 @@ const calculateDateFilterCounts = () => {
     upcoming: 0,
   }
 
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
   // Calculate counts for pending follow-ups
   pendingFollowUps.forEach((followUp) => {
     const nextCallDate = followUp.nextCallDate
     if (!nextCallDate) return
 
     try {
-      const [day, month, year] = nextCallDate.split("/")
-      const followUpDate = new Date(year, month - 1, day)
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
+      let followUpDate;
+      
+      // Handle different date formats
+      if (nextCallDate.includes('-')) {
+        // YYYY-MM-DD format (from database)
+        const [year, month, day] = nextCallDate.split('-')
+        followUpDate = new Date(year, month - 1, day)
+      } else if (nextCallDate.includes('/')) {
+        // DD/MM/YYYY format
+        const [day, month, year] = nextCallDate.split('/')
+        followUpDate = new Date(year, month - 1, day)
+      } else {
+        // Try to parse as-is
+        followUpDate = new Date(nextCallDate)
+      }
+      
+      followUpDate.setHours(0, 0, 0, 0)
 
-      if (
-        followUpDate.getDate() === today.getDate() &&
-        followUpDate.getMonth() === today.getMonth() &&
-        followUpDate.getFullYear() === today.getFullYear()
-      ) {
+      if (followUpDate.getTime() === today.getTime()) {
         counts.today++
       } else if (followUpDate < today) {
         counts.overdue++
@@ -270,12 +297,14 @@ const calculateDateFilterCounts = () => {
         counts.upcoming++
       }
     } catch (error) {
-      console.error("Error parsing date:", error)
+      console.error("Error parsing date:", error, "Date value:", nextCallDate)
     }
   })
 
   return counts
 }
+
+
 
 
   // Function to fetch data from FMS and Leads Tracker sheets
@@ -322,6 +351,7 @@ useEffect(() => {
           location: row['Location'] || "",
           customerSay: row['What_Did_Customer_say'] || "",
           enquiryStatus: row['Enquiry_Status'] || "",
+            enquiryReceivedStatus: row["Enquiry_Received_Status"] || "",
           createdAt: row['Created_At'] || "",
           nextCallDate: row['Next_Call_Date'] || "",
           callingDays: row['Calling_Days'] || "",
@@ -465,15 +495,15 @@ const filteredPendingFollowUps = pendingFollowUps.filter((followUp) => {
     (followUp.leadSource && followUp.leadSource.toLowerCase().includes(searchLower)) ||
     (followUp.location && followUp.location.toLowerCase().includes(searchLower)) ||
     (followUp.customerSay && followUp.customerSay.toLowerCase().includes(searchLower)) ||
-    (followUp.enquiryStatus && followUp.enquiryStatus.toLowerCase().includes(searchLower)) ||
+    (followUp.enquiryReceivedStatus && followUp.enquiryReceivedStatus.toLowerCase().includes(searchLower)) ||
     (followUp.assignedTo && followUp.assignedTo.toLowerCase().includes(searchLower))
 
   // Apply filter type for Column R
   const matchesFilterType = (() => {
     if (filterType === "first") {
-      return followUp.enquiryStatus === "" || followUp.enquiryStatus === null
+      return followUp.enquiryReceivedStatus === "" || followUp.enquiryReceivedStatus === null
     } else if (filterType === "multi") {
-      return followUp.enquiryStatus === "expected"
+      return followUp.enquiryReceivedStatus === "expected"
     } else {
       return true
     }
@@ -1300,9 +1330,9 @@ const filteredHistoryFollowUps = historyFollowUps.filter((followUp) => {
                                     <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
                                       <div
                                         className="max-w-[100px] sm:max-w-[120px] truncate"
-                                        title={followUp.enquiryReceivedStatus}
+                                        title={followUp.enquiryStatus}
                                       >
-                                        {followUp.enquiryReceivedStatus}
+                                        {followUp.enquiryStatus}
                                       </div>
                                     </td>
                                   )}

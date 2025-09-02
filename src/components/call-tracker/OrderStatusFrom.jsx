@@ -50,6 +50,8 @@ const [creditLimitOptions, setCreditLimitOptions] = useState([])
   const acceptance = extractOptions("acceptance_via")
   const paymentModes = extractOptions("payment_mode")
   const paymentTerms = extractOptions("payment_terms_in_days")
+  console.log(paymentTerms);
+  
   const transport = extractOptions("transport_mode")
   const creditDays = extractOptions("credit_days")
   const creditLimit = extractOptions("credit_limit")   // ⬅️ numeric now

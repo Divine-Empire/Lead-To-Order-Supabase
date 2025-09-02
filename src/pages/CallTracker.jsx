@@ -490,6 +490,35 @@ const fetchDirectEnquiryData = async () => {
     fetchDirectEnquiryData();
   }, []);
 
+
+  // Fetch on mount
+useEffect(() => {
+  fetchPendingData();
+  fetchHistoryData();
+  fetchDirectEnquiryData();
+}, []);
+
+// NEW: Update available enquiry numbers when data changes or tab changes
+useEffect(() => {
+  let enquiryNos = [];
+  
+  switch (activeTab) {
+    case "pending":
+      enquiryNos = [...new Set(pendingData.map(item => item.lead_no).filter(Boolean))];
+      break;
+    case "directEnquiry":
+      enquiryNos = [...new Set(directEnquiryData.map(item => item.enquiry_no).filter(Boolean))];
+      break;
+    case "history":
+      enquiryNos = [...new Set(historyData.map(item => item.enquiryNo).filter(Boolean))];
+      break;
+    default:
+      enquiryNos = [];
+  }
+  
+  setAvailableEnquiryNos(enquiryNos.sort());
+}, [activeTab, pendingData, directEnquiryData, historyData]);
+
   // NEW: Enhanced filter function that includes serial number filtering
   const filterTrackers = (tracker, searchTerm, activeTab) => {
     // Search term filter
@@ -507,11 +536,20 @@ const fetchDirectEnquiryData = async () => {
     }
 
     // Enquiry number filter
-    if (enquiryNoFilter.length > 0) {
-      const enquiryNo = activeTab === "history" ? tracker.enquiryNo : 
-                       activeTab === "pending" ? tracker.lead_no : tracker.enquiry_no
-      if (!enquiryNoFilter.includes(enquiryNo)) return false
-    }
+  // In your filterTrackers function, update the enquiry number filter section:
+if (enquiryNoFilter.length > 0) {
+  let enquiryNo = "";
+  
+  if (activeTab === "pending") {
+    enquiryNo = tracker.lead_no || "";
+  } else if (activeTab === "directEnquiry") {
+    enquiryNo = tracker.enquiry_no || "";
+  } else if (activeTab === "history") {
+    enquiryNo = tracker.enquiryNo || "";
+  }
+  
+  if (!enquiryNoFilter.includes(enquiryNo)) return false;
+}
 
     // Current stage filter
     if (currentStageFilter.length > 0) {
@@ -806,55 +844,90 @@ const calculateFilterCounts = () => {
 </div>
 
           {/* Enquiry No Filter */}
-          <div className="relative dropdown-container">
-            <button
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white flex items-center"
-              onClick={toggleEnquiryNoDropdown}
-            >
-              <span>Enquiry No. {enquiryNoFilter.length > 0 && `(${enquiryNoFilter.length})`}</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className={`h-4 w-4 ml-2 transition-transform ${showEnquiryNoDropdown ? 'rotate-180' : ''}`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            {showEnquiryNoDropdown && (
-              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 min-w-full max-h-60 overflow-y-auto">
-                <div className="p-2">
-                  {availableEnquiryNos.map((enquiryNo) => (
-                    <label key={enquiryNo} className="flex items-center p-2 hover:bg-gray-50 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="mr-2"
-                        checked={enquiryNoFilter.includes(enquiryNo)}
-                        onChange={() => handleEnquiryNoChange(enquiryNo)}
-                      />
-                      <span>{enquiryNo}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-            {enquiryNoFilter.length > 0 && (
-              <div className="mt-1 flex flex-wrap gap-1">
-                {enquiryNoFilter.map((filter) => (
-                  <span key={filter} className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">
-                    {filter}
-                    <button
-                      onClick={() => setEnquiryNoFilter(enquiryNoFilter.filter((item) => item !== filter))}
-                      className="ml-1 text-purple-600 hover:text-purple-800"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
+         {/* Enquiry No Filter */}
+<div className="relative dropdown-container">
+  <button
+    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white flex items-center"
+    onClick={toggleEnquiryNoDropdown}
+  >
+    <span>Enquiry No. {enquiryNoFilter.length > 0 && `(${enquiryNoFilter.length})`}</span>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className={`h-4 w-4 ml-2 transition-transform ${showEnquiryNoDropdown ? 'rotate-180' : ''}`}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    </svg>
+  </button>
+  {showEnquiryNoDropdown && (
+    <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 min-w-full max-h-60 overflow-y-auto">
+      <div className="p-2">
+        {/* Search input for enquiry numbers */}
+        <input
+          type="text"
+          placeholder="Search enquiry numbers..."
+          className="w-full px-2 py-1 mb-2 border border-gray-300 rounded text-sm"
+          onChange={(e) => {
+            // You can implement search functionality here if needed
+          }}
+        />
+        
+        {/* Select all option */}
+        <label className="flex items-center p-2 hover:bg-gray-50 cursor-pointer">
+          <input
+            type="checkbox"
+            className="mr-2"
+            checked={enquiryNoFilter.length === availableEnquiryNos.length && availableEnquiryNos.length > 0}
+            onChange={(e) => {
+              if (e.target.checked) {
+                setEnquiryNoFilter([...availableEnquiryNos]);
+              } else {
+                setEnquiryNoFilter([]);
+              }
+            }}
+          />
+          <span className="text-sm font-medium">Select All</span>
+        </label>
+        
+        <div className="max-h-40 overflow-y-auto">
+          {availableEnquiryNos.map((enquiryNo) => (
+            <label key={enquiryNo} className="flex items-center p-2 hover:bg-gray-50 cursor-pointer">
+              <input
+                type="checkbox"
+                className="mr-2"
+                checked={enquiryNoFilter.includes(enquiryNo)}
+                onChange={() => handleEnquiryNoChange(enquiryNo)}
+              />
+              <span className="text-sm">{enquiryNo}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  )}
+  {enquiryNoFilter.length > 0 && (
+    <div className="mt-1 flex flex-wrap gap-1">
+      {enquiryNoFilter.slice(0, 3).map((filter) => (
+        <span key={filter} className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">
+          {filter}
+          <button
+            onClick={() => setEnquiryNoFilter(enquiryNoFilter.filter((item) => item !== filter))}
+            className="ml-1 text-purple-600 hover:text-purple-800"
+          >
+            ×
+          </button>
+        </span>
+      ))}
+      {enquiryNoFilter.length > 3 && (
+        <span className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">
+          +{enquiryNoFilter.length - 3} more
+        </span>
+      )}
+    </div>
+  )}
+</div>
 
           {/* Current Stage Filter */}
           <div className="relative dropdown-container">
