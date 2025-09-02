@@ -203,60 +203,79 @@ const formatItemQty = (itemQtyString) => {
 }
 
   // Helper function to check date filter condition
-  // Helper function to check date filter condition
-  const checkDateFilter = (followUp, filterType) => {
-    if (filterType === "all") return true
+// Helper function to check date filter condition
+const checkDateFilter = (followUp, filterType) => {
+  if (filterType === "all") return true
 
-    if (activeTab === "pending") {
-      // Get the text value from column CL (nextCallDate field)
-      const columnCLValue = followUp.nextCallDate
-      if (!columnCLValue) return false
+  // Get the next call date from the follow-up
+  const nextCallDate = followUp.nextCallDate
+  if (!nextCallDate) return false
 
-      // Convert the column CL value to lowercase for comparison
-      const columnCLText = String(columnCLValue).toLowerCase()
+  try {
+    // Parse the date from DD/MM/YYYY format
+    const [day, month, year] = nextCallDate.split("/")
+    const followUpDate = new Date(year, month - 1, day)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0) // Reset time part for accurate comparison
 
-      // Match the filter type with the text in column CL
-      switch (filterType) {
-        case "today":
-          return columnCLText.includes("today")
-        case "overdue":
-          return columnCLText.includes("overdue")
-        case "upcoming":
-          return columnCLText.includes("upcoming")
-        default:
-          return true
-      }
-    } else {
-      // History tab filtering
-      const nextCallDate = followUp.nextCallDate
-      if (!nextCallDate) return false
-
-      try {
-        // Parse the date from DD/MM/YYYY format
-        const [day, month, year] = nextCallDate.split("/")
-        const followUpDate = new Date(year, month - 1, day)
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
-
-        switch (filterType) {
-          case "today":
-            return (
-              followUpDate.getDate() === today.getDate() &&
-              followUpDate.getMonth() === today.getMonth() &&
-              followUpDate.getFullYear() === today.getFullYear()
-            )
-          case "older":
-            return followUpDate < today
-          default:
-            return true
-        }
-      } catch (error) {
-        console.error("Error parsing date:", error)
-        return false
-      }
+    // Compare dates
+    switch (filterType) {
+      case "today":
+        return (
+          followUpDate.getDate() === today.getDate() &&
+          followUpDate.getMonth() === today.getMonth() &&
+          followUpDate.getFullYear() === today.getFullYear()
+        )
+      case "overdue":
+        return followUpDate < today
+      case "upcoming":
+        return followUpDate > today
+      default:
+        return true
     }
+  } catch (error) {
+    console.error("Error parsing date:", error)
+    return false
+  }
+}
+
+// Update the calculateDateFilterCounts function
+const calculateDateFilterCounts = () => {
+  const counts = {
+    today: 0,
+    overdue: 0,
+    upcoming: 0,
   }
 
+  // Calculate counts for pending follow-ups
+  pendingFollowUps.forEach((followUp) => {
+    const nextCallDate = followUp.nextCallDate
+    if (!nextCallDate) return
+
+    try {
+      const [day, month, year] = nextCallDate.split("/")
+      const followUpDate = new Date(year, month - 1, day)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      if (
+        followUpDate.getDate() === today.getDate() &&
+        followUpDate.getMonth() === today.getMonth() &&
+        followUpDate.getFullYear() === today.getFullYear()
+      ) {
+        counts.today++
+      } else if (followUpDate < today) {
+        counts.overdue++
+      } else if (followUpDate > today) {
+        counts.upcoming++
+      }
+    } catch (error) {
+      console.error("Error parsing date:", error)
+    }
+  })
+
+  return counts
+}
 
 
   // Function to fetch data from FMS and Leads Tracker sheets
@@ -435,178 +454,157 @@ useEffect(() => {
   }
 
   // Filter function for search in both sections
-  const filteredPendingFollowUps = pendingFollowUps.filter((followUp) => {
-    const searchLower = searchTerm.toLowerCase()
-    const matchesSearch =
-      searchTerm === "" ||
-      (followUp.companyName && followUp.companyName.toLowerCase().includes(searchLower)) ||
-      (followUp.leadId && followUp.leadId.toLowerCase().includes(searchLower)) ||
-      (followUp.personName && followUp.personName.toLowerCase().includes(searchLower)) ||
-      (followUp.phoneNumber && followUp.phoneNumber.toString().toLowerCase().includes(searchLower)) ||
-      (followUp.leadSource && followUp.leadSource.toLowerCase().includes(searchLower)) ||
-      (followUp.location && followUp.location.toLowerCase().includes(searchLower)) ||
-      (followUp.customerSay && followUp.customerSay.toLowerCase().includes(searchLower)) ||
-      (followUp.enquiryStatus && followUp.enquiryStatus.toLowerCase().includes(searchLower)) ||
-      (followUp.assignedTo && followUp.assignedTo.toLowerCase().includes(searchLower))
+const filteredPendingFollowUps = pendingFollowUps.filter((followUp) => {
+  const searchLower = searchTerm.toLowerCase()
+  const matchesSearch =
+    searchTerm === "" ||
+    (followUp.companyName && followUp.companyName.toLowerCase().includes(searchLower)) ||
+    (followUp.leadId && followUp.leadId.toLowerCase().includes(searchLower)) ||
+    (followUp.personName && followUp.personName.toLowerCase().includes(searchLower)) ||
+    (followUp.phoneNumber && followUp.phoneNumber.toString().toLowerCase().includes(searchLower)) ||
+    (followUp.leadSource && followUp.leadSource.toLowerCase().includes(searchLower)) ||
+    (followUp.location && followUp.location.toLowerCase().includes(searchLower)) ||
+    (followUp.customerSay && followUp.customerSay.toLowerCase().includes(searchLower)) ||
+    (followUp.enquiryStatus && followUp.enquiryStatus.toLowerCase().includes(searchLower)) ||
+    (followUp.assignedTo && followUp.assignedTo.toLowerCase().includes(searchLower))
 
-    // Apply filter type for Column R
-    const matchesFilterType = (() => {
-      if (filterType === "first") {
-        return followUp.enquiryStatus === "" || followUp.enquiryStatus === null
-      } else if (filterType === "multi") {
-        return followUp.enquiryStatus === "expected"
-      } else {
-        return true
-      }
-    })()
-
-    // Apply date filter based on column CL
-    const matchesDateFilter = checkDateFilter(followUp, dateFilter)
-
-    // Apply company filter
-    const matchesCompanyFilter = companyFilter === "all" || followUp.companyName === companyFilter
-
-    // Apply person filter
-    const matchesPersonFilter = personFilter === "all" || followUp.personName === personFilter
-
-    // Apply phone filter
-    const phoneToCompare = followUp.phoneNumber ? followUp.phoneNumber.toString().trim() : ""
-    const matchesPhoneFilter = phoneFilter === "all" || phoneToCompare === phoneFilter.toString().trim()
-
-    return (
-      matchesSearch &&
-      matchesFilterType &&
-      matchesDateFilter &&
-      matchesCompanyFilter &&
-      matchesPersonFilter &&
-      matchesPhoneFilter
-    )
-  })
-
-  useEffect(() => {
-    // Reset specific filters when switching tabs
-    if (activeTab !== "pending") {
-      setCompanyFilter("all")
-      setPersonFilter("all")
-      setPhoneFilter("all")
+  // Apply filter type for Column R
+  const matchesFilterType = (() => {
+    if (filterType === "first") {
+      return followUp.enquiryStatus === "" || followUp.enquiryStatus === null
+    } else if (filterType === "multi") {
+      return followUp.enquiryStatus === "expected"
+    } else {
+      return true
     }
-  }, [activeTab])
+  })()
 
-  const filteredHistoryFollowUps = historyFollowUps.filter((followUp) => {
-    const searchLower = searchTerm.toLowerCase()
-    const matchesSearch =
-      searchTerm === "" ||
-      (followUp.leadNo && followUp.leadNo.toString().toLowerCase().includes(searchLower)) ||
-      (followUp.customerSay && followUp.customerSay.toLowerCase().includes(searchLower)) ||
-      (followUp.status && followUp.status.toLowerCase().includes(searchLower)) ||
-      (followUp.enquiryReceivedStatus && followUp.enquiryReceivedStatus.toLowerCase().includes(searchLower)) ||
-      (followUp.enquiryReceivedDate && followUp.enquiryReceivedDate.toLowerCase().includes(searchLower)) ||
-      (followUp.enquiryState && followUp.enquiryState.toLowerCase().includes(searchLower)) ||
-      (followUp.projectName && followUp.projectName.toLowerCase().includes(searchLower)) ||
-      (followUp.salesType && followUp.salesType.toLowerCase().includes(searchLower)) ||
-      (followUp.requiredProductDate && followUp.requiredProductDate.toLowerCase().includes(searchLower)) ||
-      (followUp.projectApproxValue && followUp.projectApproxValue.toString().toLowerCase().includes(searchLower)) ||
-      (followUp.itemName1 && followUp.itemName1.toLowerCase().includes(searchLower)) ||
-      (followUp.itemName2 && followUp.itemName2.toLowerCase().includes(searchLower)) ||
-      (followUp.itemName3 && followUp.itemName3.toLowerCase().includes(searchLower)) ||
-      (followUp.itemName4 && followUp.itemName4.toLowerCase().includes(searchLower)) ||
-      (followUp.itemName5 && followUp.itemName5.toLowerCase().includes(searchLower)) ||
-      (followUp.nextAction && followUp.nextAction.toLowerCase().includes(searchLower)) ||
-      (followUp.nextCallDate && followUp.nextCallDate.toLowerCase().includes(searchLower)) ||
-      (followUp.nextCallTime && followUp.nextCallTime.toLowerCase().includes(searchLower))
+  // Apply date filter based on nextCallDate - USE THE SAME LOGIC FOR BOTH
+  const matchesDateFilter = checkDateFilter(followUp, dateFilter)
 
-    // Apply filter type for history - check column E (enquiryReceivedStatus)
-    const matchesFilterType = (() => {
-      if (filterType === "first") {
-        return (
-          followUp.enquiryReceivedStatus === "" ||
-          followUp.enquiryReceivedStatus === null ||
-          followUp.enquiryReceivedStatus === "New"
-        )
-      } else if (filterType === "multi") {
-        return followUp.enquiryReceivedStatus === "Expected" || followUp.enquiryReceivedStatus === "expected"
-      } else {
-        return true
-      }
-    })()
+  // Apply company filter
+  const matchesCompanyFilter = companyFilter === "all" || followUp.companyName === companyFilter
 
-    // Apply date filter based on column Z
-    const matchesDateFilter = (() => {
-      if (dateFilter === "all") return true
+  // Apply person filter
+  const matchesPersonFilter = personFilter === "all" || followUp.personName === personFilter
 
-      // Get the text value from column Z (historyDateFilter field)
-      const columnZValue = followUp.historyDateFilter
-      if (!columnZValue) return false
+  // Apply phone filter
+  const phoneToCompare = followUp.phoneNumber ? followUp.phoneNumber.toString().trim() : ""
+  const matchesPhoneFilter = phoneFilter === "all" || phoneToCompare === phoneFilter.toString().trim()
 
-      // Convert the column Z value to lowercase for comparison
-      const columnZText = String(columnZValue).toLowerCase()
+  return (
+    matchesSearch &&
+    matchesFilterType &&
+    matchesDateFilter &&
+    matchesCompanyFilter &&
+    matchesPersonFilter &&
+    matchesPhoneFilter
+  )
+})
 
-      // Match the filter type with the text in column Z
-      switch (dateFilter) {
-        case "today":
-          return columnZText.includes("today")
-        case "overdue":
-          return columnZText.includes("overdue")
-        case "upcoming":
-          return columnZText.includes("upcoming")
-        default:
-          return true
-      }
-    })()
+useEffect(() => {
+  // Reset specific filters when switching tabs
+  if (activeTab !== "pending") {
+    setCompanyFilter("all")
+    setPersonFilter("all")
+    setPhoneFilter("all")
+  }
+}, [activeTab])
 
-    return matchesSearch && matchesFilterType && matchesDateFilter
-  })
+const filteredHistoryFollowUps = historyFollowUps.filter((followUp) => {
+  const searchLower = searchTerm.toLowerCase()
+  const matchesSearch =
+    searchTerm === "" ||
+    (followUp.leadNo && followUp.leadNo.toString().toLowerCase().includes(searchLower)) ||
+    (followUp.customerSay && followUp.customerSay.toLowerCase().includes(searchLower)) ||
+    (followUp.status && followUp.status.toLowerCase().includes(searchLower)) ||
+    (followUp.enquiryReceivedStatus && followUp.enquiryReceivedStatus.toLowerCase().includes(searchLower)) ||
+    (followUp.enquiryReceivedDate && followUp.enquiryReceivedDate.toLowerCase().includes(searchLower)) ||
+    (followUp.enquiryState && followUp.enquiryState.toLowerCase().includes(searchLower)) ||
+    (followUp.projectName && followUp.projectName.toLowerCase().includes(searchLower)) ||
+    (followUp.salesType && followUp.salesType.toLowerCase().includes(searchLower)) ||
+    (followUp.requiredProductDate && followUp.requiredProductDate.toLowerCase().includes(searchLower)) ||
+    (followUp.projectApproxValue && followUp.projectApproxValue.toString().toLowerCase().includes(searchLower)) ||
+    (followUp.itemName1 && followUp.itemName1.toLowerCase().includes(searchLower)) ||
+    (followUp.itemName2 && followUp.itemName2.toLowerCase().includes(searchLower)) ||
+    (followUp.itemName3 && followUp.itemName3.toLowerCase().includes(searchLower)) ||
+    (followUp.itemName4 && followUp.itemName4.toLowerCase().includes(searchLower)) ||
+    (followUp.itemName5 && followUp.itemName5.toLowerCase().includes(searchLower)) ||
+    (followUp.nextAction && followUp.nextAction.toLowerCase().includes(searchLower)) ||
+    (followUp.nextCallDate && followUp.nextCallDate.toLowerCase().includes(searchLower)) ||
+    (followUp.nextCallTime && followUp.nextCallTime.toLowerCase().includes(searchLower))
+
+  // Apply filter type for history - check column E (enquiryReceivedStatus)
+  const matchesFilterType = (() => {
+    if (filterType === "first") {
+      return (
+        followUp.enquiryReceivedStatus === "" ||
+        followUp.enquiryReceivedStatus === null ||
+        followUp.enquiryReceivedStatus === "New"
+      )
+    } else if (filterType === "multi") {
+      return followUp.enquiryReceivedStatus === "Expected" || followUp.enquiryReceivedStatus === "expected"
+    } else {
+      return true
+    }
+  })()
+
+  // Apply date filter based on nextCallDate - USE THE SAME LOGIC FOR BOTH
+  const matchesDateFilter = checkDateFilter(followUp, dateFilter)
+
+  return matchesSearch && matchesFilterType && matchesDateFilter
+})
 
   // Add this function inside your FollowUp component
-  const calculateDateFilterCounts = () => {
-    const counts = {
-      today: 0,
-      overdue: 0,
-      upcoming: 0,
-      older: 0,
-    }
+  // const calculateDateFilterCounts = () => {
+  //   const counts = {
+  //     today: 0,
+  //     overdue: 0,
+  //     upcoming: 0,
+  //     older: 0,
+  //   }
 
-    // Calculate counts for pending follow-ups
-    pendingFollowUps.forEach((followUp) => {
-      console.log(followUp.callingDays);
+  //   // Calculate counts for pending follow-ups
+  //   pendingFollowUps.forEach((followUp) => {
+  //     console.log(followUp.callingDays);
       
-      const columnCLValue = followUp.callingDays
-      if (!columnCLValue) return
+  //     const columnCLValue = followUp.callingDays
+  //     if (!columnCLValue) return
 
-      const columnCLText = String(columnCLValue).toLowerCase()
+  //     const columnCLText = String(columnCLValue).toLowerCase()
 
-      if (columnCLText.includes("today")) counts.today++
-      if (columnCLText.includes("overdue")) counts.overdue++
-      if (columnCLText.includes("upcoming")) counts.upcoming++
-    })
+  //     if (columnCLText.includes("today")) counts.today++
+  //     if (columnCLText.includes("overdue")) counts.overdue++
+  //     if (columnCLText.includes("upcoming")) counts.upcoming++
+  //   })
 
-    // Calculate counts for history follow-ups
-    historyFollowUps.forEach((followUp) => {
-      const nextCallDate = followUp.nextCallDate
-      if (!nextCallDate) return
+  //   // Calculate counts for history follow-ups
+  //   historyFollowUps.forEach((followUp) => {
+  //     const nextCallDate = followUp.nextCallDate
+  //     if (!nextCallDate) return
 
-      try {
-        const [day, month, year] = nextCallDate.split("/")
-        const followUpDate = new Date(year, month - 1, day)
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
+  //     try {
+  //       const [day, month, year] = nextCallDate.split("/")
+  //       const followUpDate = new Date(year, month - 1, day)
+  //       const today = new Date()
+  //       today.setHours(0, 0, 0, 0)
 
-        if (
-          followUpDate.getDate() === today.getDate() &&
-          followUpDate.getMonth() === today.getMonth() &&
-          followUpDate.getFullYear() === today.getFullYear()
-        ) {
-          counts.today++
-        } else if (followUpDate < today) {
-          counts.older++
-        }
-      } catch (error) {
-        console.error("Error parsing date:", error)
-      }
-    })
+  //       if (
+  //         followUpDate.getDate() === today.getDate() &&
+  //         followUpDate.getMonth() === today.getMonth() &&
+  //         followUpDate.getFullYear() === today.getFullYear()
+  //       ) {
+  //         counts.today++
+  //       } else if (followUpDate < today) {
+  //         counts.older++
+  //       }
+  //     } catch (error) {
+  //       console.error("Error parsing date:", error)
+  //     }
+  //   })
 
-    return counts
-  }
+  //   return counts
+  // }
 
   const handleColumnToggle = (columnKey) => {
     setVisibleColumns((prev) => ({

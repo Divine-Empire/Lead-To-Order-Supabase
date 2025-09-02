@@ -355,7 +355,7 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
       // Prepare data for Supabase insertion
       const rowData = { 
         timestamp: currentDate,  // Add this line
-        enquiry_no: newCallTrackerData.enquiryNo,
+      //  enquiry_no: newCallTrackerData.enquiryNo,
         lead_source: newCallTrackerData.leadSource,
         sales_coordinator_name: newCallTrackerData.scName,
         company_name: newCallTrackerData.companyName,
