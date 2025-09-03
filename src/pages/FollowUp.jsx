@@ -313,7 +313,7 @@ function FollowUp() {
             timestamp: row["Timestamp"] ? formatDateToDDMMYYYY(row["Timestamp"]) : "",
             leadNo: row["LD-Lead-No"] || "",
             companyName: "",
-            customerSay: row["What_Did_The_Customer_say?"] || "",
+            customerSay: row["What_Did_The_Customer say?"] || "",
             status: row["Leads_Tracking_Status"] || "",
             enquiryReceivedStatus: row["Enquiry_Received_Status"] || "",
             enquiryReceivedDate: row["Enquiry_Received_Date"] ? formatDateToDDMMYYYY(row["Enquiry_Received_Date"]) : "",
@@ -1113,14 +1113,15 @@ const MobileCardView = ({ data, type }) => {
                                         {followUp.location}
                                       </div>
                                     </td>
-                                    <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
-                                      <div
-                                        className="max-w-[150px] sm:max-w-[200px] truncate"
-                                        title={followUp.customerSay}
-                                      >
-                                        {followUp.customerSay}
-                                      </div>
-                                    </td>
+                                  <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
+  <div
+    className="max-w-[150px] sm:max-w-[200px] whitespace-normal break-words"
+    title={followUp.customerSay}
+  >
+    {followUp.customerSay}
+  </div>
+</td>
+
                                     <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
                                       <div
                                         className="max-w-[100px] sm:max-w-[120px] truncate"
@@ -1346,16 +1347,17 @@ const MobileCardView = ({ data, type }) => {
                                         </div>
                                       </td>
                                     )}
-                                    {visibleColumns.customerSay && (
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
-                                        <div
-                                          className="max-w-[150px] sm:max-w-[200px] truncate"
-                                          title={followUp.customerSay}
-                                        >
-                                          {followUp.customerSay}
-                                        </div>
-                                      </td>
-                                    )}
+                                  {visibleColumns.customerSay && (
+  <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
+    <div
+      className="max-w-[150px] sm:max-w-[200px] whitespace-normal break-words"
+      title={followUp.customerSay}
+    >
+      {followUp.customerSay}
+    </div>
+  </td>
+)}
+
                                     {visibleColumns.status && (
                                       <td className="px-3 sm:px-4 py-3 sm:py-4">
                                         <span
