@@ -13,7 +13,29 @@ const slideOut = "animate-out slide-out-to-right duration-300"
 const fadeIn = "animate-in fade-in duration-300"
 const fadeOut = "animate-out fade-out duration-300"
 
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    // Initial check
+    checkIsMobile();
+
+    // Add event listener
+    window.addEventListener('resize', checkIsMobile);
+
+    // Clean up
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
+  return isMobile;
+};
+
 function CallTracker() {
+   const isMobile = useIsMobile();
   const { currentUser, userType, isAdmin } = useContext(AuthContext)
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("pending")
@@ -184,20 +206,34 @@ function CallTracker() {
     }
   }
 
-  const formatItemQty = (itemQtyString) => {
-    if (!itemQtyString) return ""
+const formatItemQty = (itemQtyString) => {
+  if (!itemQtyString) return "";
+  
+  // If it's already a nicely formatted string, just return it
+  if (typeof itemQtyString === "string" && itemQtyString.includes(":")) {
+    return itemQtyString;
+  }
+  
+  try {
+    // Try to parse as JSON
+    const items = JSON.parse(itemQtyString);
     
-    try {
-      const items = JSON.parse(itemQtyString)
+    // Check if it's an array of objects with name/quantity properties
+    if (Array.isArray(items) && items.length > 0 && typeof items[0] === "object") {
       return items
         .filter(item => item.name && item.quantity && item.quantity !== "0")
         .map(item => `${item.name} : ${item.quantity}`)
-        .join(", ")
-    } catch (error) {
-      console.error("Error parsing item quantity:", error)
-      return itemQtyString
+        .join(", ");
     }
+    
+    // If it's a different JSON format, return the string representation
+    return JSON.stringify(items);
+  } catch (error) {
+    // If parsing fails, return the original string
+    console.log("Item quantity is not JSON, returning as plain text:", itemQtyString);
+    return itemQtyString;
   }
+}
 
 // Replace your matchesCallingDaysFilter function with this:
 const matchesCallingDaysFilter = (dateValue, activeTab) => {
@@ -498,6 +534,8 @@ useEffect(() => {
   fetchDirectEnquiryData();
 }, []);
 
+
+
 // NEW: Update available enquiry numbers when data changes or tab changes
 useEffect(() => {
   let enquiryNos = [];
@@ -711,6 +749,256 @@ const calculateFilterCounts = () => {
 };
 
   const filterCounts = calculateFilterCounts();
+
+  // Mobile Card View Component for CallTracker
+const MobileCardView = ({ data, type, onProcess, onView }) => {
+  const formatItemQty = (itemQtyString) => {
+    if (!itemQtyString) return "";
+    
+    try {
+      const items = JSON.parse(itemQtyString);
+      return items
+        .filter(item => item.name && item.quantity && item.quantity !== "0")
+        .map(item => `${item.name} : ${item.quantity}`)
+        .join(", ");
+    } catch (error) {
+      console.error("Error parsing item quantity:", error);
+      return itemQtyString;
+    }
+  };
+
+  if (type === 'pending') {
+    return (
+      <div className="space-y-4 md:hidden">
+        {data.map((tracker, index) => (
+          <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+            {/* Header Section */}
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 border-b border-gray-200">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="font-bold text-gray-900 text-lg">{tracker.lead_no}</h3>
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                  tracker.priority === "High"
+                    ? "bg-red-100 text-red-700"
+                    : tracker.priority === "Medium"
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-slate-100 text-slate-700"
+                }`}>
+                  {tracker.Lead_Source}
+                </span>
+              </div>
+              <div className="flex items-center text-sm text-gray-600">
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                <span>{tracker.Lead_Receiver_Name}</span>
+              </div>
+            </div>
+            
+            {/* Content Section */}
+            <div className="p-4 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <p className="text-xs text-gray-500 mb-1">Company</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">{tracker.Company_Name}</p>
+                </div>
+                
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <p className="text-xs text-gray-500 mb-1">Phone</p>
+                  <p className="text-sm font-medium text-gray-900">{tracker.Phone_Number}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <p className="text-xs text-gray-500 mb-1">Salesperson</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">{tracker.salesperson_Name}</p>
+                </div>
+                
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <p className="text-xs text-gray-500 mb-1">Call Date</p>
+                  <p className="text-sm font-medium text-gray-900">{tracker.Timestamp}</p>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="text-xs text-gray-500 mb-1">Current Stage</p>
+                <p className="text-sm font-medium text-gray-900">{tracker.Current_Stage}</p>
+              </div>
+              
+              {tracker.itemQty && (
+                <div className="bg-amber-50 p-3 rounded-lg border border-amber-100">
+                  <p className="text-xs text-amber-600 font-medium mb-1">Items</p>
+                  <p className="text-sm font-medium text-gray-900">{formatItemQty(tracker.itemQty)}</p>
+                </div>
+              )}
+            </div>
+            
+            {/* Action Section */}
+            <div className="px-4 pb-4">
+              <Link 
+                state={{ activeTab: "pending", sc_name: tracker.sc_name }} 
+                to={`/call-tracker/new?leadId=${tracker.lead_no}`}
+                className="w-full flex items-center justify-center px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg shadow-md hover:from-purple-700 hover:to-pink-700 transition-all duration-200"
+              >
+                <ArrowRightIcon className="w-5 h-5 mr-2" />
+                Process Now
+              </Link>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  } else if (type === 'directEnquiry') {
+    return (
+      <div className="space-y-4 md:hidden">
+        {data.map((tracker, index) => (
+          <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+            {/* Header Section */}
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 border-b border-gray-200">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="font-bold text-gray-900 text-lg">{tracker.enquiry_no}</h3>
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                  tracker.priority === "High"
+                    ? "bg-red-100 text-red-700"
+                    : tracker.priority === "Medium"
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-slate-100 text-slate-700"
+                }`}>
+                  {tracker.lead_source}
+                </span>
+              </div>
+              <div className="flex items-center text-sm text-gray-600">
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                <span>{tracker.lead_receiver_name}</span>
+              </div>
+            </div>
+            
+            {/* Content Section */}
+            <div className="p-4 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <p className="text-xs text-gray-500 mb-1">Company</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">{tracker.company_name}</p>
+                </div>
+                
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <p className="text-xs text-gray-500 mb-1">Call Date</p>
+                  <p className="text-sm font-medium text-gray-900">{tracker.timestamp}</p>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="text-xs text-gray-500 mb-1">Current Stage</p>
+                <p className="text-sm font-medium text-gray-900">{tracker.current_stage}</p>
+              </div>
+              
+              {tracker.item_qty && (
+                <div className="bg-amber-50 p-3 rounded-lg border border-amber-100">
+                  <p className="text-xs text-amber-600 font-medium mb-1">Items</p>
+                  <p className="text-sm font-medium text-gray-900">{formatItemQty(tracker.item_qty)}</p>
+                </div>
+              )}
+            </div>
+            
+            {/* Action Section */}
+            <div className="px-4 pb-4 flex space-x-2">
+              <Link 
+                state={{ activeTab: "directEnquiry", sc_name: tracker.sc_name }} 
+                to={`/call-tracker/new?leadId=${tracker.enquiry_no}`}
+                className="flex-1 flex items-center justify-center px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg shadow-md hover:from-purple-700 hover:to-pink-700 transition-all duration-200"
+              >
+                <ArrowRightIcon className="w-5 h-5 mr-2" />
+                Process
+              </Link>
+              <button
+                onClick={() => onView(tracker)}
+                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200"
+              >
+                View
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  } else {
+    // History tab mobile view
+    return (
+      <div className="space-y-4 md:hidden">
+        {data.map((tracker, index) => (
+          <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+            {/* Header Section */}
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 border-b border-gray-200">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="font-bold text-gray-900 text-lg">{tracker.enquiryNo}</h3>
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                  tracker.priority === "High"
+                    ? "bg-red-100 text-red-700"
+                    : tracker.priority === "Medium"
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-slate-100 text-slate-700"
+                }`}>
+                  {tracker.enquiryStatus}
+                </span>
+              </div>
+              {tracker.Timestamp && (
+                <div className="flex items-center text-sm text-gray-600">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                  </svg>
+                  <span>{tracker.Timestamp}</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Content Section */}
+            <div className="p-4 space-y-3">
+              {tracker.customerFeedback && (
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                  <p className="text-xs text-blue-600 font-medium mb-1 flex items-center">
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                    </svg>
+                    Customer Said
+                  </p>
+                  <p className="text-sm text-gray-800 italic">"{tracker.customerFeedback}"</p>
+                </div>
+              )}
+              
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="text-xs text-gray-500 mb-1">Current Stage</p>
+                <p className="text-sm font-medium text-gray-900">{tracker.currentStage}</p>
+              </div>
+              
+              {tracker.nextCallDate && (
+                <div className="bg-green-50 p-3 rounded-lg border border-green-100">
+                  <p className="text-xs text-green-600 font-medium mb-1 flex items-center">
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    Next Follow-up
+                  </p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {tracker.nextCallDate} {tracker.nextCallTime && `at ${tracker.nextCallTime}`}
+                  </p>
+                </div>
+              )}
+              
+              {tracker.orderStatus && (
+                <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
+                  <p className="text-xs text-purple-600 font-medium mb-1">Order Status</p>
+                  <p className="text-sm font-medium text-gray-900">{tracker.orderStatus}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+};
 
   return (
     <div className="container mx-auto py-10 px-4">
@@ -1136,7 +1424,17 @@ const calculateFilterCounts = () => {
           ) : */}
            
             <>
-              {activeTab === "pending" && (
+              {activeTab === "pending" && ( 
+                 <>
+    {/* Mobile Card View */}
+    <MobileCardView 
+      data={filteredPendingCallTrackers} 
+      type="pending" 
+      onProcess={(tracker) => {
+        // Handle process action if needed
+      }}
+    />
+                <div className="hidden md:block rounded-md border overflow-x-auto">
                 <div className="rounded-md border overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-slate-50">
@@ -1292,10 +1590,17 @@ const calculateFilterCounts = () => {
   )}
 </tbody>
                   </table>
-                </div>
-              )}
+                </div></div>
+           </>   )}
 
-              {activeTab === "directEnquiry" && (
+             {activeTab === "history" && (
+  <>
+    {/* Mobile Card View */}
+    <MobileCardView 
+      data={filteredHistoryCallTrackers} 
+      type="history" 
+    /><div className="hidden md:block rounded-md border overflow-x-auto">
+     
                 <div className="rounded-md border overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-slate-50">
@@ -1426,10 +1731,24 @@ const calculateFilterCounts = () => {
                       )}
                     </tbody>
                   </table>
-                </div>
-              )}
+                </div></div>
+            </>  )}
 
-{activeTab === "history" && (
+{activeTab === "directEnquiry" && (
+  <>
+    {/* Mobile Card View */}
+    <MobileCardView 
+      data={filteredDirectEnquiryPendingTrackers} 
+      type="directEnquiry" 
+      onProcess={(tracker) => {
+        // Handle process action if needed
+      }}
+      onView={(tracker) => {
+        setSelectedTracker(tracker);
+        setShowPopup(true);
+      }}
+    />
+<div className="hidden md:block rounded-md border overflow-x-auto">
   <div className="rounded-md border overflow-x-auto">
     <table className="min-w-full divide-y divide-gray-200">
       <thead className="bg-slate-50">
@@ -1713,7 +2032,8 @@ const calculateFilterCounts = () => {
         )}
       </tbody>
     </table>
-  </div>
+  </div></div>
+  </>
 )}
             </>
           
