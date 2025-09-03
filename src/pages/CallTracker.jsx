@@ -1599,156 +1599,8 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
     <MobileCardView 
       data={filteredHistoryCallTrackers} 
       type="history" 
-    /><div className="hidden md:block rounded-md border overflow-x-auto">
-     
-                <div className="rounded-md border overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-slate-50">
-                      <tr>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Actions
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-      Timestamp
-    </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Lead No.
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Lead Source
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Company Name
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Current Stage
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Calling Days
-                        </th>
-                        <th
-  scope="col"
-  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
->
-  Item/Qty
-</th>
-  <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Total Qty
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredDirectEnquiryPendingTrackers.length > 0 ? (
-                        filteredDirectEnquiryPendingTrackers.map((tracker,index) => (
-                          <tr key={index} className="hover:bg-slate-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              <div className="flex space-x-2">
-                                <Link  state={{ activeTab: activeTab, sc_name: tracker.sc_name }} to={`/call-tracker/new?leadId=${tracker.enquiry_no}`}>
-                                  <button className="px-3 py-1 text-xs border border-purple-200 text-purple-600 hover:bg-purple-50 rounded-md">
-                                    Process <ArrowRightIcon className="ml-1 h-3 w-3 inline" />
-                                  </button>
-                                </Link>
-                                <button
-                                  onClick={() => {
-                                    setSelectedTracker(tracker)
-                                    setShowPopup(true)
-                                  }}
-                                  className="px-3 py-1 text-xs border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-md"
-                                >
-                                  View
-                                </button>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-  {tracker.timestamp}
-</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {tracker.enquiry_no}
-                            </td>
-                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {tracker.lead_source}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {tracker.company_name}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                  tracker.priority === "High"
-                                    ? "bg-red-100 text-red-800"
-                                    : tracker.priority === "Medium"
-                                      ? "bg-amber-100 text-amber-800"
-                                      : "bg-slate-100 text-slate-800"
-                                }`}
-                              >
-                                {tracker.current_stage}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {formatDateToDDMMYYYY(tracker.nextCallDate)}
-                         </td>
-<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-  <div
-    className="min-w-[100px] break-words whitespace-normal"
-    title={tracker.item_qty}
-  >
-    {tracker.item_qty}
-  </div>
-</td>
-<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-  {tracker.total_qty}
-</td>
-
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={7} className="px-6 py-4 text-center text-sm text-slate-500">
-                            No direct enquiry pending trackers found
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div></div>
-            </>  )}
-
-{activeTab === "directEnquiry" && (
-  <>
-    {/* Mobile Card View */}
-    <MobileCardView 
-      data={filteredDirectEnquiryPendingTrackers} 
-      type="directEnquiry" 
-      onProcess={(tracker) => {
-        // Handle process action if needed
-      }}
-      onView={(tracker) => {
-        setSelectedTracker(tracker);
-        setShowPopup(true);
-      }}
     />
-<div className="hidden md:block rounded-md border overflow-x-auto">
+    <div className="hidden md:block rounded-md border overflow-x-auto">
   <div className="rounded-md border overflow-x-auto">
     <table className="min-w-full divide-y divide-gray-200">
       <thead className="bg-slate-50">
@@ -2033,6 +1885,156 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
       </tbody>
     </table>
   </div></div>
+   
+            </>  )}
+
+{activeTab === "directEnquiry" && (
+  <>
+    {/* Mobile Card View */}
+    <MobileCardView 
+      data={filteredDirectEnquiryPendingTrackers} 
+      type="directEnquiry" 
+      onProcess={(tracker) => {
+        // Handle process action if needed
+      }}
+      onView={(tracker) => {
+        setSelectedTracker(tracker);
+        setShowPopup(true);
+      }}
+    />
+ <div className="hidden md:block rounded-md border overflow-x-auto">
+     
+                <div className="rounded-md border overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Actions
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+      Timestamp
+    </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Lead No.
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Lead Source
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Company Name
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Current Stage
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Calling Days
+                        </th>
+                        <th
+  scope="col"
+  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+>
+  Item/Qty
+</th>
+  <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Total Qty
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredDirectEnquiryPendingTrackers.length > 0 ? (
+                        filteredDirectEnquiryPendingTrackers.map((tracker,index) => (
+                          <tr key={index} className="hover:bg-slate-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <div className="flex space-x-2">
+                                <Link  state={{ activeTab: activeTab, sc_name: tracker.sc_name }} to={`/call-tracker/new?leadId=${tracker.enquiry_no}`}>
+                                  <button className="px-3 py-1 text-xs border border-purple-200 text-purple-600 hover:bg-purple-50 rounded-md">
+                                    Process <ArrowRightIcon className="ml-1 h-3 w-3 inline" />
+                                  </button>
+                                </Link>
+                                <button
+                                  onClick={() => {
+                                    setSelectedTracker(tracker)
+                                    setShowPopup(true)
+                                  }}
+                                  className="px-3 py-1 text-xs border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-md"
+                                >
+                                  View
+                                </button>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+  {tracker.timestamp}
+</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {tracker.enquiry_no}
+                            </td>
+                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {tracker.lead_source}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {tracker.company_name}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  tracker.priority === "High"
+                                    ? "bg-red-100 text-red-800"
+                                    : tracker.priority === "Medium"
+                                      ? "bg-amber-100 text-amber-800"
+                                      : "bg-slate-100 text-slate-800"
+                                }`}
+                              >
+                                {tracker.current_stage}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {formatDateToDDMMYYYY(tracker.nextCallDate)}
+                         </td>
+<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+  <div
+    className="min-w-[100px] break-words whitespace-normal"
+    title={tracker.item_qty}
+  >
+    {tracker.item_qty}
+  </div>
+</td>
+<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+  {tracker.total_qty}
+</td>
+
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={7} className="px-6 py-4 text-center text-sm text-slate-500">
+                            No direct enquiry pending trackers found
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div></div>
   </>
 )}
             </>
