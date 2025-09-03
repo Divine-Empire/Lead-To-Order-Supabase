@@ -558,7 +558,7 @@ const handleOrderStatusChange = async (field, value) => {
   } else if (field === "apologyVideo" && value) {
     try {
       setIsSubmitting(true);
-      const fileUrl = await uploadFileToSupabase(value, "apology_videos");
+      const fileUrl = await uploadFileToSupabase(value, "order_lost_apology");
       
       setOrderStatusData(prev => ({
         ...prev,
