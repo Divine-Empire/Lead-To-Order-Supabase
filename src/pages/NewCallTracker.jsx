@@ -679,6 +679,7 @@ const handleOrderStatusChange = async (field, value) => {
           });
         } else if (formData.orderStatus?.toLowerCase() === "no") {
           Object.assign(updateData, {
+                Actual1: new Date().toISOString(),
              Order_Lost_Apology_Video:typeof formData.apologyVideo === "string" 
       ? formData.apologyVideo 
       : "", // handle upload later
@@ -1016,7 +1017,7 @@ const handleSubmit = async (e) => {
         orderStatusData.apologyVideo && 
         typeof orderStatusData.apologyVideo !== "string") {
       showNotification("Uploading apology video...", "info");
-      const fileUrl = await uploadFileToSupabase(orderStatusData.apologyVideo, "apology_videos");
+      const fileUrl = await uploadFileToSupabase(orderStatusData.apologyVideo, "order_lost_apology");
       
       setOrderStatusData(prev => ({
         ...prev,
