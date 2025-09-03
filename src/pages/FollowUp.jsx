@@ -291,7 +291,7 @@ function FollowUp() {
             phoneNumber: row['Phone_Number'] || "",
             leadSource: row['Lead_Source'] || "",
             location: row['Location'] || "",
-            customerSay: row['What_Did_The_Customer_say?'] || "",
+            customerSay: row['What_Did_The_Customer say?'] || "",
             enquiryStatus: row['Status'] || "",
             enquiryReceivedStatus: row["Enquiry_Received_Status"] || "",
             createdAt: row['Created_At'] || "",
