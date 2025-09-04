@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useContext } from "react"
+import { useState, useEffect, useContext, useCallback } from "react"
 import { Link } from "react-router-dom"
 import { SearchIcon, ArrowRightIcon } from "../components/Icons"
 import { AuthContext } from "../App"
@@ -20,13 +20,8 @@ const useIsMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
 
-    // Initial check
     checkIsMobile();
-
-    // Add event listener
     window.addEventListener('resize', checkIsMobile);
-
-    // Clean up
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
 
@@ -48,6 +43,15 @@ function FollowUp() {
   const [companyFilter, setCompanyFilter] = useState("all")
   const [personFilter, setPersonFilter] = useState("all")
   const [phoneFilter, setPhoneFilter] = useState("all")
+
+  // Fixed pagination state management
+  const [pendingPage, setPendingPage] = useState(1)
+  const [historyPage, setHistoryPage] = useState(1)
+  const [hasMorePending, setHasMorePending] = useState(true)
+  const [hasMoreHistory, setHasMoreHistory] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [searchTimeout, setSearchTimeout] = useState(null)
+
   const [visibleColumns, setVisibleColumns] = useState({
     timestamp: true,
     leadNo: true,
@@ -78,17 +82,15 @@ function FollowUp() {
   })
   const [showColumnDropdown, setShowColumnDropdown] = useState(false)
 
-  // Helper function to determine priority based on lead source
+  // Helper functions
   const determinePriority = (source) => {
     if (!source) return "Low"
-
     const sourceLower = source.toLowerCase()
     if (sourceLower.includes("indiamart")) return "High"
     if (sourceLower.includes("website")) return "Medium"
     return "Low"
   }
 
-  // Helper function to format next call time
   const formatNextCallTime = (timeValue) => {
     if (!timeValue) return ""
 
@@ -122,7 +124,6 @@ function FollowUp() {
     }
   }
 
-  // Helper function to format date to DD/MM/YYYY
   const formatDateToDDMMYYYY = (dateValue) => {
     if (!dateValue) return ""
 
@@ -151,7 +152,6 @@ function FollowUp() {
     }
   }
 
-  // Helper function to format item quantity
   const formatItemQty = (itemQtyString) => {
     if (!itemQtyString) return ""
     
@@ -167,7 +167,6 @@ function FollowUp() {
     }
   }
 
-  // Helper function to check date filter condition
   const checkDateFilter = (followUp, filterType) => {
     if (filterType === "all") return true
 
@@ -251,154 +250,280 @@ function FollowUp() {
     return counts
   }
 
-  // Function to fetch data from FMS and Leads Tracker sheets
-  useEffect(() => {
-    let isMounted = true;
-    const abortController = new AbortController();
+  // Fixed scroll detection function
+  const isBottom = () => {
+    return window.innerHeight + window.scrollY >= document.documentElement.offsetHeight - 100;
+  };
 
-    const fetchFollowUpData = async () => {
-      try {
+  // Fixed function to fetch data with pagination
+  const fetchFollowUpData = useCallback(async (page = 1, isLoadMore = false, searchTerm = "") => {
+    try {
+      console.log(`Fetching data - Page: ${page}, LoadMore: ${isLoadMore}, ActiveTab: ${activeTab}`);
+      
+      if (isLoadMore) {
+        setIsLoadingMore(true);
+      } else {
         setIsLoading(true);
+      }
 
-        const [pendingResponse, historyResponse] = await Promise.all([
-          supabase
-            .from('leads_to_order')
-            .select('*')
-            .not('Planned', 'is', null)
-            .is('Actual', null)
-            .abortSignal(abortController.signal),
-          supabase
-            .from('leads_tracker')
-            .select('*')
-            .abortSignal(abortController.signal)
-        ]);
+      const itemsPerPage = 50;
+      const from = (page - 1) * itemsPerPage;
+      const to = from + itemsPerPage - 1;
 
-        if (!isMounted) return;
+      if (activeTab === "pending") {
+        let pendingQuery = supabase
+          .from('leads_to_order')
+          .select('*', { count: 'exact' })
+          .not('Planned', 'is', null)
+          .is('Actual', null)
+          .order('Next_Call_Date', { ascending: true })
+          .range(from, to);
 
-        // Process pending data
-        const pendingData = pendingResponse.data || [];
-        const filteredPending = pendingData
-          .filter(row => {
-            const assignedUser = row.SC_Name || row.assigned_user || "";
-            return isAdmin() || (currentUser && assignedUser === currentUser.username);
-          })
-          .map(row => ({
-            timestamp: row.Next_Call_Date ? formatDateToDDMMYYYY(row.Next_Call_Date) : "",
-            id: row.id || "",
-            leadId: row['LD-Lead-No'] || "",
-            companyName: row['Company_Name'] || "",
-            personName: row['Salesperson_Name'] || "",
-            phoneNumber: row['Phone_Number'] || "",
-            leadSource: row['Lead_Source'] || "",
-            location: row['Location'] || "",
-            customerSay: row['What_Did_The_Customer say?'] || "",
-            enquiryStatus: row['Status'] || "",
-            enquiryReceivedStatus: row["Enquiry_Received_Status"] || "",
-            createdAt: row['Created_At'] || "",
-            nextCallDate: row['Next_Call_Date'] || "",
-            callingDays: row['Calling_Days'] || "",
-            priority: determinePriority(row['Lead_Source'] || ""),
-            assignedTo: row['SC_Name'] || row['assigned_user'] || "",
-            itemQty: row['Item_Qty'] || ""
-          }));
-
-        // Process history data
-        const historyData = historyResponse.data || [];
-        const filteredHistory = historyData
-          .filter(row => {
-            const assignedUser = row.SC_Name || row.assigned_user || "";
-            return isAdmin() || (currentUser && assignedUser === currentUser.username);
-          })
-          .map(row => ({
-            timestamp: row["Timestamp"] ? formatDateToDDMMYYYY(row["Timestamp"]) : "",
-            leadNo: row["LD-Lead-No"] || "",
-            companyName: "",
-            customerSay: row["What_Did_The_Customer say?"] || "",
-            status: row["Leads_Tracking_Status"] || "",
-            enquiryReceivedStatus: row["Enquiry_Received_Status"] || "",
-            enquiryReceivedDate: row["Enquiry_Received_Date"] ? formatDateToDDMMYYYY(row["Enquiry_Received_Date"]) : "",
-            enquiryState: row["Enquiry_for_State"] || "",
-            projectName: row["Project_Name"] || "",
-            salesType: row["Enquiry_Type"] || "",
-            requiredProductDate: "",
-            projectApproxValue: row["Project_Approximate_Value"] || "",
-            itemName1: row["Item_Name1"] || "",
-            quantity1: row["Quantity1"] || "",
-            itemName2: row["Item_Name2"] || "",
-            quantity2: row["Quantity2"] || "",
-            itemName3: row["Item_Name3"] || "",
-            quantity3: row["Quantity3"] || "",
-            itemName4: row["Item_Name4"] || "",
-            quantity4: row["Quantity4"] || "",
-            itemName5: row["Item_Name5"] || "",
-            quantity5: row["Quantity5"] || "",
-            nextAction: row["Next_Action"] || "",
-            nextCallDate: row["Next_Call_Date"] ? formatDateToDDMMYYYY(row["Next_Call_Date"]) : "",
-            nextCallTime: row["Next_Call_Time"] ? formatNextCallTime(row["Next_Call_Time"]) : "",
-            historyDateFilter: "",
-            assignedTo: row.SC_Name || row.assigned_user || "",
-            itemQty: row.item_qty || ""
-          }));
-
-        if (isMounted) {
-          setPendingFollowUps(filteredPending);
-          setHistoryFollowUps(filteredHistory);
-          setIsLoading(false);
+        // Apply search filter if search term exists
+        if (searchTerm) {
+          pendingQuery = pendingQuery.or(`
+            Company_Name.ilike.%${searchTerm}%,
+            LD-Lead-No.ilike.%${searchTerm}%,
+            Salesperson_Name.ilike.%${searchTerm}%,
+            Phone_Number.ilike.%${searchTerm}%,
+            Lead_Source.ilike.%${searchTerm}%,
+            Location.ilike.%${searchTerm}%,
+            What_Did_Customer_say.ilike.%${searchTerm}%,
+            Enquiry_Received_Status.ilike.%${searchTerm}%
+          `);
         }
 
-      } catch (error) {
-        if (error.name !== 'AbortError' && isMounted) {
-          console.error("Error fetching follow-up data:", error);
-          setIsLoading(false);
-          
-          // Fallback data
-          setPendingFollowUps([{
-            id: "1",
-            leadId: "LD-001",
-            companyName: "ABC Corp",
-            personName: "John Smith",
-            phoneNumber: "9876543210",
-            leadSource: "Indiamart",
-            location: "Mumbai",
-            customerSay: "Interested in product details",
-            enquiryStatus: "New",
-            createdAt: "2023-05-15",
-            nextCallDate: "Date(2025,4,27)",
-            priority: "High",
-            assignedTo: "",
-            itemQty: ""
-          }]);
+        // Apply user filter if not admin
+        if (!isAdmin() && currentUser && currentUser.username) {
+          pendingQuery = pendingQuery.eq('SC_Name', currentUser.username);
+        }
 
-          setHistoryFollowUps([{
-            leadNo: "LD-001",
-            customerSay: "Interested in product details",
-            status: "Pending",
-            enquiryReceivedStatus: "New",
-            enquiryReceivedDate: "15/05/2023",
-            enquiryState: "Maharashtra",
-            projectName: "Sample Project",
-            salesType: "Direct",
-            requiredProductDate: "15/06/2023",
-            projectApproxValue: "₹500,000",
-            itemName1: "Product A",
-            quantity1: "10",
-            nextAction: "Follow-up call",
-            nextCallDate: "20/05/2023",
-            nextCallTime: "10:00 AM",
-            assignedTo: "",
-            itemQty: ""
-          }]);
+        const { data, error, count } = await pendingQuery;
+
+        if (error) throw error;
+
+        console.log(`Fetched ${data?.length || 0} pending records for page ${page}`);
+
+        const filteredPending = (data || []).map(row => ({
+          timestamp: row.Next_Call_Date ? formatDateToDDMMYYYY(row.Next_Call_Date) : "",
+          id: row.id || "",
+          leadId: row['LD-Lead-No'] || "",
+          companyName: row['Company_Name'] || "",
+          personName: row['Salesperson_Name'] || "",
+          phoneNumber: row['Phone_Number'] || "",
+          leadSource: row['Lead_Source'] || "",
+          location: row['Location'] || "",
+          customerSay: row['What_Did_The_Customer say?'] || "",
+          enquiryStatus: row['Enquiry_Status'] || "",
+          enquiryReceivedStatus: row["Enquiry_Received_Status"] || "",
+          createdAt: row['Created_At'] || "",
+          nextCallDate: row['Next_Call_Date'] || "",
+          callingDays: row['Calling_Days'] || "",
+          priority: determinePriority(row['Lead_Source'] || ""),
+          assignedTo: row['SC_Name'] || row['assigned_user'] || "",
+          itemQty: row['Item_Qty'] || ""
+        }));
+
+        if (isLoadMore) {
+          setPendingFollowUps(prev => [...prev, ...filteredPending]);
+        } else {
+          setPendingFollowUps(filteredPending);
+        }
+
+        // Check if there's more data to load
+        const hasMore = (data || []).length === itemsPerPage;
+        setHasMorePending(hasMore);
+        
+        console.log(`HasMorePending: ${hasMore}, Data length: ${data?.length}`);
+
+      } else {
+        // History tab data fetching
+        let historyQuery = supabase
+          .from('leads_tracker')
+          .select('*', { count: 'exact' })
+          .order('Timestamp', { ascending: false })
+          .range(from, to);
+
+        // Apply search filter if search term exists
+        if (searchTerm) {
+          historyQuery = historyQuery.or(`
+            LD-Lead-No.ilike.%${searchTerm}%,
+            What_Did_The_Customer say?.ilike.%${searchTerm}%,
+            Leads_Tracking_Status.ilike.%${searchTerm}%,
+            Enquiry_Received_Status.ilike.%${searchTerm}%,
+            Enquiry_for_State.ilike.%${searchTerm}%,
+            Project_Name.ilike.%${searchTerm}%,
+            Enquiry_Type.ilike.%${searchTerm}%,
+            Next_Action.ilike.%${searchTerm}%
+          `);
+        }
+
+        // Apply user filter if not admin
+        if (!isAdmin() && currentUser && currentUser.username) {
+          historyQuery = historyQuery.eq('SC_Name', currentUser.username);
+        }
+
+        const { data, error, count } = await historyQuery;
+
+        if (error) throw error;
+
+        console.log(`Fetched ${data?.length || 0} history records for page ${page}`);
+
+        const filteredHistory = (data || []).map(row => ({
+          timestamp: row["Timestamp"] ? formatDateToDDMMYYYY(row["Timestamp"]) : "",
+          leadNo: row["LD-Lead-No"] || "",
+          companyName: "",
+          customerSay: row["What_Did_The_Customer say?"] || "",
+          status: row["Leads_Tracking_Status"] || "",
+          enquiryReceivedStatus: row["Enquiry_Received_Status"] || "",
+          enquiryReceivedDate: row["Enquiry_Received_Date"] ? formatDateToDDMMYYYY(row["Enquiry_Received_Date"]) : "",
+          enquiryState: row["Enquiry_for_State"] || "",
+          projectName: row["Project_Name"] || "",
+          salesType: row["Enquiry_Type"] || "",
+          requiredProductDate: "",
+          projectApproxValue: row["Project_Approximate_Value"] || "",
+          itemName1: row["Item_Name1"] || "",
+          quantity1: row["Quantity1"] || "",
+          itemName2: row["Item_Name2"] || "",
+          quantity2: row["Quantity2"] || "",
+          itemName3: row["Item_Name3"] || "",
+          quantity3: row["Quantity3"] || "",
+          itemName4: row["Item_Name4"] || "",
+          quantity4: row["Quantity4"] || "",
+          itemName5: row["Item_Name5"] || "",
+          quantity5: row["Quantity5"] || "",
+          nextAction: row["Next_Action"] || "",
+          nextCallDate: row["Next_Call_Date"] ? formatDateToDDMMYYYY(row["Next_Call_Date"]) : "",
+          nextCallTime: row["Next_Call_Time"] ? formatNextCallTime(row["Next_Call_Time"]) : "",
+          historyDateFilter: "",
+          assignedTo: row.SC_Name || row.assigned_user || "",
+          itemQty: row.item_qty || ""
+        }));
+
+        if (isLoadMore) {
+          setHistoryFollowUps(prev => [...prev, ...filteredHistory]);
+        } else {
+          setHistoryFollowUps(filteredHistory);
+        }
+
+        // Check if there's more data to load
+        const hasMore = (data || []).length === itemsPerPage;
+        setHasMoreHistory(hasMore);
+        
+        console.log(`HasMoreHistory: ${hasMore}, Data length: ${data?.length}`);
+      }
+
+    } catch (error) {
+      console.error("Error fetching follow-up data:", error);
+      
+      // Fallback to prevent infinite loading states
+      if (!isLoadMore) {
+        setPendingFollowUps([{
+          id: "1",
+          leadId: "LD-001",
+          companyName: "ABC Corp",
+          personName: "John Smith",
+          phoneNumber: "9876543210",
+          leadSource: "Indiamart",
+          location: "Mumbai",
+          customerSay: "Interested in product details",
+          enquiryStatus: "New",
+          createdAt: "2023-05-15",
+          nextCallDate: "Date(2025,4,27)",
+          priority: "High",
+          assignedTo: "",
+          itemQty: ""
+        }]);
+
+        setHistoryFollowUps([{
+          leadNo: "LD-001",
+          customerSay: "Interested in product details",
+          status: "Pending",
+          enquiryReceivedStatus: "New",
+          enquiryReceivedDate: "15/05/2023",
+          enquiryState: "Maharashtra",
+          projectName: "Sample Project",
+          salesType: "Direct",
+          requiredProductDate: "15/06/2023",
+          projectApproxValue: "₹500,000",
+          itemName1: "Product A",
+          quantity1: "10",
+          nextAction: "Follow-up call",
+          nextCallDate: "20/05-2023",
+          nextCallTime: "10:00 AM",
+          assignedTo: "",
+          itemQty: ""
+        }]);
+      }
+    } finally {
+      setIsLoading(false);
+      setIsLoadingMore(false);
+    }
+  }, [currentUser, isAdmin, activeTab]);
+
+  // Fixed load more data function
+  const loadMoreData = useCallback(() => {
+    if (isLoadingMore) return;
+    
+    if (activeTab === "pending" && hasMorePending) {
+      console.log(`Loading more pending data, page: ${pendingPage}`);
+      fetchFollowUpData(pendingPage, true, searchTerm);
+      setPendingPage(prev => prev + 1);
+    } else if (activeTab === "history" && hasMoreHistory) {
+      console.log(`Loading more history data, page: ${historyPage}`);
+      fetchFollowUpData(historyPage, true, searchTerm);
+      setHistoryPage(prev => prev + 1);
+    }
+  }, [activeTab, isLoadingMore, hasMorePending, hasMoreHistory, pendingPage, historyPage, searchTerm, fetchFollowUpData]);
+
+  // Fixed scroll event listener for infinite scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (isBottom() && !isLoadingMore && !isLoading) {
+        if ((activeTab === "pending" && hasMorePending) || 
+            (activeTab === "history" && hasMoreHistory)) {
+          loadMoreData();
         }
       }
     };
 
-    fetchFollowUpData();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isLoadingMore, isLoading, activeTab, hasMorePending, hasMoreHistory, loadMoreData]);
+
+  // Reset pagination when changing tabs
+  useEffect(() => {
+    console.log(`Tab changed to: ${activeTab}`);
+    setPendingPage(1);
+    setHistoryPage(1);
+    setHasMorePending(true);
+    setHasMoreHistory(true);
+    fetchFollowUpData(1, false, searchTerm);
+  }, [activeTab, currentUser]);
+
+  // Debounced search function
+  useEffect(() => {
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
+    const timeout = setTimeout(() => {
+      console.log(`Search term changed: ${searchTerm}`);
+      setPendingPage(1);
+      setHistoryPage(1);
+      setHasMorePending(true);
+      setHasMoreHistory(true);
+      fetchFollowUpData(1, false, searchTerm);
+    }, 500);
+
+    setSearchTimeout(timeout);
 
     return () => {
-      isMounted = false;
-      abortController.abort();
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
     };
-  }, [currentUser, isAdmin]);
+  }, [searchTerm]);
 
   // Filter function for search in both sections
   const filteredPendingFollowUps = pendingFollowUps.filter((followUp) => {
@@ -550,16 +675,6 @@ function FollowUp() {
 
   // Mobile Card View Component
 const MobileCardView = ({ data, type }) => {
-  const formatItemQty = (itemQty) => {
-    // Your implementation here
-    return itemQty;
-  };
-
-  const isAdmin = () => {
-    // Your implementation here
-    return false;
-  };
-
   if (type === 'pending') {
     return (
       <div className="space-y-4 md:hidden">
@@ -968,7 +1083,7 @@ const MobileCardView = ({ data, type }) => {
               </div>
             ) : (
               <>
-                {/* Pending Tab Content */}
+                {/* Content Tables/Cards */}
                 {activeTab === "pending" && (
                   <>
                     {/* Mobile Card View */}
@@ -1347,7 +1462,7 @@ const MobileCardView = ({ data, type }) => {
                                         </div>
                                       </td>
                                     )}
-                                  {visibleColumns.customerSay && (
+                                {visibleColumns.customerSay && (
   <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
     <div
       className="max-w-[150px] sm:max-w-[200px] whitespace-normal break-words"
@@ -1561,6 +1676,32 @@ const MobileCardView = ({ data, type }) => {
                       </div>
                     </div>
                   </>
+                )}
+
+                {/* Loading indicator */}
+                {isLoadingMore && (
+                  <div className="flex justify-center items-center py-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    <span className="ml-2 text-gray-600">Loading more data...</span>
+                  </div>
+                )}
+
+                {/* End of data message */}
+                {!isLoading && 
+                 ((activeTab === "pending" && !hasMorePending && pendingFollowUps.length > 0) ||
+                  (activeTab === "history" && !hasMoreHistory && historyFollowUps.length > 0)) && (
+                  <div className="text-center py-4 text-gray-500">
+                    You've reached the end of the data
+                  </div>
+                )}
+
+                {/* No results message */}
+                {!isLoading && 
+                 ((activeTab === "pending" && pendingFollowUps.length === 0) ||
+                  (activeTab === "history" && historyFollowUps.length === 0)) && (
+                  <div className="text-center py-8 text-gray-500">
+                    No results found
+                  </div>
                 )}
               </>
             )}

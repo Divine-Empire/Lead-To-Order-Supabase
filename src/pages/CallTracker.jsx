@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useContext } from "react"
+import { useState, useEffect, useContext, useRef, useCallback } from "react"
 import { Link } from "react-router-dom"
 import { PlusIcon, SearchIcon, ArrowRightIcon, BuildingIcon } from "../components/Icons"
 import { AuthContext } from "../App"
@@ -55,6 +55,14 @@ function CallTracker() {
   const [availableEnquiryNos, setAvailableEnquiryNos] = useState([])
   const [loading, setLoading] = useState(true)
   
+  const [pendingPage, setPendingPage] = useState(1)
+  const [historyPage, setHistoryPage] = useState(1)
+  const [directEnquiryPage, setDirectEnquiryPage] = useState(1)
+  const [hasMorePending, setHasMorePending] = useState(true)
+  const [hasMoreHistory, setHasMoreHistory] = useState(true)
+  const [hasMoreDirectEnquiry, setHasMoreDirectEnquiry] = useState(true)
+  const [isSearching, setIsSearching] = useState(false)
+
   // NEW: Add serial number filter state
   const [serialFilter, setSerialFilter] = useState([])
   const [showSerialDropdown, setShowSerialDropdown] = useState(false)
@@ -104,6 +112,59 @@ function CallTracker() {
     holdRemark: true,
   })
   const [showColumnDropdown, setShowColumnDropdown] = useState(false)
+
+// Refs for observer
+  const observer = useRef()
+const lastElementRef = useCallback(node => {
+  if (isLoading) return
+  if (observer.current) observer.current.disconnect()
+  
+  observer.current = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) {
+      console.log('Intersection triggered for tab:', activeTab)
+      loadMoreData()
+    }
+  })
+  
+  if (node) observer.current.observe(node)
+}, [isLoading, activeTab])
+
+// 3. Fix the loadMoreData function to properly check conditions
+const loadMoreData = useCallback(() => {
+  if (isLoading || isSearching) {
+    console.log('Skipping load more - isLoading:', isLoading, 'isSearching:', isSearching)
+    return
+  }
+  
+  switch (activeTab) {
+    case "pending":
+      if (hasMorePending) {
+        console.log('Loading more pending data, current page:', pendingPage)
+        setPendingPage(prev => prev + 1)
+      } else {
+        console.log('No more pending data to load')
+      }
+      break
+    case "history":
+      if (hasMoreHistory) {
+        console.log('Loading more history data, current page:', historyPage)
+        setHistoryPage(prev => prev + 1)
+      } else {
+        console.log('No more history data to load')
+      }
+      break
+    case "directEnquiry":
+      if (hasMoreDirectEnquiry) {
+        console.log('Loading more direct enquiry data, current page:', directEnquiryPage)
+        setDirectEnquiryPage(prev => prev + 1)
+      } else {
+        console.log('No more direct enquiry data to load')
+      }
+      break
+  }
+}, [isLoading, isSearching, activeTab, hasMorePending, hasMoreHistory, hasMoreDirectEnquiry, pendingPage, historyPage, directEnquiryPage])
+
+
 
   // Helper function to determine priority based on status
   const determinePriority = (status) => {
@@ -235,6 +296,8 @@ const formatItemQty = (itemQtyString) => {
   }
 }
 
+
+
 // Replace your matchesCallingDaysFilter function with this:
 const matchesCallingDaysFilter = (dateValue, activeTab) => {
   if (callingDaysFilter.length === 0) return true;
@@ -339,34 +402,43 @@ const matchesCallingDaysFilter = (dateValue, activeTab) => {
     }
   }, [])
 
-  // Function for fetching data
-  // Replace your existing fetchPendingData function with this:
-const fetchPendingData = async () => {
+   // Function for fetching data with pagination and search
+ const fetchPendingData = async (page = 1, searchTerm = "", isLoadMore = false) => {
+  if (isLoadMore && !hasMorePending) return // Don't fetch if no more data
+  
+  setIsLoading(true)
+  const itemsPerPage = 50
+  const from = (page - 1) * itemsPerPage
+  const to = from + itemsPerPage - 1
+
+  console.log(`Fetching pending data - Page: ${page}, From: ${from}, To: ${to}, IsLoadMore: ${isLoadMore}`)
+
   let query = supabase
     .from("leads_to_order")
-    .select("*")
+    .select("*", { count: 'exact' })
     .not("Planned1", "is", null)
-    .is("Actual1", null);
+    .is("Actual1", null)
+    .order("LD-Lead-No", { ascending: true })
+    .range(from, to)
+
+  if (searchTerm) {
+    query = query.or(`LD-Lead-No.ilike.%${searchTerm}%,Lead_Receiver_Name.ilike.%${searchTerm}%,Company_Name.ilike.%${searchTerm}%,Phone_Number.ilike.%${searchTerm}%`)
+  }
 
   if (!isAdmin() && currentUser && currentUser.username) {
     query = query.eq("SC_Name", currentUser.username);
   }
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
 
   if (error) {
     console.error("Error fetching leads:", error.message);
+    setIsLoading(false)
+    return [];
   } else {
-    // Sort data by Lead Number before assigning serial numbers
-    const sortedData = data.sort((a, b) => {
-      const leadNoA = a["LD-Lead-No"] || "";
-      const leadNoB = b["LD-Lead-No"] || "";
-      return leadNoA.localeCompare(leadNoB, undefined, { numeric: true });
-    });
-
-    const transformedData = sortedData.map((item, index) => ({
-      id: index + 1,
-      serialNo: index + 1, // Now this will be in proper sequence
+    const transformedData = data.map((item, index) => ({
+      id: from + index + 1,
+      serialNo: from + index + 1,
       Timestamp: formatDateToDDMMYYYY(item.Timestamp) || "",
       lead_no: item["LD-Lead-No"] || "",
       Lead_Receiver_Name: item["Lead_Receiver_Name"] || "",
@@ -379,41 +451,71 @@ const fetchPendingData = async () => {
       priority: determinePriority(item["Lead_Source"] || ""),
       itemQty: formatItemQty(item["Item/qty"]) || "",
       sc_name: item['SC_Name'] || "",
-      nextCallDate: item['Next_Call_Date']|| "",
-        nextCallDate1: item['Next Call Date_1']|| "",
+      nextCallDate: item['Next_Call_Date'] || "",
+      nextCallDate1: item['Next Call Date_1'] || "",
     }));
-    setPendingData(transformedData);
-    console.log("Pending leads:", transformedData);
+
+    console.log(`Received ${transformedData.length} items, total count: ${count}`)
+
+    if (isLoadMore) {
+      setPendingData(prev => {
+        console.log('Appending to existing data, current length:', prev.length)
+        return [...prev, ...transformedData]
+      })
+    } else {
+      console.log('Setting new data')
+      setPendingData(transformedData)
+    }
+
+    // Check if there's more data - fixed logic
+    const hasMore = transformedData.length === itemsPerPage && (from + transformedData.length) < (count || 0)
+    console.log(`Has more data: ${hasMore}, items received: ${transformedData.length}, total available: ${count}`)
+    setHasMorePending(hasMore)
+    
+    setIsLoading(false)
     return transformedData;
   }
-  setLoading(false);
 };
 
+
 // Replace your existing fetchHistoryData function with this:
-const fetchHistoryData = async () => {
+// 1. Fix the column name issue in fetchHistoryData
+const fetchHistoryData = async (page = 1, searchTerm = "", isLoadMore = false) => {
+  if (isLoadMore && !hasMoreHistory) return // Don't fetch if no more data
+  
+  setIsLoading(true)
+  const itemsPerPage = 50
+  const from = (page - 1) * itemsPerPage
+  const to = from + itemsPerPage - 1
+
+  console.log(`Fetching history data - Page: ${page}, From: ${from}, To: ${to}, IsLoadMore: ${isLoadMore}`)
+
+  // FIX: Properly escape the column name with quotes for Supabase
   let query = supabase
     .from("enquiry_tracker")
-    .select("*");
+    .select("*", { count: 'exact' })
+    .order('"Enquiry No."', { ascending: true }) // Fixed: Use proper column name escaping
+    .range(from, to)
+
+  if (searchTerm) {
+    // FIX: Use proper column name escaping in search too
+    query = query.or(`"Enquiry No.".ilike.%${searchTerm}%,"What Did Customer Say".ilike.%${searchTerm}%,"Current Stage".ilike.%${searchTerm}%`)
+  }
 
   if (!isAdmin() && currentUser && currentUser.username) {
     query = query.eq("Sales Cordinator", currentUser.username);
   }
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
 
   if (error) {
     console.error("Error fetching enquiry tracker:", error.message);
+    setIsLoading(false)
+    return [];
   } else {
-    // Sort data by Enquiry Number before assigning serial numbers
-    const sortedData = data.sort((a, b) => {
-      const enquiryNoA = a["Enquiry No."] || "";
-      const enquiryNoB = b["Enquiry No."] || "";
-      return enquiryNoA.localeCompare(enquiryNoB, undefined, { numeric: true });
-    });
-
-    const transformedData = sortedData.map((item, index) => ({
-      id: index + 1,
-      serialNo: index + 1, // Now this will be in proper sequence
+    const transformedData = data.map((item, index) => ({
+      id: from + index + 1,
+      serialNo: from + index + 1,
       Timestamp: formatDateToDDMMYYYY(item.Timestamp) || "",
       enquiryNo: item["Enquiry No."] || "",
       enquiryStatus: item["Enquiry Status"] || "",
@@ -463,40 +565,65 @@ const fetchHistoryData = async () => {
       priority: determinePriority(item["Enquiry Status"] || "")
     }));
 
-    setHistoryData(transformedData);
-    console.log("History data:", transformedData);
+    console.log(`Received ${transformedData.length} items, total count: ${count}`)
+
+    if (isLoadMore) {
+      setHistoryData(prev => {
+        console.log('Appending to existing history data, current length:', prev.length)
+        return [...prev, ...transformedData]
+      })
+    } else {
+      console.log('Setting new history data')
+      setHistoryData(transformedData)
+    }
+
+    // Check if there's more data - fixed logic
+    const hasMore = transformedData.length === itemsPerPage && (from + transformedData.length) < (count || 0)
+    console.log(`Has more history data: ${hasMore}, items received: ${transformedData.length}, total available: ${count}`)
+    setHasMoreHistory(hasMore)
+    
+    setIsLoading(false)
     return transformedData;
   }
-  setLoading(false);
 };
 
-// Replace your existing fetchDirectEnquiryData function with this:
-const fetchDirectEnquiryData = async () => {
+// 2. Fix the fetchDirectEnquiryData function with proper pagination check
+const fetchDirectEnquiryData = async (page = 1, searchTerm = "", isLoadMore = false) => {
+  if (isLoadMore && !hasMoreDirectEnquiry) return // Don't fetch if no more data
+  
+  setIsLoading(true)
+  const itemsPerPage = 50
+  const from = (page - 1) * itemsPerPage
+  const to = from + itemsPerPage - 1
+
+  console.log(`Fetching direct enquiry data - Page: ${page}, From: ${from}, To: ${to}, IsLoadMore: ${isLoadMore}`)
+
   let query = supabase
     .from("enquiry_to_order")
-    .select("*")
+    .select("*", { count: 'exact' })
     .not("planned1", "is", null)
-    .is("actual1", null);
+    .is("actual1", null)
+    .order("enquiry_no", { ascending: true })
+    .range(from, to)
+
+  if (searchTerm) {
+    query = query.or(`enquiry_no.ilike.%${searchTerm}%,company_name.ilike.%${searchTerm}%,sales_person_name.ilike.%${searchTerm}%`)
+  }
 
   if (!isAdmin() && currentUser && currentUser.username) {
     query = query.eq("sales_coordinator_name", currentUser.username);
   }
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
 
   if (error) {
     console.error("Error fetching direct enquiry:", error.message);
+    setIsLoading(false)
+    return [];
   } else {
-    // Sort data by Enquiry Number before assigning serial numbers
-    const sortedData = data.sort((a, b) => {
-      const enquiryNoA = a.enquiry_no || "";
-      const enquiryNoB = b.enquiry_no || "";
-      return enquiryNoA.localeCompare(enquiryNoB, undefined, { numeric: true });
-    });
-
-    const transformedData = sortedData.map((item, index) => ({
-      id: index + 1,
-      serialNo: index + 1, // Now this will be in proper sequence
+    const transformedData = data.map((item, index) => ({
+      id: from + index + 1,
+      serialNo: from + index + 1,
       timestamp: formatDateToDDMMYYYY(item.timestamp) || "",
       enquiry_no: item.enquiry_no || "",
       lead_receiver_name: item.enquiry_receiver_name || "",
@@ -509,32 +636,169 @@ const fetchDirectEnquiryData = async () => {
       priority: determinePriority(item.lead_source || ""),
       item_qty: formatItemQty(item.item_qty) || "",
       sc_name: item.sales_coordinator_name || "",
-      nextCallDate:item.next_call_date||"",
+      nextCallDate: item.next_call_date || "",
     }));
 
-    setDirectEnquiryData(transformedData);
-    console.log("Direct Enquiry data:", transformedData);
+    console.log(`Received ${transformedData.length} items, total count: ${count}`)
+
+    if (isLoadMore) {
+      setDirectEnquiryData(prev => {
+        console.log('Appending to existing direct enquiry data, current length:', prev.length)
+        return [...prev, ...transformedData]
+      })
+    } else {
+      console.log('Setting new direct enquiry data')
+      setDirectEnquiryData(transformedData)
+    }
+
+    // Check if there's more data - fixed logic
+    const hasMore = transformedData.length === itemsPerPage && (from + transformedData.length) < (count || 0)
+    console.log(`Has more direct enquiry data: ${hasMore}, items received: ${transformedData.length}, total available: ${count}`)
+    setHasMoreDirectEnquiry(hasMore)
+    
+    setIsLoading(false)
     return transformedData;
   }
-  setLoading(false);
 };
 
-  // Fetch on mount
-  useEffect(() => {
-    fetchPendingData();
-    fetchHistoryData();
-    fetchDirectEnquiryData();
-  }, []);
-
-
-  // Fetch on mount
+  // Fetch data when tab changes or page changes
 useEffect(() => {
-  fetchPendingData();
-  fetchHistoryData();
-  fetchDirectEnquiryData();
-}, []);
+  if (isSearching) {
+    console.log('Skipping fetch due to search in progress')
+    return // Don't fetch if we're in the middle of a search
+  }
+  
+  const fetchData = async () => {
+    console.log('Fetching data for tab:', activeTab, 'pages:', { pendingPage, historyPage, directEnquiryPage })
+    
+    switch (activeTab) {
+      case "pending":
+        await fetchPendingData(pendingPage, searchTerm, pendingPage > 1)
+        break
+      case "history":
+        await fetchHistoryData(historyPage, searchTerm, historyPage > 1)
+        break
+      case "directEnquiry":
+        await fetchDirectEnquiryData(directEnquiryPage, searchTerm, directEnquiryPage > 1)
+        break
+    }
+  }
+
+  fetchData()
+}, [activeTab, pendingPage, historyPage, directEnquiryPage]) // Removed isSearching from dependencies
 
 
+
+  // Handle search with debounce
+useEffect(() => {
+  const handler = setTimeout(() => {
+    if (searchTerm.trim() !== "") {
+      console.log('Starting search with term:', searchTerm)
+      setIsSearching(true)
+      // Reset pagination and fetch with search term
+      setPendingPage(1)
+      setHistoryPage(1)
+      setDirectEnquiryPage(1)
+      
+      // Reset hasMore flags for search
+      setHasMorePending(true)
+      setHasMoreHistory(true)
+      setHasMoreDirectEnquiry(true)
+      
+      const performSearch = async () => {
+        switch (activeTab) {
+          case "pending":
+            await fetchPendingData(1, searchTerm, false)
+            break
+          case "history":
+            await fetchHistoryData(1, searchTerm, false)
+            break
+          case "directEnquiry":
+            await fetchDirectEnquiryData(1, searchTerm, false)
+            break
+        }
+        setIsSearching(false)
+      }
+      
+      performSearch()
+    } else if (isSearching) {
+      console.log('Clearing search and resetting')
+      // Clear search and reset to normal pagination
+      setIsSearching(false)
+      setPendingPage(1)
+      setHistoryPage(1)
+      setDirectEnquiryPage(1)
+      
+      // Reset hasMore flags
+      setHasMorePending(true)
+      setHasMoreHistory(true)
+      setHasMoreDirectEnquiry(true)
+      
+      const resetData = async () => {
+        switch (activeTab) {
+          case "pending":
+            await fetchPendingData(1, "", false)
+            break
+          case "history":
+            await fetchHistoryData(1, "", false)
+            break
+          case "directEnquiry":
+            await fetchDirectEnquiryData(1, "", false)
+            break
+        }
+      }
+      
+      resetData()
+    }
+  }, 500) // 500ms debounce
+
+  return () => clearTimeout(handler)
+}, [searchTerm, activeTab])
+
+const LoadingIndicator = () => {
+  if (!isLoading) return null
+  
+  return (
+    <div className="flex justify-center items-center py-4 bg-gray-50">
+      <div className="flex items-center space-x-2">
+        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
+        <span className="text-sm text-gray-600">Loading more data...</span>
+      </div>
+    </div>
+  )
+}
+
+  // Reset pagination when tab changes
+ useEffect(() => {
+  // Reset all pagination when active tab changes
+  setPendingPage(1)
+  setHistoryPage(1)
+  setDirectEnquiryPage(1)
+  setHasMorePending(true)
+  setHasMoreHistory(true)
+  setHasMoreDirectEnquiry(true)
+  
+  // Clear existing data to prevent stale data
+  if (activeTab === "pending") {
+    setPendingData([])
+  } else if (activeTab === "history") {
+    setHistoryData([])
+  } else if (activeTab === "directEnquiry") {
+    setDirectEnquiryData([])
+  }
+}, [activeTab])
+
+useEffect(() => {
+  if (callingDaysFilter.length > 0 || enquiryNoFilter.length > 0 || currentStageFilter.length > 0) {
+    // Reset pagination when filters are applied
+    setPendingPage(1)
+    setHistoryPage(1)
+    setDirectEnquiryPage(1)
+    setHasMorePending(true)
+    setHasMoreHistory(true)
+    setHasMoreDirectEnquiry(true)
+  }
+}, [callingDaysFilter, enquiryNoFilter, currentStageFilter])
 
 // NEW: Update available enquiry numbers when data changes or tab changes
 useEffect(() => {
@@ -557,37 +821,22 @@ useEffect(() => {
   setAvailableEnquiryNos(enquiryNos.sort());
 }, [activeTab, pendingData, directEnquiryData, historyData]);
 
-  // NEW: Enhanced filter function that includes serial number filtering
-  const filterTrackers = (tracker, searchTerm, activeTab) => {
-    // Search term filter
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase()
-      const matchesSearch = Object.values(tracker).some(
-        (value) => value && value.toString().toLowerCase().includes(term),
-      )
-      if (!matchesSearch) return false
-    }
-
-    // NEW: Serial number filter
-    if (serialFilter.length > 0) {
-      if (!serialFilter.includes(tracker.serialNo)) return false
-    }
-
+   // Filter data based on current filters
+  const filterTrackers = (tracker, activeTab) => {
     // Enquiry number filter
-  // In your filterTrackers function, update the enquiry number filter section:
-if (enquiryNoFilter.length > 0) {
-  let enquiryNo = "";
-  
-  if (activeTab === "pending") {
-    enquiryNo = tracker.lead_no || "";
-  } else if (activeTab === "directEnquiry") {
-    enquiryNo = tracker.enquiry_no || "";
-  } else if (activeTab === "history") {
-    enquiryNo = tracker.enquiryNo || "";
-  }
-  
-  if (!enquiryNoFilter.includes(enquiryNo)) return false;
-}
+    if (enquiryNoFilter.length > 0) {
+      let enquiryNo = "";
+      
+      if (activeTab === "pending") {
+        enquiryNo = tracker.lead_no || "";
+      } else if (activeTab === "directEnquiry") {
+        enquiryNo = tracker.enquiry_no || "";
+      } else if (activeTab === "history") {
+        enquiryNo = tracker.enquiryNo || "";
+      }
+      
+      if (!enquiryNoFilter.includes(enquiryNo)) return false;
+    }
 
     // Current stage filter
     if (currentStageFilter.length > 0) {
@@ -596,33 +845,32 @@ if (enquiryNoFilter.length > 0) {
     }
 
     // Calling days filter
-   // In your filterTrackers function, replace the calling days filter section with:
-if (callingDaysFilter.length > 0) {
-  let dateValue = "";
-  if (activeTab === "pending") {
-    dateValue = tracker.nextCallDate1 || tracker.Calling_Days || "";
-  } else if (activeTab === "directEnquiry") {
-    dateValue = tracker.nextCallDate || tracker.calling_days || "";
-  } else if (activeTab === "history") {
-    dateValue = tracker.nextCallDate || "";
-  }
-  
-  if (!matchesCallingDaysFilter(dateValue, activeTab)) return false;
-}
+    if (callingDaysFilter.length > 0) {
+      let dateValue = "";
+      if (activeTab === "pending") {
+        dateValue = tracker.nextCallDate1 || tracker.Calling_Days || "";
+      } else if (activeTab === "directEnquiry") {
+        dateValue = tracker.nextCallDate || tracker.calling_days || "";
+      } else if (activeTab === "history") {
+        dateValue = tracker.nextCallDate || "";
+      }
+      
+      if (!matchesCallingDaysFilter(dateValue, activeTab)) return false;
+    }
 
     return true
   }
 
   const filteredPendingCallTrackers = pendingData.filter((tracker) =>
-    filterTrackers(tracker, searchTerm, "pending"),
+    filterTrackers(tracker, "pending")
   )
 
   const filteredHistoryCallTrackers = historyData.filter((tracker) =>
-    filterTrackers(tracker, searchTerm, "history"),
+    filterTrackers(tracker, "history")
   )
 
   const filteredDirectEnquiryPendingTrackers = directEnquiryData.filter((tracker) =>
-    filterTrackers(tracker, searchTerm, "directEnquiry"),
+    filterTrackers(tracker, "directEnquiry")
   )
 
   // NEW: Get available serial numbers based on active tab
@@ -766,6 +1014,8 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
       return itemQtyString;
     }
   };
+
+  
 
   if (type === 'pending') {
     return (
@@ -1512,7 +1762,12 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
               <tbody className="bg-white divide-y divide-gray-200">
   {filteredPendingCallTrackers.length > 0 ? (
     filteredPendingCallTrackers.map((tracker, index) => (
-      <tr key={index} className="hover:bg-slate-50">
+      <tr 
+      key={tracker.id} 
+      className="hover:bg-slate-50"
+      ref={index === filteredPendingCallTrackers.length - 1 ? lastElementRef : null}
+    >
+    
         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
           <div className="flex space-x-2">
             <Link state={{ activeTab: activeTab, sc_name: tracker.sc_name }} to={`/call-tracker/new?leadId=${tracker.lead_no}`}>
@@ -1588,8 +1843,12 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
       </td>
     </tr>
   )}
-</tbody>
-                  </table>
+</tbody> 
+                  </table> {isLoading && activeTab === "pending" && (
+  <div className="flex justify-center py-4">
+    <div className="text-sm text-gray-500">Loading more data...</div>
+  </div>
+)}
                 </div></div>
            </>   )}
 
@@ -1720,8 +1979,12 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
       </thead>
       <tbody className="bg-white divide-y divide-gray-200">
         {filteredHistoryCallTrackers.length > 0 ? (
-          filteredHistoryCallTrackers.map((tracker,index) => (
-            <tr key={index} className="hover:bg-slate-50">
+    filteredHistoryCallTrackers.map((tracker, index) => (
+      <tr 
+        key={tracker.id} 
+        className="hover:bg-slate-50"
+        ref={index === filteredHistoryCallTrackers.length - 1 ? lastElementRef : null}
+      >
               {visibleColumns.timestamp && (
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.Timestamp}</td>
               )}
@@ -1883,7 +2146,13 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
           </tr>
         )}
       </tbody>
-    </table>
+      
+  
+    </table>  {isLoading && activeTab === "history" && (
+  <div className="flex justify-center py-4">
+    <div className="text-sm text-gray-500">Loading more data...</div>
+  </div>
+)}
   </div></div>
    
             </>  )}
@@ -1962,9 +2231,13 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredDirectEnquiryPendingTrackers.length > 0 ? (
-                        filteredDirectEnquiryPendingTrackers.map((tracker,index) => (
-                          <tr key={index} className="hover:bg-slate-50">
+                   {filteredDirectEnquiryPendingTrackers.length > 0 ? (
+    filteredDirectEnquiryPendingTrackers.map((tracker, index) => (
+      <tr 
+        key={tracker.id} 
+        className="hover:bg-slate-50"
+        ref={index === filteredDirectEnquiryPendingTrackers.length - 1 ? lastElementRef : null}
+      >
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                               <div className="flex space-x-2">
                                 <Link  state={{ activeTab: activeTab, sc_name: tracker.sc_name }} to={`/call-tracker/new?leadId=${tracker.enquiry_no}`}>
@@ -2033,7 +2306,12 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                         </tr>
                       )}
                     </tbody>
-                  </table>
+                   
+                  </table> {isLoading && activeTab === "directEnquiry" && (
+  <div className="flex justify-center py-4">
+    <div className="text-sm text-gray-500">Loading more data...</div>
+  </div>
+)}
                 </div></div>
   </>
 )}

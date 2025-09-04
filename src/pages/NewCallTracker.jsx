@@ -652,7 +652,8 @@ const handleOrderStatusChange = async (field, value) => {
 
         if (formData.orderStatus?.toLowerCase() === "yes") {
           Object.assign(updateData, {
-            Actual1: new Date().toISOString(),
+           Actual1: new Date().toISOString().slice(0, 10),
+
             Acceptance_Via: formData.acceptanceVia,
             Payment_Mode: formData.paymentMode,
             Destination: formData.destination,
@@ -679,7 +680,8 @@ const handleOrderStatusChange = async (field, value) => {
           });
         } else if (formData.orderStatus?.toLowerCase() === "no") {
           Object.assign(updateData, {
-                Actual1: new Date().toISOString(),
+               Actual1: new Date().toISOString().slice(0, 10),
+
              Order_Lost_Apology_Video:typeof formData.apologyVideo === "string" 
       ? formData.apologyVideo 
       : "", // handle upload later
