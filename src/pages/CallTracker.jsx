@@ -616,49 +616,65 @@ const fetchDirectEnquiryData = async (page = 1, searchTerm = "", isLoadMore = fa
 
   const { data, error, count } = await query;
 
-  if (error) {
-    console.error("Error fetching direct enquiry:", error.message);
-    setIsLoading(false)
-    return [];
-  } else {
-    const transformedData = data.map((item, index) => ({
-      id: from + index + 1,
-      serialNo: from + index + 1,
-      timestamp: formatDateToDDMMYYYY(item.timestamp) || "",
-      enquiry_no: item.enquiry_no || "",
-      lead_receiver_name: item.enquiry_receiver_name || "",
-      lead_source: item.lead_source || "",
-      phone_number: item.phone_number || "",
-      salesperson_name: item.sales_person_name || "",
-      company_name: item.company_name || "",
-      current_stage: item.current_stage || "",
-      calling_days: item.calling_days || "",
-      priority: determinePriority(item.lead_source || ""),
-      item_qty: formatItemQty(item.item_qty) || "",
-      sc_name: item.sales_coordinator_name || "",
-      nextCallDate: item.next_call_date || "",
-    }));
+if (error) {
+  console.error("Error fetching direct enquiry:", error.message);
+  setIsLoading(false);
+  return [];
+} else {
+  // ✅ Sort enquiry_no numerically (ignore 'En-' prefix)
+  const sortedData = data.sort((a, b) => {
+    const numA = parseInt((a.enquiry_no || "").replace("En-", ""), 10);
+    const numB = parseInt((b.enquiry_no || "").replace("En-", ""), 10);
+    return numA - numB;
+  });
 
-    console.log(`Received ${transformedData.length} items, total count: ${count}`)
+  const transformedData = sortedData.map((item, index) => ({
+    id: from + index + 1,
+    serialNo: from + index + 1,
+    timestamp: formatDateToDDMMYYYY(item.timestamp) || "",
+    enquiry_no: item.enquiry_no || "",
+    lead_receiver_name: item.enquiry_receiver_name || "",
+    lead_source: item.lead_source || "",
+    phone_number: item.phone_number || "",
+    salesperson_name: item.sales_person_name || "",
+    company_name: item.company_name || "",
+    current_stage: item.current_stage || "",
+    calling_days: item.calling_days || "",
+    priority: determinePriority(item.lead_source || ""),
+    item_qty: formatItemQty(item.item_qty) || "",
+    sc_name: item.sales_coordinator_name || "",
+    nextCallDate: item.next_call_date || "",
+  }));
 
-    if (isLoadMore) {
-      setDirectEnquiryData(prev => {
-        console.log('Appending to existing direct enquiry data, current length:', prev.length)
-        return [...prev, ...transformedData]
-      })
-    } else {
-      console.log('Setting new direct enquiry data')
-      setDirectEnquiryData(transformedData)
-    }
+  console.log(`Received ${transformedData.length} items, total count: ${count}`);
 
-    // Check if there's more data - fixed logic
-    const hasMore = transformedData.length === itemsPerPage && (from + transformedData.length) < (count || 0)
-    console.log(`Has more direct enquiry data: ${hasMore}, items received: ${transformedData.length}, total available: ${count}`)
-    setHasMoreDirectEnquiry(hasMore)
-    
-    setIsLoading(false)
-    return transformedData;
-  }
+if (isLoadMore) {
+  setDirectEnquiryData(prev => {
+    console.log("Merging and re-sorting all enquiry data");
+    const merged = [...prev, ...transformedData];
+
+    // Re-sort globally
+    return merged.sort((a, b) => {
+      const numA = parseInt((a.enquiry_no || "").replace("En-", ""), 10);
+      const numB = parseInt((b.enquiry_no || "").replace("En-", ""), 10);
+      return numA - numB;
+    });
+  });
+} else {
+  console.log("Setting new direct enquiry data");
+  setDirectEnquiryData(transformedData);
+}
+
+
+  // Check if there's more data
+  const hasMore = transformedData.length === itemsPerPage && (from + transformedData.length) < (count || 0);
+  console.log(`Has more direct enquiry data: ${hasMore}, items received: ${transformedData.length}, total available: ${count}`);
+  setHasMoreDirectEnquiry(hasMore);
+
+  setIsLoading(false);
+  return transformedData;
+}
+
 };
 
   // Fetch data when tab changes or page changes
