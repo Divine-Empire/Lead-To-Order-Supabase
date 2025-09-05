@@ -299,37 +299,37 @@ const formatItemQty = (itemQtyString) => {
 
 
 // Replace your matchesCallingDaysFilter function with this:
-const matchesCallingDaysFilter = (dateValue, activeTab) => {
-  if (callingDaysFilter.length === 0) return true;
+// const matchesCallingDaysFilter = (dateValue, activeTab) => {
+//   if (callingDaysFilter.length === 0) return true;
   
-  // For pending and directEnquiry tabs, we need to check the actual date values
-  if (activeTab === "pending" || activeTab === "directEnquiry") {
-    return callingDaysFilter.some((filter) => {
-      switch (filter) {
-        case "today":
-          return isToday(dateValue);
-        case "overdue":
-          return isOverdue(dateValue);
-        case "upcoming":
-          return isUpcoming(dateValue);
-        default:
-          return false;
-      }
-    });
-  } else {
-    // For history tab, check if it matches actual dates
-    return callingDaysFilter.some((filter) => {
-      switch (filter) {
-        case "today":
-          return isToday(dateValue);
-        case "older":
-          return !isToday(dateValue) && dateValue !== "";
-        default:
-          return false;
-      }
-    });
-  }
-};
+//   // For pending and directEnquiry tabs, we need to check the actual date values
+//   if (activeTab === "pending" || activeTab === "directEnquiry") {
+//     return callingDaysFilter.some((filter) => {
+//       switch (filter) {
+//         case "today":
+//           return isToday(dateValue);
+//         case "overdue":
+//           return isOverdue(dateValue);
+//         case "upcoming":
+//           return isUpcoming(dateValue);
+//         default:
+//           return false;
+//       }
+//     });
+//   } else {
+//     // For history tab, check if it matches actual dates
+//     return callingDaysFilter.some((filter) => {
+//       switch (filter) {
+//         case "today":
+//           return isToday(dateValue);
+//         case "older":
+//           return !isToday(dateValue) && dateValue !== "";
+//         default:
+//           return false;
+//       }
+//     });
+//   }
+// };
 
   const handleColumnToggle = (columnKey) => {
     setVisibleColumns((prev) => ({
@@ -402,16 +402,14 @@ const matchesCallingDaysFilter = (dateValue, activeTab) => {
     }
   }, [])
 
-   // Function for fetching data with pagination and search
- const fetchPendingData = async (page = 1, searchTerm = "", isLoadMore = false) => {
-  if (isLoadMore && !hasMorePending) return // Don't fetch if no more data
+// 1. Update the fetchPendingData function to accept date filters
+const fetchPendingData = async (page = 1, searchTerm = "", isLoadMore = false, dateFilters = {}) => {
+  if (isLoadMore && !hasMorePending) return;
   
-  setIsLoading(true)
-  const itemsPerPage = 50
-  const from = (page - 1) * itemsPerPage
-  const to = from + itemsPerPage - 1
-
-  console.log(`Fetching pending data - Page: ${page}, From: ${from}, To: ${to}, IsLoadMore: ${isLoadMore}`)
+  setIsLoading(true);
+  const itemsPerPage = 50;
+  const from = (page - 1) * itemsPerPage;
+  const to = from + itemsPerPage - 1;
 
   let query = supabase
     .from("leads_to_order")
@@ -419,10 +417,22 @@ const matchesCallingDaysFilter = (dateValue, activeTab) => {
     .not("Planned1", "is", null)
     .is("Actual1", null)
     .order("LD-Lead-No", { ascending: true })
-    .range(from, to)
+    .range(from, to);
+
+  // Add date filtering for pending data
+  if (dateFilters.today) {
+    const today = new Date().toISOString().split('T')[0];
+    query = query.gte('Next Call Date_1', today).lt('Next Call Date_1', new Date(Date.now() + 86400000).toISOString().split('T')[0]);
+  } else if (dateFilters.overdue) {
+    const today = new Date().toISOString().split('T')[0];
+    query = query.lt('Next Call Date_1', today);
+  } else if (dateFilters.upcoming) {
+    const today = new Date().toISOString().split('T')[0];
+    query = query.gt('Next Call Date_1', today);
+  }
 
   if (searchTerm) {
-    query = query.or(`LD-Lead-No.ilike.%${searchTerm}%,Lead_Receiver_Name.ilike.%${searchTerm}%,Company_Name.ilike.%${searchTerm}%,Phone_Number.ilike.%${searchTerm}%`)
+    query = query.or(`LD-Lead-No.ilike.%${searchTerm}%,Lead_Receiver_Name.ilike.%${searchTerm}%,Company_Name.ilike.%${searchTerm}%,Phone_Number.ilike.%${searchTerm}%`);
   }
 
   if (!isAdmin() && currentUser && currentUser.username) {
@@ -433,7 +443,7 @@ const matchesCallingDaysFilter = (dateValue, activeTab) => {
 
   if (error) {
     console.error("Error fetching leads:", error.message);
-    setIsLoading(false)
+    setIsLoading(false);
     return [];
   } else {
     const transformedData = data.map((item, index) => ({
@@ -480,26 +490,31 @@ const matchesCallingDaysFilter = (dateValue, activeTab) => {
 
 // Replace your existing fetchHistoryData function with this:
 // 1. Fix the column name issue in fetchHistoryData
-const fetchHistoryData = async (page = 1, searchTerm = "", isLoadMore = false) => {
-  if (isLoadMore && !hasMoreHistory) return // Don't fetch if no more data
+const fetchHistoryData = async (page = 1, searchTerm = "", isLoadMore = false, dateFilters = {}) => {
+  if (isLoadMore && !hasMoreHistory) return;
   
-  setIsLoading(true)
-  const itemsPerPage = 50
-  const from = (page - 1) * itemsPerPage
-  const to = from + itemsPerPage - 1
+  setIsLoading(true);
+  const itemsPerPage = 50;
+  const from = (page - 1) * itemsPerPage;
+  const to = from + itemsPerPage - 1;
 
-  console.log(`Fetching history data - Page: ${page}, From: ${from}, To: ${to}, IsLoadMore: ${isLoadMore}`)
-
-  // FIX: Properly escape the column name with quotes for Supabase
   let query = supabase
     .from("enquiry_tracker")
     .select("*", { count: 'exact' })
-    .order('"Enquiry No."', { ascending: true }) // Fixed: Use proper column name escaping
-    .range(from, to)
+    .order('"Enquiry No."', { ascending: true })
+    .range(from, to);
+
+  // Add date filtering for history data
+  if (dateFilters.today) {
+    const today = new Date().toISOString().split('T')[0];
+    query = query.gte('"Next Call Date"', today).lt('"Next Call Date"', new Date(Date.now() + 86400000).toISOString().split('T')[0]);
+  } else if (dateFilters.older) {
+    const today = new Date().toISOString().split('T')[0];
+    query = query.lt('"Next Call Date"', today);
+  }
 
   if (searchTerm) {
-    // FIX: Use proper column name escaping in search too
-    query = query.or(`"Enquiry No.".ilike.%${searchTerm}%,"What Did Customer Say".ilike.%${searchTerm}%,"Current Stage".ilike.%${searchTerm}%`)
+    query = query.or(`"Enquiry No.".ilike.%${searchTerm}%,"What Did Customer Say".ilike.%${searchTerm}%,"Current Stage".ilike.%${searchTerm}%`);
   }
 
   if (!isAdmin() && currentUser && currentUser.username) {
@@ -510,7 +525,7 @@ const fetchHistoryData = async (page = 1, searchTerm = "", isLoadMore = false) =
 
   if (error) {
     console.error("Error fetching enquiry tracker:", error.message);
-    setIsLoading(false)
+    setIsLoading(false);
     return [];
   } else {
     const transformedData = data.map((item, index) => ({
@@ -588,15 +603,13 @@ const fetchHistoryData = async (page = 1, searchTerm = "", isLoadMore = false) =
 };
 
 // 2. Fix the fetchDirectEnquiryData function with proper pagination check
-const fetchDirectEnquiryData = async (page = 1, searchTerm = "", isLoadMore = false) => {
-  if (isLoadMore && !hasMoreDirectEnquiry) return // Don't fetch if no more data
+const fetchDirectEnquiryData = async (page = 1, searchTerm = "", isLoadMore = false, dateFilters = {}) => {
+  if (isLoadMore && !hasMoreDirectEnquiry) return;
   
-  setIsLoading(true)
-  const itemsPerPage = 50
-  const from = (page - 1) * itemsPerPage
-  const to = from + itemsPerPage - 1
-
-  console.log(`Fetching direct enquiry data - Page: ${page}, From: ${from}, To: ${to}, IsLoadMore: ${isLoadMore}`)
+  setIsLoading(true);
+  const itemsPerPage = 50;
+  const from = (page - 1) * itemsPerPage;
+  const to = from + itemsPerPage - 1;
 
   let query = supabase
     .from("enquiry_to_order")
@@ -604,10 +617,22 @@ const fetchDirectEnquiryData = async (page = 1, searchTerm = "", isLoadMore = fa
     .not("planned1", "is", null)
     .is("actual1", null)
     .order("enquiry_no", { ascending: true })
-    .range(from, to)
+    .range(from, to);
+
+  // Add date filtering for direct enquiry data
+  if (dateFilters.today) {
+    const today = new Date().toISOString().split('T')[0];
+    query = query.gte('next_call_date', today).lt('next_call_date', new Date(Date.now() + 86400000).toISOString().split('T')[0]);
+  } else if (dateFilters.overdue) {
+    const today = new Date().toISOString().split('T')[0];
+    query = query.lt('next_call_date', today);
+  } else if (dateFilters.upcoming) {
+    const today = new Date().toISOString().split('T')[0];
+    query = query.gt('next_call_date', today);
+  }
 
   if (searchTerm) {
-    query = query.or(`enquiry_no.ilike.%${searchTerm}%,company_name.ilike.%${searchTerm}%,sales_person_name.ilike.%${searchTerm}%`)
+    query = query.or(`enquiry_no.ilike.%${searchTerm}%,company_name.ilike.%${searchTerm}%,sales_person_name.ilike.%${searchTerm}%`);
   }
 
   if (!isAdmin() && currentUser && currentUser.username) {
@@ -616,10 +641,10 @@ const fetchDirectEnquiryData = async (page = 1, searchTerm = "", isLoadMore = fa
 
   const { data, error, count } = await query;
 
-if (error) {
-  console.error("Error fetching direct enquiry:", error.message);
-  setIsLoading(false);
-  return [];
+  if (error) {
+    console.error("Error fetching direct enquiry:", error.message);
+    setIsLoading(false);
+    return [];
 } else {
   // ✅ Sort enquiry_no numerically (ignore 'En-' prefix)
   const sortedData = data.sort((a, b) => {
@@ -677,99 +702,131 @@ if (isLoadMore) {
 
 };
 
+// 4. Create a function to convert callingDaysFilter to dateFilters object
+const getDateFiltersFromCallingDays = () => {
+  const dateFilters = {};
+  
+  if (callingDaysFilter.includes("today")) {
+    dateFilters.today = true;
+  }
+  
+  if (callingDaysFilter.includes("overdue")) {
+    dateFilters.overdue = true;
+  }
+  
+  if (callingDaysFilter.includes("upcoming")) {
+    dateFilters.upcoming = true;
+  }
+  
+  if (callingDaysFilter.includes("older")) {
+    dateFilters.older = true;
+  }
+  
+  return dateFilters;
+};
+
   // Fetch data when tab changes or page changes
 useEffect(() => {
   if (isSearching) {
-    console.log('Skipping fetch due to search in progress')
-    return // Don't fetch if we're in the middle of a search
+    console.log('Skipping fetch due to search in progress');
+    return;
   }
   
-  const fetchData = async () => {
-    console.log('Fetching data for tab:', activeTab, 'pages:', { pendingPage, historyPage, directEnquiryPage })
+    const fetchData = async () => {
+    console.log('Fetching data for tab:', activeTab, 'pages:', { pendingPage, historyPage, directEnquiryPage });
+    
+    // Get date filters from callingDaysFilter
+    const dateFilters = getDateFiltersFromCallingDays();
     
     switch (activeTab) {
       case "pending":
-        await fetchPendingData(pendingPage, searchTerm, pendingPage > 1)
-        break
+        await fetchPendingData(pendingPage, searchTerm, pendingPage > 1, dateFilters);
+        break;
       case "history":
-        await fetchHistoryData(historyPage, searchTerm, historyPage > 1)
-        break
+        await fetchHistoryData(historyPage, searchTerm, historyPage > 1, dateFilters);
+        break;
       case "directEnquiry":
-        await fetchDirectEnquiryData(directEnquiryPage, searchTerm, directEnquiryPage > 1)
-        break
+        await fetchDirectEnquiryData(directEnquiryPage, searchTerm, directEnquiryPage > 1, dateFilters);
+        break;
     }
-  }
+  };
 
-  fetchData()
-}, [activeTab, pendingPage, historyPage, directEnquiryPage]) // Removed isSearching from dependencies
-
+  fetchData();
+}, [activeTab, pendingPage, historyPage, directEnquiryPage, callingDaysFilter]); 
 
 
   // Handle search with debounce
+// 6. Update the search useEffect to handle date filters
 useEffect(() => {
   const handler = setTimeout(() => {
     if (searchTerm.trim() !== "") {
-      console.log('Starting search with term:', searchTerm)
-      setIsSearching(true)
+      console.log('Starting search with term:', searchTerm);
+      setIsSearching(true);
       // Reset pagination and fetch with search term
-      setPendingPage(1)
-      setHistoryPage(1)
-      setDirectEnquiryPage(1)
+      setPendingPage(1);
+      setHistoryPage(1);
+      setDirectEnquiryPage(1);
       
       // Reset hasMore flags for search
-      setHasMorePending(true)
-      setHasMoreHistory(true)
-      setHasMoreDirectEnquiry(true)
+      setHasMorePending(true);
+      setHasMoreHistory(true);
+      setHasMoreDirectEnquiry(true);
+      
+      // Get date filters from callingDaysFilter
+      const dateFilters = getDateFiltersFromCallingDays();
       
       const performSearch = async () => {
         switch (activeTab) {
           case "pending":
-            await fetchPendingData(1, searchTerm, false)
-            break
+            await fetchPendingData(1, searchTerm, false, dateFilters);
+            break;
           case "history":
-            await fetchHistoryData(1, searchTerm, false)
-            break
+            await fetchHistoryData(1, searchTerm, false, dateFilters);
+            break;
           case "directEnquiry":
-            await fetchDirectEnquiryData(1, searchTerm, false)
-            break
+            await fetchDirectEnquiryData(1, searchTerm, false, dateFilters);
+            break;
         }
-        setIsSearching(false)
-      }
+        setIsSearching(false);
+      };
       
-      performSearch()
+      performSearch();
     } else if (isSearching) {
-      console.log('Clearing search and resetting')
+      console.log('Clearing search and resetting');
       // Clear search and reset to normal pagination
-      setIsSearching(false)
-      setPendingPage(1)
-      setHistoryPage(1)
-      setDirectEnquiryPage(1)
+      setIsSearching(false);
+      setPendingPage(1);
+      setHistoryPage(1);
+      setDirectEnquiryPage(1);
       
       // Reset hasMore flags
-      setHasMorePending(true)
-      setHasMoreHistory(true)
-      setHasMoreDirectEnquiry(true)
+      setHasMorePending(true);
+      setHasMoreHistory(true);
+      setHasMoreDirectEnquiry(true);
+      
+      // Get date filters from callingDaysFilter
+      const dateFilters = getDateFiltersFromCallingDays();
       
       const resetData = async () => {
         switch (activeTab) {
           case "pending":
-            await fetchPendingData(1, "", false)
-            break
+            await fetchPendingData(1, "", false, dateFilters);
+            break;
           case "history":
-            await fetchHistoryData(1, "", false)
-            break
+            await fetchHistoryData(1, "", false, dateFilters);
+            break;
           case "directEnquiry":
-            await fetchDirectEnquiryData(1, "", false)
-            break
+            await fetchDirectEnquiryData(1, "", false, dateFilters);
+            break;
         }
-      }
+      };
       
-      resetData()
+      resetData();
     }
-  }, 500) // 500ms debounce
+  }, 500); // 500ms debounce
 
-  return () => clearTimeout(handler)
-}, [searchTerm, activeTab])
+  return () => clearTimeout(handler);
+}, [searchTerm, activeTab, callingDaysFilter]);
 
 const LoadingIndicator = () => {
   if (!isLoading) return null
@@ -877,17 +934,9 @@ useEffect(() => {
     return true
   }
 
-  const filteredPendingCallTrackers = pendingData.filter((tracker) =>
-    filterTrackers(tracker, "pending")
-  )
-
-  const filteredHistoryCallTrackers = historyData.filter((tracker) =>
-    filterTrackers(tracker, "history")
-  )
-
-  const filteredDirectEnquiryPendingTrackers = directEnquiryData.filter((tracker) =>
-    filterTrackers(tracker, "directEnquiry")
-  )
+const filteredPendingCallTrackers = pendingData;
+const filteredHistoryCallTrackers = historyData;
+const filteredDirectEnquiryPendingTrackers = directEnquiryData;
 
   // NEW: Get available serial numbers based on active tab
   const getAvailableSerialNumbers = () => {
