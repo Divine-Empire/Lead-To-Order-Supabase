@@ -523,9 +523,13 @@ const fetchHistoryData = async (page = 1, searchTerm = "", isLoadMore = false, d
     query = query.lt('"Next Call Date"', today);
   }
 
-  if (searchTerm) {
-    query = query.or(`"Enquiry No.".ilike.%${searchTerm}%,"What Did Customer Say".ilike.%${searchTerm}%,"Current Stage".ilike.%${searchTerm}%`);
-  }
+if (searchTerm) {
+  const cleanSearchTerm = searchTerm.replace(/-/g, '');
+  
+  query = query.or(
+    `"Enquiry No.".ilike.%${searchTerm}%,"What Did Customer Say".ilike.%${searchTerm}%,"Current Stage".ilike.%${searchTerm}%,"Quotation Number".ilike.%${searchTerm}%,"Quotation Number".ilike.%${cleanSearchTerm}%`
+  );
+}
 
   if (!isAdmin() && currentUser && currentUser.username) {
     query = query.eq("Sales Cordinator", currentUser.username);
