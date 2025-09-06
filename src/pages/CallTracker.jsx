@@ -48,7 +48,6 @@ function CallTracker() {
   const [showNewCallTrackerForm, setShowNewCallTrackerForm] = useState(false)
   const [showPopup, setShowPopup] = useState(false)
   const [selectedTracker, setSelectedTracker] = useState(null)
-  const [directEnquiryPendingTrackers, setDirectEnquiryPendingTrackers] = useState([])
   const [callingDaysFilter, setCallingDaysFilter] = useState([])
   const [enquiryNoFilter, setEnquiryNoFilter] = useState([])
   const [currentStageFilter, setCurrentStageFilter] = useState([])
@@ -71,6 +70,17 @@ function CallTracker() {
   const [showCallingDaysDropdown, setShowCallingDaysDropdown] = useState(false)
   const [showEnquiryNoDropdown, setShowEnquiryNoDropdown] = useState(false)
   const [showCurrentStageDropdown, setShowCurrentStageDropdown] = useState(false)
+
+   const [callingDaysCounts, setCallingDaysCounts] = useState({
+    pendingToday: 0,
+    pendingOverdue: 0,
+    pendingUpcoming: 0,
+    directToday: 0,
+    directOverdue: 0,
+    directUpcoming: 0,
+    historyToday: 0,
+    historyOlder: 0,
+  });
   
   const [visibleColumns, setVisibleColumns] = useState({
     timestamp: true,
@@ -1025,6 +1035,93 @@ const filteredDirectEnquiryPendingTrackers = directEnquiryData;
     }
   }
 
+
+  const fetchCallingDaysCounts = async () => {
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0];
+
+      const { count: pendingToday } = await supabase
+        .from("leads_to_order")
+        .select("*", { count: "exact", head: true })
+        .eq("Next Call Date_1", today)
+        .is("Actual1", null);
+
+      const { count: pendingOverdue } = await supabase
+        .from("leads_to_order")
+        .select("*", { count: "exact", head: true })
+        .not("Planned1", "is", null)
+        .is("Actual1", null)
+        .lt("Next Call Date_1", today);
+
+      const { count: pendingUpcoming } = await supabase
+        .from("leads_to_order")
+        .select("*", { count: "exact", head: true })
+        .not("Planned1", "is", null)
+        .is("Actual1", null)
+        .gt("Next Call Date_1", today);
+
+      const { count: directToday } = await supabase
+        .from("enquiry_to_order")
+        .select("*", { count: "exact", head: true })
+        .not("planned1", "is", null)
+        .is("actual1", null)
+        .gte("next_call_date", today)
+        .lt("next_call_date", tomorrow);
+
+      const { count: directOverdue } = await supabase
+        .from("enquiry_to_order")
+        .select("*", { count: "exact", head: true })
+        .not("planned1", "is", null)
+        .is("actual1", null)
+        .lt("next_call_date", today);
+
+      const { count: directUpcoming } = await supabase
+        .from("enquiry_to_order")
+        .select("*", { count: "exact", head: true })
+        .not("planned1", "is", null)
+        .is("actual1", null)
+        .gt("next_call_date", today);
+
+      const { count: historyToday } = await supabase
+        .from("enquiry_tracker")
+        .select("*", { count: "exact", head: true })
+        .gte('"Next Call Date"', today)
+        .lt('"Next Call Date"', tomorrow);
+
+      const { count: historyOlder } = await supabase
+        .from("enquiry_tracker")
+        .select("*", { count: "exact", head: true })
+        .lt('"Next Call Date"', today);
+
+      // ✅ Save everything to state
+      setCallingDaysCounts({
+        pendingToday: pendingToday || 0,
+        pendingOverdue: pendingOverdue || 0,
+        pendingUpcoming: pendingUpcoming || 0,
+        directToday: directToday || 0,
+        directOverdue: directOverdue || 0,
+        directUpcoming: directUpcoming || 0,
+        historyToday: historyToday || 0,
+        historyOlder: historyOlder || 0,
+      });
+    } catch (error) {
+      console.error("Error fetching calling days counts:", error);
+    }
+  };
+
+
+useEffect(()=>{
+fetchCallingDaysCounts();
+
+
+},[])
+//console.log(callingDaysCounts.today);
+// console.log(callingDaysCounts.overdue);
+// console.log(callingDaysCounts.upcoming);
+
   // Add this function inside your CallTracker component
 // Replace your calculateFilterCounts function with this:
 const calculateFilterCounts = () => {
@@ -1371,7 +1468,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                 />
                 <span>Today's Calls</span>
               </div>
-              <span className="text-xs text-gray-500 ml-2">({filterCounts.today})</span>
+              <span className="text-xs text-gray-500 ml-2">({callingDaysCounts.historyToday})</span>
             </label>
             <label className="flex items-center justify-between p-2 hover:bg-gray-50 cursor-pointer w-full">
               <div className="flex items-center">
@@ -1383,7 +1480,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                 />
                 <span>Older Calls</span>
               </div>
-              <span className="text-xs text-gray-500 ml-2">({filterCounts.older})</span>
+              <span className="text-xs text-gray-500 ml-2">({callingDaysCounts.historyOlder})</span>
             </label>
           </>
         ) : (
@@ -1398,7 +1495,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                 />
                 <span>Today</span>
               </div>
-              <span className="text-xs text-gray-500 ml-2">({filterCounts.today})</span>
+              <span className="text-xs text-gray-500 ml-2">({activeTab==="pending"?callingDaysCounts.pendingToday:callingDaysCounts.directToday})</span>
             </label>
             <label className="flex items-center justify-between p-2 hover:bg-gray-50 cursor-pointer w-full">
               <div className="flex items-center">
@@ -1410,7 +1507,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                 />
                 <span>Overdue</span>
               </div>
-              <span className="text-xs text-gray-500 ml-2">({filterCounts.overdue})</span>
+              <span className="text-xs text-gray-500 ml-2">({activeTab==="pending"?callingDaysCounts.pendingOverdue:callingDaysCounts.directOverdue})</span>
             </label>
             <label className="flex items-center justify-between p-2 hover:bg-gray-50 cursor-pointer w-full">
               <div className="flex items-center">
@@ -1422,7 +1519,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                 />
                 <span>Upcoming</span>
               </div>
-              <span className="text-xs text-gray-500 ml-2">({filterCounts.upcoming})</span>
+              <span className="text-xs text-gray-500 ml-2">({activeTab==="pending"?callingDaysCounts.pendingUpcoming:callingDaysCounts.directUpcoming})</span>
             </label>
           </>
         )}
