@@ -1036,81 +1036,83 @@ const filteredDirectEnquiryPendingTrackers = directEnquiryData;
   }
 
 
-  const fetchCallingDaysCounts = async () => {
-    try {
-      const today = new Date().toISOString().split("T")[0];
-      const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0];
+const fetchCallingDaysCounts = async () => {
+  try {
+    const today = new Date().toISOString().split("T")[0];
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
 
-      const { count: pendingToday } = await supabase
-        .from("leads_to_order")
-        .select("*", { count: "exact", head: true })
-        .eq("Next Call Date_1", today)
-        .is("Actual1", null);
+    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    const role = localStorage.getItem("userType");
+console.log(currentUser);
+console.log(role);
 
-      const { count: pendingOverdue } = await supabase
-        .from("leads_to_order")
-        .select("*", { count: "exact", head: true })
-        .not("Planned1", "is", null)
-        .is("Actual1", null)
-        .lt("Next Call Date_1", today);
+    // Helper function to conditionally apply user filter
+    const withRoleFilter = (table) => {
+      const query = supabase.from(table).select("*", { count: "exact", head: true });
+      if (role === "user" && currentUser?.username) {
+        return query.eq("sales_coordinator_name", currentUser.username);
+      }
+      return query;
+    };
 
-      const { count: pendingUpcoming } = await supabase
-        .from("leads_to_order")
-        .select("*", { count: "exact", head: true })
-        .not("Planned1", "is", null)
-        .is("Actual1", null)
-        .gt("Next Call Date_1", today);
+    // Leads to Order
+    const { count: pendingToday } = await withRoleFilter("leads_to_order")
+      .eq("Next Call Date_1", today)
+      .is("Actual1", null);
 
-      const { count: directToday } = await supabase
-        .from("enquiry_to_order")
-        .select("*", { count: "exact", head: true })
-        .not("planned1", "is", null)
-        .is("actual1", null)
-        .gte("next_call_date", today)
-        .lt("next_call_date", tomorrow);
+    const { count: pendingOverdue } = await withRoleFilter("leads_to_order")
+      .not("Planned1", "is", null)
+      .is("Actual1", null)
+      .lt("Next Call Date_1", today);
 
-      const { count: directOverdue } = await supabase
-        .from("enquiry_to_order")
-        .select("*", { count: "exact", head: true })
-        .not("planned1", "is", null)
-        .is("actual1", null)
-        .lt("next_call_date", today);
+    const { count: pendingUpcoming } = await withRoleFilter("leads_to_order")
+      .not("Planned1", "is", null)
+      .is("Actual1", null)
+      .gt("Next Call Date_1", today);
 
-      const { count: directUpcoming } = await supabase
-        .from("enquiry_to_order")
-        .select("*", { count: "exact", head: true })
-        .not("planned1", "is", null)
-        .is("actual1", null)
-        .gt("next_call_date", today);
+    // Enquiry to Order
+    const { count: directToday } = await withRoleFilter("enquiry_to_order")
+      .not("planned1", "is", null)
+      .is("actual1", null)
+      .gte("next_call_date", today)
+      .lt("next_call_date", tomorrow);
 
-      const { count: historyToday } = await supabase
-        .from("enquiry_tracker")
-        .select("*", { count: "exact", head: true })
-        .gte('"Next Call Date"', today)
-        .lt('"Next Call Date"', tomorrow);
+    const { count: directOverdue } = await withRoleFilter("enquiry_to_order")
+      .not("planned1", "is", null)
+      .is("actual1", null)
+      .lt("next_call_date", today);
 
-      const { count: historyOlder } = await supabase
-        .from("enquiry_tracker")
-        .select("*", { count: "exact", head: true })
-        .lt('"Next Call Date"', today);
+    const { count: directUpcoming } = await withRoleFilter("enquiry_to_order")
+      .not("planned1", "is", null)
+      .is("actual1", null)
+      .gt("next_call_date", today);
 
-      // ✅ Save everything to state
-      setCallingDaysCounts({
-        pendingToday: pendingToday || 0,
-        pendingOverdue: pendingOverdue || 0,
-        pendingUpcoming: pendingUpcoming || 0,
-        directToday: directToday || 0,
-        directOverdue: directOverdue || 0,
-        directUpcoming: directUpcoming || 0,
-        historyToday: historyToday || 0,
-        historyOlder: historyOlder || 0,
-      });
-    } catch (error) {
-      console.error("Error fetching calling days counts:", error);
-    }
-  };
+    // Enquiry Tracker
+    const { count: historyToday } = await withRoleFilter("enquiry_tracker")
+      .gte('"Next Call Date"', today)
+      .lt('"Next Call Date"', tomorrow);
+
+    const { count: historyOlder } = await withRoleFilter("enquiry_tracker")
+      .lt('"Next Call Date"', today);
+
+    setCallingDaysCounts({
+      pendingToday: pendingToday || 0,
+      pendingOverdue: pendingOverdue || 0,
+      pendingUpcoming: pendingUpcoming || 0,
+      directToday: directToday || 0,
+      directOverdue: directOverdue || 0,
+      directUpcoming: directUpcoming || 0,
+      historyToday: historyToday || 0,
+      historyOlder: historyOlder || 0,
+    });
+  } catch (error) {
+    console.error("Error fetching calling days counts:", error);
+  }
+};
+
+
 
 
 useEffect(()=>{
