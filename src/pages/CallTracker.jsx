@@ -523,9 +523,12 @@ const fetchHistoryData = async (page = 1, searchTerm = "", isLoadMore = false, d
     query = query.lt('"Next Call Date"', today);
   }
 
-  if (searchTerm) {
-    query = query.or(`"Enquiry No.".ilike.%${searchTerm}%,"What Did Customer Say".ilike.%${searchTerm}%,"Current Stage".ilike.%${searchTerm}%`);
-  }
+  // Replace the search functionality in your fetchHistoryData function
+if (searchTerm) {
+  query = query.or(
+    `"Enquiry No.".ilike.%${searchTerm}%,"What Did Customer Say".ilike.%${searchTerm}%,"Current Stage".ilike.%${searchTerm}%,"Quotation Number".ilike.%${searchTerm}%,"Quotation Shared By".ilike.%${searchTerm}%,"Quotation Remarks".ilike.%${searchTerm}%,"Quotation Validator Name".ilike.%${searchTerm}%,"Quotation Send Status".ilike.%${searchTerm}%,"Quotation Validation Remark".ilike.%${searchTerm}%,"Is Order Received? Status".ilike.%${searchTerm}%,"Acceptance Via".ilike.%${searchTerm}%,"Payment Mode".ilike.%${searchTerm}%,"Payment Terms (In Days)".ilike.%${searchTerm}%,"Transport Mode".ilike.%${searchTerm}%,"CONVEYED FOR REGISTRATION FORM".ilike.%${searchTerm}%,"Remark".ilike.%${searchTerm}%,"If No Then Get Relevant Reason Status".ilike.%${searchTerm}%,"If No Then Get Relevant Reason Remark".ilike.%${searchTerm}%,"Customer Order Hold Reason Category".ilike.%${searchTerm}%,"Hold Remark".ilike.%${searchTerm}%`
+  );
+}
 
   if (!isAdmin() && currentUser && currentUser.username) {
     query = query.eq("Sales Cordinator", currentUser.username);

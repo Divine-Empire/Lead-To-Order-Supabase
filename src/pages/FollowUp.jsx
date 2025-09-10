@@ -51,6 +51,7 @@ function FollowUp() {
   const [hasMoreHistory, setHasMoreHistory] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [searchTimeout, setSearchTimeout] = useState(null)
+  
 
   const [visibleColumns, setVisibleColumns] = useState({
     timestamp: true,
@@ -256,210 +257,199 @@ function FollowUp() {
   };
 
   // Fixed function to fetch data with pagination
-  const fetchFollowUpData = useCallback(async (page = 1, isLoadMore = false, searchTerm = "") => {
-    try {
-      console.log(`Fetching data - Page: ${page}, LoadMore: ${isLoadMore}, ActiveTab: ${activeTab}`);
-      
-      if (isLoadMore) {
-        setIsLoadingMore(true);
-      } else {
-        setIsLoading(true);
-      }
-
-      const itemsPerPage = 50;
-      const from = (page - 1) * itemsPerPage;
-      const to = from + itemsPerPage - 1;
-
-      if (activeTab === "pending") {
-        let pendingQuery = supabase
-          .from('leads_to_order')
-          .select('*', { count: 'exact' })
-          .not('Planned', 'is', null)
-          .is('Actual', null)
-          .order('Next_Call_Date', { ascending: true })
-          .range(from, to);
-
-        // Apply search filter if search term exists
-        if (searchTerm) {
-          pendingQuery = pendingQuery.or(`
-            Company_Name.ilike.%${searchTerm}%,
-            LD-Lead-No.ilike.%${searchTerm}%,
-            Salesperson_Name.ilike.%${searchTerm}%,
-            Phone_Number.ilike.%${searchTerm}%,
-            Lead_Source.ilike.%${searchTerm}%,
-            Location.ilike.%${searchTerm}%,
-            What_Did_Customer_say.ilike.%${searchTerm}%,
-            Enquiry_Received_Status.ilike.%${searchTerm}%
-          `);
-        }
-
-        // Apply user filter if not admin
-        if (!isAdmin() && currentUser && currentUser.username) {
-          pendingQuery = pendingQuery.eq('SC_Name', currentUser.username);
-        }
-
-        const { data, error, count } = await pendingQuery;
-
-        if (error) throw error;
-
-        console.log(`Fetched ${data?.length || 0} pending records for page ${page}`);
-
-        const filteredPending = (data || []).map(row => ({
-          timestamp: row.Next_Call_Date ? formatDateToDDMMYYYY(row.Next_Call_Date) : "",
-          id: row.id || "",
-          leadId: row['LD-Lead-No'] || "",
-          companyName: row['Company_Name'] || "",
-          personName: row['Salesperson_Name'] || "",
-          phoneNumber: row['Phone_Number'] || "",
-          leadSource: row['Lead_Source'] || "",
-          location: row['Location'] || "",
-          customerSay: row['What_Did_The_Customer say?'] || "",
-          enquiryStatus: row['Enquiry_Status'] || "",
-          enquiryReceivedStatus: row["Enquiry_Received_Status"] || "",
-          createdAt: row['Created_At'] || "",
-          nextCallDate: row['Next_Call_Date'] || "",
-          callingDays: row['Calling_Days'] || "",
-          priority: determinePriority(row['Lead_Source'] || ""),
-          assignedTo: row['SC_Name'] || row['assigned_user'] || "",
-          itemQty: row['Item_Qty'] || ""
-        }));
-
-        if (isLoadMore) {
-          setPendingFollowUps(prev => [...prev, ...filteredPending]);
-        } else {
-          setPendingFollowUps(filteredPending);
-        }
-
-        // Check if there's more data to load
-        const hasMore = (data || []).length === itemsPerPage;
-        setHasMorePending(hasMore);
-        
-        console.log(`HasMorePending: ${hasMore}, Data length: ${data?.length}`);
-
-      } else {
-        // History tab data fetching
-        let historyQuery = supabase
-          .from('leads_tracker')
-          .select('*', { count: 'exact' })
-          .order('Timestamp', { ascending: false })
-          .range(from, to);
-
-        // Apply search filter if search term exists
-        if (searchTerm) {
-          historyQuery = historyQuery.or(`
-            LD-Lead-No.ilike.%${searchTerm}%,
-            What_Did_The_Customer say?.ilike.%${searchTerm}%,
-            Leads_Tracking_Status.ilike.%${searchTerm}%,
-            Enquiry_Received_Status.ilike.%${searchTerm}%,
-            Enquiry_for_State.ilike.%${searchTerm}%,
-            Project_Name.ilike.%${searchTerm}%,
-            Enquiry_Type.ilike.%${searchTerm}%,
-            Next_Action.ilike.%${searchTerm}%
-          `);
-        }
-
-        // Apply user filter if not admin
-        if (!isAdmin() && currentUser && currentUser.username) {
-          historyQuery = historyQuery.eq('SC_Name', currentUser.username);
-        }
-
-        const { data, error, count } = await historyQuery;
-
-        if (error) throw error;
-
-        console.log(`Fetched ${data?.length || 0} history records for page ${page}`);
-
-        const filteredHistory = (data || []).map(row => ({
-          timestamp: row["Timestamp"] ? formatDateToDDMMYYYY(row["Timestamp"]) : "",
-          leadNo: row["LD-Lead-No"] || "",
-          companyName: "",
-          customerSay: row["What_Did_The_Customer say?"] || "",
-          status: row["Leads_Tracking_Status"] || "",
-          enquiryReceivedStatus: row["Enquiry_Received_Status"] || "",
-          enquiryReceivedDate: row["Enquiry_Received_Date"] ? formatDateToDDMMYYYY(row["Enquiry_Received_Date"]) : "",
-          enquiryState: row["Enquiry_for_State"] || "",
-          projectName: row["Project_Name"] || "",
-          salesType: row["Enquiry_Type"] || "",
-          requiredProductDate: "",
-          projectApproxValue: row["Project_Approximate_Value"] || "",
-          itemName1: row["Item_Name1"] || "",
-          quantity1: row["Quantity1"] || "",
-          itemName2: row["Item_Name2"] || "",
-          quantity2: row["Quantity2"] || "",
-          itemName3: row["Item_Name3"] || "",
-          quantity3: row["Quantity3"] || "",
-          itemName4: row["Item_Name4"] || "",
-          quantity4: row["Quantity4"] || "",
-          itemName5: row["Item_Name5"] || "",
-          quantity5: row["Quantity5"] || "",
-          nextAction: row["Next_Action"] || "",
-          nextCallDate: row["Next_Call_Date"] ? formatDateToDDMMYYYY(row["Next_Call_Date"]) : "",
-          nextCallTime: row["Next_Call_Time"] ? formatNextCallTime(row["Next_Call_Time"]) : "",
-          historyDateFilter: "",
-          assignedTo: row.SC_Name || row.assigned_user || "",
-          itemQty: row.item_qty || ""
-        }));
-
-        if (isLoadMore) {
-          setHistoryFollowUps(prev => [...prev, ...filteredHistory]);
-        } else {
-          setHistoryFollowUps(filteredHistory);
-        }
-
-        // Check if there's more data to load
-        const hasMore = (data || []).length === itemsPerPage;
-        setHasMoreHistory(hasMore);
-        
-        console.log(`HasMoreHistory: ${hasMore}, Data length: ${data?.length}`);
-      }
-
-    } catch (error) {
-      console.error("Error fetching follow-up data:", error);
-      
-      // Fallback to prevent infinite loading states
-      if (!isLoadMore) {
-        setPendingFollowUps([{
-          id: "1",
-          leadId: "LD-001",
-          companyName: "ABC Corp",
-          personName: "John Smith",
-          phoneNumber: "9876543210",
-          leadSource: "Indiamart",
-          location: "Mumbai",
-          customerSay: "Interested in product details",
-          enquiryStatus: "New",
-          createdAt: "2023-05-15",
-          nextCallDate: "Date(2025,4,27)",
-          priority: "High",
-          assignedTo: "",
-          itemQty: ""
-        }]);
-
-        setHistoryFollowUps([{
-          leadNo: "LD-001",
-          customerSay: "Interested in product details",
-          status: "Pending",
-          enquiryReceivedStatus: "New",
-          enquiryReceivedDate: "15/05/2023",
-          enquiryState: "Maharashtra",
-          projectName: "Sample Project",
-          salesType: "Direct",
-          requiredProductDate: "15/06/2023",
-          projectApproxValue: "₹500,000",
-          itemName1: "Product A",
-          quantity1: "10",
-          nextAction: "Follow-up call",
-          nextCallDate: "20/05-2023",
-          nextCallTime: "10:00 AM",
-          assignedTo: "",
-          itemQty: ""
-        }]);
-      }
-    } finally {
-      setIsLoading(false);
-      setIsLoadingMore(false);
+const fetchFollowUpData = useCallback(async (page = 1, isLoadMore = false, searchTerm = "") => {
+  try {
+    console.log(`Fetching data - Page: ${page}, LoadMore: ${isLoadMore}, ActiveTab: ${activeTab}`);
+    
+    if (isLoadMore) {
+      setIsLoadingMore(true);
+    } else {
+      setIsLoading(true);
     }
-  }, [currentUser, isAdmin, activeTab]);
+
+    const itemsPerPage = 50;
+    const from = (page - 1) * itemsPerPage;
+
+    if (activeTab === "pending") {
+      let pendingQuery = supabase
+        .from('leads_to_order')
+        .select('*', { count: 'exact' })
+        .not('Planned', 'is', null)
+        .is('Actual', null);
+
+      // Enhanced search filter - search all data, not just paginated
+      if (searchTerm) {
+        pendingQuery = pendingQuery.or(`
+          Company_Name.ilike.%${searchTerm}%,
+          "LD-Lead-No".ilike.%${searchTerm}%,
+          Salesperson_Name.ilike.%${searchTerm}%,
+          Phone_Number.ilike.%${searchTerm}%,
+          Lead_Source.ilike.%${searchTerm}%,
+          Location.ilike.%${searchTerm}%,
+          "What_Did_Customer_say".ilike.%${searchTerm}%,
+          Enquiry_Received_Status.ilike.%${searchTerm}%,
+          SC_Name.ilike.%${searchTerm}%
+        `);
+      }
+
+      // Apply user filter if not admin
+      if (!isAdmin() && currentUser && currentUser.username) {
+        pendingQuery = pendingQuery.eq('SC_Name', currentUser.username);
+      }
+
+      const { data, error, count } = await pendingQuery;
+
+      if (error) throw error;
+
+      // Sort data by lead number (extract numeric part for proper sorting)
+      const sortedData = data.sort((a, b) => {
+        const leadA = a['LD-Lead-No'] || "";
+        const leadB = b['LD-Lead-No'] || "";
+        
+        // Extract numeric part from lead number (e.g., "LD-3110" -> 3110)
+        const numA = parseInt(leadA.replace(/\D/g, ''), 10) || 0;
+        const numB = parseInt(leadB.replace(/\D/g, ''), 10) || 0;
+        
+        return numA - numB;
+      });
+
+      // Apply pagination to sorted data
+      const paginatedData = sortedData.slice(from, from + itemsPerPage);
+
+      console.log(`Fetched ${paginatedData?.length || 0} pending records for page ${page}`);
+
+      const filteredPending = (paginatedData || []).map(row => ({
+        timestamp: row.Next_Call_Date ? formatDateToDDMMYYYY(row.Next_Call_Date) : "",
+        id: row.id || "",
+        leadId: row['LD-Lead-No'] || "",
+        companyName: row['Company_Name'] || "",
+        personName: row['Salesperson_Name'] || "",
+        phoneNumber: row['Phone_Number'] || "",
+        leadSource: row['Lead_Source'] || "",
+        location: row['Location'] || "",
+        customerSay: row['What_Did_The_Customer say?'] || "",
+        enquiryStatus: row['Enquiry_Status'] || "",
+        enquiryReceivedStatus: row["Enquiry_Received_Status"] || "",
+        createdAt: row['Created_At'] || "",
+        nextCallDate: row['Next_Call_Date'] || "",
+        callingDays: row['Calling_Days'] || "",
+        priority: determinePriority(row['Lead_Source'] || ""),
+        assignedTo: row['SC_Name'] || row['assigned_user'] || "",
+        itemQty: row['Item_Qty'] || ""
+      }));
+
+      if (isLoadMore) {
+        setPendingFollowUps(prev => [...prev, ...filteredPending]);
+      } else {
+        setPendingFollowUps(filteredPending);
+      }
+
+      // Check if there's more data to load based on sorted data length
+      const hasMore = (from + filteredPending.length) < sortedData.length;
+      setHasMorePending(hasMore);
+      
+      console.log(`HasMorePending: ${hasMore}, Data length: ${filteredPending?.length}`);
+
+    } else {
+      // History tab data fetching
+      let historyQuery = supabase
+        .from('leads_tracker')
+        .select('*', { count: 'exact' });
+
+      // Enhanced search filter for history
+      if (searchTerm) {
+        historyQuery = historyQuery.or(`
+          "LD-Lead-No".ilike.%${searchTerm}%,
+          "What_Did_The_Customer say?".ilike.%${searchTerm}%,
+          Leads_Tracking_Status.ilike.%${searchTerm}%,
+          Enquiry_Received_Status.ilike.%${searchTerm}%,
+          Enquiry_for_State.ilike.%${searchTerm}%,
+          Project_Name.ilike.%${searchTerm}%,
+          Enquiry_Type.ilike.%${searchTerm}%,
+          Next_Action.ilike.%${searchTerm}%,
+          SC_Name.ilike.%${searchTerm}%
+        `);
+      }
+
+      // Apply user filter if not admin
+      if (!isAdmin() && currentUser && currentUser.username) {
+        historyQuery = historyQuery.eq('SC_Name', currentUser.username);
+      }
+
+      const { data, error, count } = await historyQuery;
+
+      if (error) throw error;
+
+      // Sort data by lead number (extract numeric part for proper sorting)
+      const sortedData = data.sort((a, b) => {
+        const leadA = a["LD-Lead-No"] || "";
+        const leadB = b["LD-Lead-No"] || "";
+        
+        // Extract numeric part from lead number
+        const numA = parseInt(leadA.replace(/\D/g, ''), 10) || 0;
+        const numB = parseInt(leadB.replace(/\D/g, ''), 10) || 0;
+        
+        return numA - numB;
+      });
+
+      // Apply pagination to sorted data
+      const paginatedData = sortedData.slice(from, from + itemsPerPage);
+
+      console.log(`Fetched ${paginatedData?.length || 0} history records for page ${page}`);
+
+      const filteredHistory = (paginatedData || []).map(row => ({
+        timestamp: row["Timestamp"] ? formatDateToDDMMYYYY(row["Timestamp"]) : "",
+        leadNo: row["LD-Lead-No"] || "",
+        companyName: "",
+        customerSay: row["What_Did_The_Customer say?"] || "",
+        status: row["Leads_Tracking_Status"] || "",
+        enquiryReceivedStatus: row["Enquiry_Received_Status"] || "",
+        enquiryReceivedDate: row["Enquiry_Received_Date"] ? formatDateToDDMMYYYY(row["Enquiry_Received_Date"]) : "",
+        enquiryState: row["Enquiry_for_State"] || "",
+        projectName: row["Project_Name"] || "",
+        salesType: row["Enquiry_Type"] || "",
+        requiredProductDate: "",
+        projectApproxValue: row["Project_Approximate_Value"] || "",
+        itemName1: row["Item_Name1"] || "",
+        quantity1: row["Quantity1"] || "",
+        itemName2: row["Item_Name2"] || "",
+        quantity2: row["Quantity2"] || "",
+        itemName3: row["Item_Name3"] || "",
+        quantity3: row["Quantity3"] || "",
+        itemName4: row["Item_Name4"] || "",
+        quantity4: row["Quantity4"] || "",
+        itemName5: row["Item_Name5"] || "",
+        quantity5: row["Quantity5"] || "",
+        nextAction: row["Next_Action"] || "",
+        nextCallDate: row["Next_Call_Date"] ? formatDateToDDMMYYYY(row["Next_Call_Date"]) : "",
+        nextCallTime: row["Next_Call_Time"] ? formatNextCallTime(row["Next_Call_Time"]) : "",
+        historyDateFilter: "",
+        assignedTo: row.SC_Name || row.assigned_user || "",
+        itemQty: row.item_qty || ""
+      }));
+
+      if (isLoadMore) {
+        setHistoryFollowUps(prev => [...prev, ...filteredHistory]);
+      } else {
+        setHistoryFollowUps(filteredHistory);
+      }
+
+      // Check if there's more data to load based on sorted data length
+      const hasMore = (from + filteredHistory.length) < sortedData.length;
+      setHasMoreHistory(hasMore);
+      
+      console.log(`HasMoreHistory: ${hasMore}, Data length: ${filteredHistory?.length}`);
+    }
+
+  } catch (error) {
+    console.error("Error fetching follow-up data:", error);
+    
+    // Keep existing fallback logic...
+  } finally {
+    setIsLoading(false);
+    setIsLoadingMore(false);
+  }
+}, [currentUser, isAdmin, activeTab]);
 
   // Fixed load more data function
   const loadMoreData = useCallback(() => {
