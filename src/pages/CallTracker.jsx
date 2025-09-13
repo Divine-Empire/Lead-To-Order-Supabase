@@ -65,6 +65,9 @@ function CallTracker() {
   // NEW: Add serial number filter state
   const [serialFilter, setSerialFilter] = useState([])
   const [showSerialDropdown, setShowSerialDropdown] = useState(false)
+  const [tenDaysData, setTenDaysData] = useState([])
+const [selectedOrders, setSelectedOrders] = useState([])
+const [isSubmitting, setIsSubmitting] = useState(false)
   
   // Dropdown visibility states
   const [showCallingDaysDropdown, setShowCallingDaysDropdown] = useState(false)
@@ -412,6 +415,216 @@ const formatItemQty = (itemQtyString) => {
     }
   }, [])
 
+  // Add this function near your other fetch functions
+// Replace your fetchTenDaysData function with this fixed version
+const fetchTenDaysData = async () => {
+  setIsLoading(true);
+  try {
+    const response = await fetch(
+      "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec?sheet=ORDER-DISPATCH&action=fetch"
+    );
+
+    const text = await response.text();
+    
+    // Try to parse as JSON, but handle cases where it's not
+    let result;
+    try {
+      result = JSON.parse(text);
+    } catch (parseError) {
+      console.error("Response is not JSON:", text);
+      setTenDaysData([]);
+      setIsLoading(false);
+      return;
+    }
+    
+    if (result.success && result.data) {
+      const headers = result.data[0];
+      const rows = result.data.slice(4);
+      
+      // Find column indices by name for better reliability
+      const awIndex = headers.findIndex(h => 
+        h && typeof h === 'string' && h.toLowerCase().includes('delivery status')
+      );
+      const cfIndex = headers.findIndex(h => 
+        h && typeof h === 'string' && h.toLowerCase().includes('revised order date')
+      );
+      const cgIndex = headers.findIndex(h => 
+        h && typeof h === 'string' && h.toLowerCase().includes('revised order status')
+      );
+      
+      console.log('Column indices - AW:', awIndex, 'CF:', cfIndex, 'CG:', cgIndex);
+      
+      // If specific column names not found, use fallback indices
+      const awCol = awIndex >= 0 ? awIndex : 48;
+      const cfCol = cfIndex >= 0 ? cfIndex : 83;
+      const cgCol = cgIndex >= 0 ? cgIndex : 84;
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Set to start of day for comparison
+      
+      const tenDaysOrders = [];
+      
+      rows.forEach((row, index) => {
+        try {
+          const awValue = row[awCol];
+          const cfValue = row[cfCol];
+          const cgValue = row[cgCol];
+          
+          // Check conditions: AW = "complete", CF date is not empty, CG is null/empty
+          if (awValue && awValue.toString().toLowerCase() === "complete" && 
+              (!cgValue || cgValue === "" || cgValue === null) && 
+              cfValue) {
+            
+            let cfDate;
+            
+            // Parse date from CF column - handle different date formats
+            if (cfValue instanceof Date) {
+              cfDate = cfValue;
+            } else if (typeof cfValue === 'string') {
+              // Try to parse as date string
+              cfDate = new Date(cfValue);
+              
+              // If that fails, try to parse as Excel serial date
+              if (isNaN(cfDate.getTime())) {
+                const serialDate = parseFloat(cfValue);
+                if (!isNaN(serialDate)) {
+                  // Convert Excel serial date to JS date
+                  cfDate = new Date((serialDate - 25569) * 86400 * 1000);
+                }
+              }
+            } else if (typeof cfValue === 'number') {
+              // Google Sheets serial date
+              cfDate = new Date((cfValue - 25569) * 86400 * 1000);
+            }
+            
+            // Check if date is valid and is within the last 10 days
+            if (cfDate && !isNaN(cfDate.getTime())) {
+              // Normalize both dates to midnight for accurate comparison
+              const normalizedCfDate = new Date(cfDate);
+              normalizedCfDate.setHours(0, 0, 0, 0);
+              
+              const normalizedToday = new Date(today);
+              normalizedToday.setHours(0, 0, 0, 0);
+              
+              // Calculate difference in days
+              const diffTime = normalizedToday.getTime() - normalizedCfDate.getTime();
+              const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+              
+              // Check if the date is within the last 10 days (0-10 days ago)
+              // Check if the date is overdue OR within the last 10 days
+if (diffDays >= 0) {
+  const order = {
+    id: index + 2, // Row number (accounting for header)
+    timestamp: row[0] || "",
+    orderNo: row[1] || "",
+    quotationNo: row[2] || "",
+    companyName: row[3] || "",
+    contactPersonName: row[4] || "",
+    contactNumber: row[5] || "",
+    billingAddress: row[6] || "",
+    shippingAddress: row[7] || "",
+    paymentMode: row[8] || "",
+    paymentTerms: row[9] || "",
+    referenceName: row[10] || "",
+    email: row[11] || "",
+    itemName1: row[12] || "",
+    quantity1: row[13] || "",
+    itemName2: row[14] || "",
+    quantity2: row[15] || "",
+    itemName3: row[16] || "",
+    quantity3: row[17] || "",
+    itemName4: row[18] || "",
+    quantity4: row[19] || "",
+    itemName5: row[20] || "",
+    quantity5: row[21] || "",
+    itemName6: row[22] || "",
+    quantity6: row[23] || "",
+    itemName7: row[24] || "",
+    quantity7: row[25] || "",
+    itemName8: row[26] || "",
+    quantity8: row[27] || "",
+    itemName9: row[28] || "",
+    quantity9: row[29] || "",
+    itemName10: row[30] || "",
+    quantity10: row[31] || "",
+    transportMode: row[32] || "",
+    destination: row[33] || "",
+    itemQty: row[34] || "",
+    poNumber: row[35] || "",
+    quotationCopy: row[36] || "",
+    acceptanceCopy: row[37] || "",
+    offerShow: row[38] || "",
+    conveyedForRegistrationForm: row[39] || "",
+    totalOrderQty: row[40] || "",
+    amountTotal: row[41] || "",
+    dispatchQuantityDelivered: row[42] || "",
+    orderCancel: row[43] || "",
+    pendingDeliveryQty: row[44] || "",
+    pendingDispatchQty: row[45] || "",
+    materialReturn: row[46] || "",
+    deliveryStatus: row[47] || "",
+    dispatchStatus: row[48] || "",
+    dispatchCompleteDate: row[49] || "",
+    deliveryCompleteDate: row[50] || "",
+    cfDate: cfDate.toLocaleDateString(),
+    daysAgo: diffDays,
+    status: diffDays <= 10 ? "within 10 days" : "overdue" // 🔥 mark overdue vs recent
+  };
+  tenDaysOrders.push(order);
+}
+
+            }
+          }
+        } catch (error) {
+          console.error("Error processing row:", error, row);
+        }
+      });
+      
+      console.log('Filtered 10 days orders:', tenDaysOrders);
+      setTenDaysData(tenDaysOrders);
+    } else {
+      console.error("Error fetching 10 days data:", result.error);
+      setTenDaysData([]);
+    }
+  } catch (error) {
+    console.error("Error fetching 10 days data:", error);
+    setTenDaysData([]);
+  }
+  setIsLoading(false);
+};
+
+// Also update your useEffect to properly handle the 10 days tab
+useEffect(() => {
+  if (isSearching) {
+    console.log('Skipping fetch due to search in progress');
+    return;
+  }
+  
+  const fetchData = async () => {
+    console.log('Fetching data for tab:', activeTab, 'pages:', { pendingPage, historyPage, directEnquiryPage });
+    
+    // Get date filters from callingDaysFilter
+    const dateFilters = getDateFiltersFromCallingDays();
+    
+    switch (activeTab) {
+      case "pending":
+        await fetchPendingData(pendingPage, searchTerm, pendingPage > 1, dateFilters);
+        break;
+      case "history":
+        await fetchHistoryData(historyPage, searchTerm, historyPage > 1, dateFilters);
+        break;
+      case "directEnquiry":
+        await fetchDirectEnquiryData(directEnquiryPage, searchTerm, directEnquiryPage > 1, dateFilters);
+        break;
+      case "tenDays":
+        await fetchTenDaysData(); // This was missing!
+        break;
+    }
+  };
+
+  fetchData();
+}, [activeTab, pendingPage, historyPage, directEnquiryPage, callingDaysFilter]);
+
 // 1. Update the fetchPendingData function to accept date filters
 const fetchPendingData = async (page = 1, searchTerm = "", isLoadMore = false, dateFilters = {}) => {
   if (isLoadMore && !hasMorePending) return;
@@ -714,6 +927,60 @@ if (isLoadMore) {
 }
 
 };
+
+// Add these handler functions
+const handleOrderSelect = (orderNo, isChecked) => {
+  if (isChecked) {
+    setSelectedOrders(prev => [...prev, orderNo])
+  } else {
+    setSelectedOrders(prev => prev.filter(id => id !== orderNo))
+  }
+}
+
+const handleSelectAllOrders = (isChecked) => {
+  if (isChecked) {
+    setSelectedOrders(tenDaysData.map(order => order.orderNo))
+  } else {
+    setSelectedOrders([])
+  }
+}
+
+const handleSubmitSelected = async () => {
+  if (selectedOrders.length === 0) {
+    alert("Please select at least one order to submit")
+    return
+  }
+
+  setIsSubmitting(true)
+  try {
+    const formData = new FormData()
+    formData.append('action', 'updateTenDaysOrders')
+    formData.append('sheetName', 'ORDER-DISPATCH')
+    formData.append('orderIds', JSON.stringify(selectedOrders))
+
+    const response = await fetch(
+      "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec",
+      {
+        method: "POST",
+        body: formData
+      }
+    )
+
+    const result = await response.json()
+    if (result.success) {
+      alert("Selected orders updated successfully!")
+      setSelectedOrders([])
+      // Refresh the data
+      fetchTenDaysData()
+    } else {
+      alert("Error updating orders: " + result.error)
+    }
+  } catch (error) {
+    console.error("Error submitting orders:", error)
+    alert("Error submitting orders: " + error.message)
+  }
+  setIsSubmitting(false)
+}
 
 // 4. Create a function to convert callingDaysFilter to dateFilters object
 const getDateFiltersFromCallingDays = () => {
@@ -1020,6 +1287,37 @@ const filteredDirectEnquiryPendingTrackers = directEnquiryData;
       setEnquiryNoFilter([...enquiryNoFilter, value])
     }
   }
+
+  useEffect(() => {
+  if (isSearching) {
+    console.log('Skipping fetch due to search in progress');
+    return;
+  }
+  
+  const fetchData = async () => {
+    console.log('Fetching data for tab:', activeTab, 'pages:', { pendingPage, historyPage, directEnquiryPage });
+    
+    // Get date filters from callingDaysFilter
+    const dateFilters = getDateFiltersFromCallingDays();
+    
+    switch (activeTab) {
+      case "pending":
+        await fetchPendingData(pendingPage, searchTerm, pendingPage > 1, dateFilters);
+        break;
+      case "history":
+        await fetchHistoryData(historyPage, searchTerm, historyPage > 1, dateFilters);
+        break;
+      case "directEnquiry":
+        await fetchDirectEnquiryData(directEnquiryPage, searchTerm, directEnquiryPage > 1, dateFilters);
+        break;
+      case "tenDays":
+        await fetchTenDaysData();
+        break;
+    }
+  };
+
+  fetchData();
+}, [activeTab, pendingPage, historyPage, directEnquiryPage, callingDaysFilter]);
 
   const handleCurrentStageChange = (value) => {
     if (currentStageFilter.includes(value)) {
@@ -1831,6 +2129,16 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
               >
                 History
               </button>
+              <button
+      onClick={() => setActiveTab("tenDays")}
+      className={`px-4 py-2 text-sm font-medium rounded-r-md ${
+        activeTab === "tenDays"
+          ? "bg-purple-100 text-purple-800"
+          : "bg-white text-slate-700 hover:bg-slate-50"
+      }`}
+    >
+      10 Days
+    </button>
             </div>
           </div>
 
@@ -2480,6 +2788,100 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
   </div>
 )}
                 </div></div>
+  </>
+)}
+{activeTab === "tenDays" && (
+  <>
+    {/* Submit Button - Show when orders are selected */}
+    {selectedOrders.length > 0 && (
+      <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-blue-700">
+            {selectedOrders.length} order(s) selected
+          </span>
+          <button
+            onClick={handleSubmitSelected}
+            disabled={isSubmitting}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? 'Submitting...' : 'Submit Selected'}
+          </button>
+        </div>
+      </div>
+    )}
+
+    <div className="rounded-md border overflow-x-auto">
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead className="bg-slate-50">
+          <tr>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <input
+                type="checkbox"
+                checked={selectedOrders.length === tenDaysData.length && tenDaysData.length > 0}
+                onChange={(e) => handleSelectAllOrders(e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order No.</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quotation No.</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company Name</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Person</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Number</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Mode</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Terms</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transport Mode</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destination</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item/Qty</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PO Number</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Order Qty</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount Total</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dispatch Status</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CF Date</th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {tenDaysData.length > 0 ? (
+            tenDaysData.map((order, index) => (
+              <tr key={order.id} className="hover:bg-slate-50">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    checked={selectedOrders.includes(order.orderNo)}
+                    onChange={(e) => handleOrderSelect(order.orderNo, e.target.checked)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.timestamp}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{order.orderNo}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.quotationNo}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.companyName}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.contactPersonName}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.contactNumber}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.paymentMode}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.paymentTerms}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.transportMode}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.destination}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 max-w-[200px] truncate" title={order.itemQty}>
+                  {order.itemQty}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.poNumber}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.totalOrderQty}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.amountTotal}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.dispatchStatus}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.cfDate}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={17} className="px-6 py-4 text-center text-sm text-slate-500">
+                {isLoading ? 'Loading 10 days data...' : 'No orders found for 10 days criteria'}
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
   </>
 )}
             </>
