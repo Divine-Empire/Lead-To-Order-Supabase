@@ -829,6 +829,106 @@ if (searchTerm) {
 };
 
 // 2. Fix the fetchDirectEnquiryData function with proper pagination check
+// const fetchDirectEnquiryData = async (page = 1, searchTerm = "", isLoadMore = false, dateFilters = {}) => {
+//   if (isLoadMore && !hasMoreDirectEnquiry) return;
+  
+//   setIsLoading(true);
+//   const itemsPerPage = 50;
+//   const from = (page - 1) * itemsPerPage;
+//   const to = from + itemsPerPage - 1;
+
+//   let query = supabase
+//     .from("enquiry_to_order")
+//     .select("*", { count: 'exact' })
+//     .not("planned1", "is", null)
+//     .is("actual1", null)
+//     .order("enquiry_no", { ascending: true })
+//     .range(from, to);
+
+//   // Add date filtering for direct enquiry data
+//   if (dateFilters.today) {
+//     const today = new Date().toISOString().split('T')[0];
+//     query = query.gte('next_call_date', today).lt('next_call_date', new Date(Date.now() + 86400000).toISOString().split('T')[0]);
+//   } else if (dateFilters.overdue) {
+//     const today = new Date().toISOString().split('T')[0];
+//     query = query.lt('next_call_date', today);
+//   } else if (dateFilters.upcoming) {
+//     const today = new Date().toISOString().split('T')[0];
+//     query = query.gt('next_call_date', today);
+//   }
+
+//   if (searchTerm) {
+//     query = query.or(`enquiry_no.ilike.%${searchTerm}%,company_name.ilike.%${searchTerm}%,sales_person_name.ilike.%${searchTerm}%`);
+//   }
+
+//   if (!isAdmin() && currentUser && currentUser.username) {
+//     query = query.eq("sales_coordinator_name", currentUser.username);
+//   }
+
+//   const { data, error, count } = await query;
+
+//   if (error) {
+//     console.error("Error fetching direct enquiry:", error.message);
+//     setIsLoading(false);
+//     return [];
+// } else {
+//   // ✅ Sort enquiry_no numerically (ignore 'En-' prefix)
+//   const sortedData = data.sort((a, b) => {
+//     const numA = parseInt((a.enquiry_no || "").replace("En-", ""), 10);
+//     const numB = parseInt((b.enquiry_no || "").replace("En-", ""), 10);
+//     return numA - numB;
+//   });
+
+//   const transformedData = sortedData.map((item, index) => ({
+//     id: from + index + 1,
+//     serialNo: from + index + 1,
+//     timestamp: formatDateToDDMMYYYY(item.timestamp) || "",
+//     enquiry_no: item.enquiry_no || "",
+//     lead_receiver_name: item.enquiry_receiver_name || "",
+//     lead_source: item.lead_source || "",
+//     phone_number: item.phone_number || "",
+//     salesperson_name: item.sales_person_name || "",
+//     company_name: item.company_name || "",
+//     current_stage: item.current_stage || "",
+//     calling_days: item.calling_days || "",
+//     priority: determinePriority(item.lead_source || ""),
+//     item_qty: formatItemQty(item.item_qty) || "",
+//     sc_name: item.sales_coordinator_name || "",
+//     nextCallDate: item.next_call_date || "",
+//   }));
+
+//   console.log(`Received ${transformedData.length} items, total count: ${count}`);
+
+// if (isLoadMore) {
+//   setDirectEnquiryData(prev => {
+//     console.log("Merging and re-sorting all enquiry data");
+//     const merged = [...prev, ...transformedData];
+
+//     // Re-sort globally
+//     return merged.sort((a, b) => {
+//       const numA = parseInt((a.enquiry_no || "").replace("En-", ""), 10);
+//       const numB = parseInt((b.enquiry_no || "").replace("En-", ""), 10);
+//       return numA - numB;
+//     });
+//   });
+// } else {
+//   console.log("Setting new direct enquiry data");
+//   setDirectEnquiryData(transformedData);
+// }
+
+
+//   // Check if there's more data
+//   const hasMore = transformedData.length === itemsPerPage && (from + transformedData.length) < (count || 0);
+//   console.log(`Has more direct enquiry data: ${hasMore}, items received: ${transformedData.length}, total available: ${count}`);
+//   setHasMoreDirectEnquiry(hasMore);
+
+//   setIsLoading(false);
+//   return transformedData;
+// }
+
+// };
+
+// 2. Fix the fetchDirectEnquiryData function to prevent duplicates
 const fetchDirectEnquiryData = async (page = 1, searchTerm = "", isLoadMore = false, dateFilters = {}) => {
   if (isLoadMore && !hasMoreDirectEnquiry) return;
   
@@ -871,61 +971,58 @@ const fetchDirectEnquiryData = async (page = 1, searchTerm = "", isLoadMore = fa
     console.error("Error fetching direct enquiry:", error.message);
     setIsLoading(false);
     return [];
-} else {
-  // ✅ Sort enquiry_no numerically (ignore 'En-' prefix)
-  const sortedData = data.sort((a, b) => {
-    const numA = parseInt((a.enquiry_no || "").replace("En-", ""), 10);
-    const numB = parseInt((b.enquiry_no || "").replace("En-", ""), 10);
-    return numA - numB;
-  });
+  } else {
+    const transformedData = data.map((item, index) => ({
+      id: from + index + 1,
+      serialNo: from + index + 1,
+      timestamp: formatDateToDDMMYYYY(item.timestamp) || "",
+      enquiry_no: item.enquiry_no || "",
+      lead_receiver_name: item.enquiry_receiver_name || "",
+      lead_source: item.lead_source || "",
+      phone_number: item.phone_number || "",
+      salesperson_name: item.sales_person_name || "",
+      company_name: item.company_name || "",
+      current_stage: item.current_stage || "",
+      calling_days: item.calling_days || "",
+      priority: determinePriority(item.lead_source || ""),
+      item_qty: formatItemQty(item.item_qty) || "",
+      sc_name: item.sales_coordinator_name || "",
+      nextCallDate: item.next_call_date || "",
+    }));
 
-  const transformedData = sortedData.map((item, index) => ({
-    id: from + index + 1,
-    serialNo: from + index + 1,
-    timestamp: formatDateToDDMMYYYY(item.timestamp) || "",
-    enquiry_no: item.enquiry_no || "",
-    lead_receiver_name: item.enquiry_receiver_name || "",
-    lead_source: item.lead_source || "",
-    phone_number: item.phone_number || "",
-    salesperson_name: item.sales_person_name || "",
-    company_name: item.company_name || "",
-    current_stage: item.current_stage || "",
-    calling_days: item.calling_days || "",
-    priority: determinePriority(item.lead_source || ""),
-    item_qty: formatItemQty(item.item_qty) || "",
-    sc_name: item.sales_coordinator_name || "",
-    nextCallDate: item.next_call_date || "",
-  }));
+    console.log(`Received ${transformedData.length} items, total count: ${count}`);
 
-  console.log(`Received ${transformedData.length} items, total count: ${count}`);
+    if (isLoadMore) {
+      setDirectEnquiryData(prev => {
+        // Create a map to avoid duplicates by enquiry_no
+        const existingMap = new Map(prev.map(item => [item.enquiry_no, item]));
+        
+        // Add new items, overwriting any duplicates
+        transformedData.forEach(item => {
+          existingMap.set(item.enquiry_no, item);
+        });
+        
+        // Convert back to array and sort
+        const merged = Array.from(existingMap.values());
+        return merged.sort((a, b) => {
+          const numA = parseInt((a.enquiry_no || "").replace("En-", ""), 10);
+          const numB = parseInt((b.enquiry_no || "").replace("En-", ""), 10);
+          return numA - numB;
+        });
+      });
+    } else {
+      console.log("Setting new direct enquiry data");
+      setDirectEnquiryData(transformedData);
+    }
 
-if (isLoadMore) {
-  setDirectEnquiryData(prev => {
-    console.log("Merging and re-sorting all enquiry data");
-    const merged = [...prev, ...transformedData];
+    // Check if there's more data
+    const hasMore = transformedData.length === itemsPerPage && (from + transformedData.length) < (count || 0);
+    console.log(`Has more direct enquiry data: ${hasMore}, items received: ${transformedData.length}, total available: ${count}`);
+    setHasMoreDirectEnquiry(hasMore);
 
-    // Re-sort globally
-    return merged.sort((a, b) => {
-      const numA = parseInt((a.enquiry_no || "").replace("En-", ""), 10);
-      const numB = parseInt((b.enquiry_no || "").replace("En-", ""), 10);
-      return numA - numB;
-    });
-  });
-} else {
-  console.log("Setting new direct enquiry data");
-  setDirectEnquiryData(transformedData);
-}
-
-
-  // Check if there's more data
-  const hasMore = transformedData.length === itemsPerPage && (from + transformedData.length) < (count || 0);
-  console.log(`Has more direct enquiry data: ${hasMore}, items received: ${transformedData.length}, total available: ${count}`);
-  setHasMoreDirectEnquiry(hasMore);
-
-  setIsLoading(false);
-  return transformedData;
-}
-
+    setIsLoading(false);
+    return transformedData;
+  }
 };
 
 // Add these handler functions
