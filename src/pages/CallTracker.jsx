@@ -62,6 +62,9 @@ function CallTracker() {
   const [hasMoreDirectEnquiry, setHasMoreDirectEnquiry] = useState(true)
   const [isSearching, setIsSearching] = useState(false)
 
+  const [orderStatuses, setOrderStatuses] = useState({});
+const [orderRemarks, setOrderRemarks] = useState({});
+
   // NEW: Add serial number filter state
   const [serialFilter, setSerialFilter] = useState([])
   const [showSerialDropdown, setShowSerialDropdown] = useState(false)
@@ -1042,6 +1045,21 @@ const handleSelectAllOrders = (isChecked) => {
   }
 }
 
+const handleStatusChange = (orderNo, status) => {
+  setOrderStatuses(prev => ({
+    ...prev,
+    [orderNo]: status
+  }));
+};
+
+const handleRemarkChange = (orderNo, remark) => {
+  setOrderRemarks(prev => ({
+    ...prev,
+    [orderNo]: remark
+  }));
+};
+
+// Update the submit function to include status and remarks
 const handleSubmitSelected = async () => {
   if (selectedOrders.length === 0) {
     alert("Please select at least one order to submit")
@@ -1053,7 +1071,15 @@ const handleSubmitSelected = async () => {
     const formData = new FormData()
     formData.append('action', 'updateTenDaysOrders')
     formData.append('sheetName', 'ORDER-DISPATCH')
-    formData.append('orderIds', JSON.stringify(selectedOrders))
+    
+    // Prepare data with status and remarks - FIXED: Remove default 'done'
+    const ordersData = selectedOrders.map(orderNo => ({
+      orderNo,
+      status: orderStatuses[orderNo] || 'pending',  // Default to 'pending' instead of 'done'
+      remark: orderRemarks[orderNo] || ''
+    }));
+    
+    formData.append('ordersData', JSON.stringify(ordersData))
 
     const response = await fetch(
       "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec",
@@ -1067,6 +1093,15 @@ const handleSubmitSelected = async () => {
     if (result.success) {
       alert("Selected orders updated successfully!")
       setSelectedOrders([])
+      // Clear the status and remarks for submitted orders
+      const newStatuses = {...orderStatuses};
+      const newRemarks = {...orderRemarks};
+      selectedOrders.forEach(orderNo => {
+        delete newStatuses[orderNo];
+        delete newRemarks[orderNo];
+      });
+      setOrderStatuses(newStatuses);
+      setOrderRemarks(newRemarks);
       // Refresh the data
       fetchTenDaysData()
     } else {
@@ -2919,6 +2954,10 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
             </th>
+            {/* Add Status column */}
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            {/* Add Remarks column */}
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order No.</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quotation No.</th>
@@ -2949,6 +2988,27 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                 </td>
+                {/* Status dropdown */}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <select
+                    value={orderStatuses[order.orderNo] || 'pending'}
+                    onChange={(e) => handleStatusChange(order.orderNo, e.target.value)}
+                    className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="done">Done</option>
+                  </select>
+                </td>
+                {/* Remarks input */}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <input
+                    type="text"
+                    value={orderRemarks[order.orderNo] || ''}
+                    onChange={(e) => handleRemarkChange(order.orderNo, e.target.value)}
+                    placeholder="Enter remarks"
+                    className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.timestamp}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{order.orderNo}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.quotationNo}</td>
@@ -2971,7 +3031,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
             ))
           ) : (
             <tr>
-              <td colSpan={17} className="px-6 py-4 text-center text-sm text-slate-500">
+              <td colSpan={19} className="px-6 py-4 text-center text-sm text-slate-500">
                 {isLoading ? 'Loading 10 days data...' : 'No orders found for 10 days criteria'}
               </td>
             </tr>
