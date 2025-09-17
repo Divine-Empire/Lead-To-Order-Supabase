@@ -308,38 +308,41 @@ function Quotation() {
     }
   }
 
-  const handleGeneratePDF = () => {
-    setIsGenerating(true)
+    const handleGeneratePDF = async () => {
+  setIsGenerating(true)
 
-    try {
-      const base64Data = generatePDFFromData(quotationData, selectedReferences, specialDiscount, hiddenColumns)
+  try {
+    const pdfDataUri = await generatePDFFromData(quotationData, selectedReferences, specialDiscount, hiddenColumns)
+    
+    // Extract base64 data from data URI
+    const base64Data = pdfDataUri.split(',')[1]
 
-      const byteCharacters = atob(base64Data)
-      const byteNumbers = new Array(byteCharacters.length)
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i)
-      }
-      const byteArray = new Uint8Array(byteNumbers)
-      const blob = new Blob([byteArray], { type: "application/pdf" })
-
-      const link = document.createElement("a")
-      link.href = URL.createObjectURL(blob)
-      link.download = `Quotation_${quotationData.quotationNo}.pdf`
-
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-
-      URL.revokeObjectURL(link.href)
-
-      setIsGenerating(false)
-      alert("PDF generated and downloaded successfully!")
-    } catch (error) {
-      console.error("Error generating PDF:", error)
-      alert("Failed to generate PDF")
-      setIsGenerating(false)
+    const byteCharacters = atob(base64Data)
+    const byteNumbers = new Array(byteCharacters.length)
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i)
     }
+    const byteArray = new Uint8Array(byteNumbers)
+    const blob = new Blob([byteArray], { type: "application/pdf" })
+
+    const link = document.createElement("a")
+    link.href = URL.createObjectURL(blob)
+    link.download = `Quotation_${quotationData.quotationNo}.pdf`
+
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    URL.revokeObjectURL(link.href)
+
+    setIsGenerating(false)
+    alert("PDF generated and downloaded successfully!")
+  } catch (error) {
+    console.error("Error generating PDF:", error)
+    alert("Failed to generate PDF: " + error.message)
+    setIsGenerating(false)
   }
+}
 
   const handleGenerateLink = async () => {
     setIsGenerating(true)

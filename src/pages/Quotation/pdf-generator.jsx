@@ -591,21 +591,13 @@
 
 
 
-import jsPDF from "jspdf"
-import autoTable from "jspdf-autotable"
+import React from 'react';
+import ReactDOMServer from 'react-dom/server';
+import logo from '../../assests/WhatsApp Image 2025-05-14 at 4.11.43 PM.jpeg';
+import maniquipLogo from '../../assests/WhatsApp Image 2025-05-14 at 4.11.54 PM.jpeg';
 
-export const generatePDFFromData = (quotationData, selectedReferences, specialDiscount, hiddenColumns = {}) => {
-  const doc = new jsPDF("p", "mm", "a4")
-
-  const pageWidth = 210
-  const pageHeight = 297
-  const margin = 15
-  let currentY = 15
-
-  const wrapText = (text, maxWidth) => {
-    return doc.splitTextToSize(text || "", maxWidth)
-  }
-
+// React PDF Component that matches your web interface exactly
+const QuotationPDFComponent = ({ quotationData, selectedReferences, specialDiscount, hiddenColumns = {} }) => {
   const formatCurrency = (value) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -615,91 +607,8 @@ export const generatePDFFromData = (quotationData, selectedReferences, specialDi
     })
       .format(value || 0)
       .replace("₹", "")
-      .trim()
-  }
-
-  const checkSpace = (requiredHeight) => {
-    if (currentY + requiredHeight > pageHeight - margin - 20) {
-      doc.addPage()
-      currentY = margin + 10
-      return true
-    }
-    return false
-  }
-
-  const addPageHeader = () => {
-    currentY = margin
-
-    // Header background with light blue color
-    doc.setFillColor(240, 248, 255) // Light blue background
-    doc.rect(margin, currentY, pageWidth - 2 * margin, 40, "F")
-    
-    // Header border
-    doc.setDrawColor(0, 0, 0)
-    doc.setLineWidth(0.5)
-    doc.rect(margin, currentY, pageWidth - 2 * margin, 40)
-
-    // Company name section (LEFT SIDE) - Better styling and positioning
-    doc.setTextColor(0, 50, 100) // Dark blue color for company name
-    doc.setFontSize(20)
-    doc.setFont("helvetica", "bold")
-    doc.text("DIVINE EMPIRE", margin + 8, currentY + 15)
-    
-    doc.setFontSize(12)
-    doc.setFont("helvetica", "normal")
-    doc.setTextColor(0, 0, 0)
-    doc.text("Private Limited", margin + 8, currentY + 25)
-    
-    // Add a subtle line under company name
-    doc.setDrawColor(0, 50, 100)
-    doc.setLineWidth(0.3)
-    doc.line(margin + 8, currentY + 27, margin + 65, currentY + 27)
-
-    // Quotation section (RIGHT SIDE) - Better positioning and styling
-    doc.setFont("helvetica", "bold")
-    doc.setFontSize(16)
-    doc.setTextColor(0, 50, 100) // Dark blue for quotation title
-    doc.text("QUOTATION", pageWidth - margin - 8, currentY + 15, { align: "right" })
-    
-    doc.setFont("helvetica", "normal")
-    doc.setFontSize(10)
-    doc.setTextColor(0, 0, 0)
-    doc.text(`No: ${quotationData.quotationNo || "NBD-25-26-002"}`, pageWidth - margin - 8, currentY + 25, { align: "right" })
-    
-    const dateStr = quotationData.date ? new Date(quotationData.date).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB')
-    doc.text(`Date: ${dateStr}`, pageWidth - margin - 8, currentY + 33, { align: "right" })
-
-    currentY += 50
-  }
-
-  // Add main document border (4 sides)
-  const addMainBorder = () => {
-    doc.setDrawColor(0, 0, 0)
-    doc.setLineWidth(1)
-    doc.rect(margin - 5, margin - 5, pageWidth - 2 * margin + 10, pageHeight - 2 * margin + 10)
-  }
-
-  // Only add header on first page
-  addPageHeader()
-
-  // FROM and TO sections side by side - In one combined box
-  const sectionWidth = (pageWidth - 3 * margin) / 2
-  const sectionHeight = 55
-  
-  // Combined box for both FROM and TO sections
-  doc.setFillColor(250, 250, 250) // Very light gray background
-  doc.rect(margin, currentY, pageWidth - 2 * margin, sectionHeight, "F")
-  doc.setDrawColor(0, 0, 0)
-  doc.setLineWidth(0.5)
-  doc.rect(margin, currentY, pageWidth - 2 * margin, sectionHeight)
-
-  // Add vertical separator line between FROM and TO
-  const separatorX = margin + sectionWidth + 7.5
-  doc.setDrawColor(0, 0, 0)
-  doc.setLineWidth(0.5)
-  doc.line(separatorX, currentY, separatorX, currentY + sectionHeight)
-
-  const toSectionX = margin + sectionWidth + 15
+      .trim();
+  };
 
   const consignorDetails = [
     String(selectedReferences && selectedReferences[0] ? selectedReferences[0] : "NEERAJ SIR"),
@@ -710,346 +619,16 @@ export const generatePDFFromData = (quotationData, selectedReferences, specialDi
     `Phone: ${String(quotationData.consignorPhone || "N/A")}`,
     `GSTIN: ${String(quotationData.consignorGSTIN || "21AAGCD9326H1ZS")}`,
     `State Code: ${String(quotationData.consignorStateCode || "21")}`,
-  ]
+  ];
 
   const consigneeDetails = [
-    String(quotationData.consigneeName || "A S CONSTRUCTION , Raipur"),
-    `31/554, GALI NO.6, NEW SHANTI NAGAR,`,
-    `RAIPUR, Raipur, Chhattisgarh, 492004`,
-    `State: ${String(quotationData.consigneeState || "Chhattisgarh")}`,
-    `Contact: ${String(quotationData.consigneeContactName || "N/A")}`,
-    `Mobile: ${String(quotationData.consigneeContactNo || "N/A")}`,
-    `GSTIN: ${String(quotationData.consigneeGSTIN || "22AAGFA4837R2ZT")}`,
-    `State Code: ${String(quotationData.consigneeStateCode || "22")}`,
-    `MSME: ${String(quotationData.consigneeMSME || "UDYAM-CG-14-0001307")}`,
-  ]
-
-  // FROM section header
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(11)
-  doc.setTextColor(0, 50, 100) // Dark blue for headers
-  doc.text("FROM:", margin + 5, currentY + 10)
-
-  // FROM section content
-  doc.setFont("helvetica", "normal")
-  doc.setFontSize(8)
-  doc.setTextColor(0, 0, 0)
-  let fromY = currentY + 17
-  consignorDetails.forEach((line) => {
-    if (fromY < currentY + sectionHeight - 3) {
-      const wrappedLines = wrapText(line, sectionWidth - 15)
-      wrappedLines.forEach((wrappedLine) => {
-        if (fromY < currentY + sectionHeight - 3) {
-          doc.text(wrappedLine, margin + 5, fromY)
-          fromY += 4
-        }
-      })
-    }
-  })
-
-  // TO section header
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(11)
-  doc.setTextColor(0, 50, 100) // Dark blue for headers
-  doc.text("TO:", toSectionX + 5, currentY + 10)
-
-  // TO section content
-  doc.setFont("helvetica", "normal")
-  doc.setFontSize(8)
-  doc.setTextColor(0, 0, 0)
-  let toY = currentY + 17
-  consigneeDetails.forEach((line) => {
-    if (toY < currentY + sectionHeight - 3) {
-      const wrappedLines = wrapText(line, sectionWidth - 10)
-      wrappedLines.forEach((wrappedLine) => {
-        if (toY < currentY + sectionHeight - 3) {
-          doc.text(wrappedLine, toSectionX + 5, toY)
-          toY += 4
-        }
-      })
-    }
-  })
-
-  currentY += sectionHeight + 15
-
-  // Items section header
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(12)
-  doc.setTextColor(0, 50, 100) // Dark blue for section headers
-  doc.text("Items:", margin, currentY)
-
-  currentY += 8
-
-  // FIXED: Add Product Name column to table headers
-  const tableHeaders = ["S.No", "Code", "Product Name", "Description", "GST%", "Qty", "Units", "Rate"]
-  if (!hiddenColumns.hideDisc) tableHeaders.push("Disc%")
-  if (!hiddenColumns.hideFlatDisc) tableHeaders.push("Flat Disc")
-  tableHeaders.push("Amount")
-
-  // FIXED: Add Product Name data to items
-  const itemsData = quotationData.items ? quotationData.items.map((item, index) => {
-    const row = [
-      String(index + 1),                                    // S.No
-      String(item.code || "AFG10017"),                     // Code
-      String(item.name || "FISCHER-ANCHOR-FWA 16X180"),    // Product Name
-      String(item.description || ""),                       // Description (separate from name)
-      String(`${item.gst || 18}%`),                        // GST%
-      String(item.qty || 1),                               // Qty
-      String(item.units || "Nos"),                         // Units
-      String(formatCurrency(item.rate || 1712121.00)),     // Rate
-    ]
-    if (!hiddenColumns.hideDisc) row.push(String(`${item.discount || 0}%`))           // Disc%
-    if (!hiddenColumns.hideFlatDisc) row.push(String(formatCurrency(item.flatDiscount || 0))) // Flat Disc
-    row.push(String(formatCurrency(item.amount || 1712121.00)))                       // Amount
-    return row
-  }) : [
-    (() => {
-      const defaultRow = [
-        "1", 
-        "AFG10017", 
-        "FISCHER-ANCHOR-FWA 16X180",  // Product Name
-        "",                           // Description (empty)
-        "18%", 
-        "1", 
-        "Nos", 
-        String(formatCurrency(1712121.00))
-      ]
-      if (!hiddenColumns.hideDisc) defaultRow.push("0%")
-      if (!hiddenColumns.hideFlatDisc) defaultRow.push(String(formatCurrency(0)))
-      defaultRow.push(String(formatCurrency(1712121.00)))
-      return defaultRow
-    })()
-  ]
-
-  // FIXED: Column styles with Product Name column
-  const getColumnStyles = () => {
-    const availableWidth = pageWidth - 2 * margin - 2
-    
-    const styles = {
-      0: { cellWidth: 8, halign: 'center' },   // S.No
-      1: { cellWidth: 15, halign: 'center' },  // Code  
-      2: { cellWidth: 35, halign: 'left' },    // Product Name
-      3: { cellWidth: 30, halign: 'left' },    // Description
-      4: { cellWidth: 10, halign: 'center' },  // GST%
-      5: { cellWidth: 8, halign: 'center' },   // Qty
-      6: { cellWidth: 10, halign: 'center' },  // Units
-      7: { cellWidth: 18, halign: 'right' },   // Rate
-    }
-    
-    let columnIndex = 8
-    let usedWidth = 8 + 15 + 35 + 30 + 10 + 8 + 10 + 18 // 134mm used
-    
-    if (!hiddenColumns.hideDisc) {
-      styles[columnIndex] = { cellWidth: 10, halign: 'center' } // Disc%
-      usedWidth += 10
-      columnIndex++
-    }
-    if (!hiddenColumns.hideFlatDisc) {
-      styles[columnIndex] = { cellWidth: 15, halign: 'right' } // Flat Disc
-      usedWidth += 15
-      columnIndex++
-    }
-    
-    // Amount column gets remaining width
-    const remainingWidth = availableWidth - usedWidth
-    styles[columnIndex] = { 
-      cellWidth: Math.max(18, remainingWidth - 2), 
-      halign: 'right', 
-      fontStyle: 'bold' 
-    }
-    
-    return styles
-  }
-
-  autoTable(doc, {
-    startY: currentY,
-    head: [tableHeaders],
-    body: itemsData,
-    margin: { left: margin, right: margin },
-    tableWidth: pageWidth - 2 * margin,
-    styles: {
-      fontSize: 6.5, // Even smaller font for all columns to fit
-      cellPadding: 1,
-      overflow: 'linebreak',
-      lineColor: [0, 0, 0],
-      lineWidth: 0.2,
-      textColor: [0, 0, 0],
-      font: 'helvetica',
-      valign: 'middle',
-    },
-    headStyles: {
-      fillColor: [230, 240, 255],
-      textColor: [0, 50, 100],
-      fontSize: 6.5,
-      fontStyle: 'bold',
-      cellPadding: 1.5,
-      halign: 'center',
-      valign: 'middle',
-    },
-    columnStyles: getColumnStyles(),
-    theme: 'grid',
-    tableLineWidth: 0.2,
-    tableLineColor: [0, 0, 0],
-    willDrawCell: function(data) {
-      if (data.cell.x + data.cell.width > pageWidth - margin) {
-        data.cell.width = pageWidth - margin - data.cell.x - 1;
-      }
-    },
-    didDrawPage: (data) => {
-      currentY = data.cursor.y;
-    },
-  });
-
-  currentY = doc.lastAutoTable.finalY + 10
-
-  // FIXED: Financial summary with correct tax calculation
-  // FIXED: Financial summary with proper page break handling
-const summaryWidth = 60
-const summaryX = pageWidth - margin - summaryWidth
-
-// Use actual data from quotationData for correct tax calculation
-const subtotal = quotationData.subtotal || 0
-const totalFlatDiscount = quotationData.totalFlatDiscount || 0
-const taxableAmount = Math.max(0, subtotal - totalFlatDiscount)
-
-// Check if IGST or CGST+SGST should be used
-const isIGST = quotationData.isIGST
-const igstRate = quotationData.igstRate || 18
-const cgstRate = quotationData.cgstRate || 9
-const sgstRate = quotationData.sgstRate || 9
-
-let taxAmount = 0
-let finalTotal = 0
-
-// Build summary items based on tax type
-const summaryItems = [
-  { label: "Subtotal:", value: String(formatCurrency(subtotal)) }
-]
-
-// Add Total Flat Discount if exists and not hidden
-if (!hiddenColumns.hideTotalFlatDisc && totalFlatDiscount > 0) {
-  summaryItems.push({ 
-    label: "Total Flat Discount:", 
-    value: `-${String(formatCurrency(totalFlatDiscount))}` 
-  })
-}
-
-// Add Taxable Amount
-summaryItems.push({ 
-  label: "Taxable Amount:", 
-  value: String(formatCurrency(taxableAmount)) 
-})
-
-// Add correct tax based on IGST or CGST+SGST
-if (isIGST) {
-  // Use IGST
-  const igstAmount = quotationData.igstAmount || (taxableAmount * (igstRate / 100))
-  taxAmount = igstAmount
-  summaryItems.push({ 
-    label: `IGST (${igstRate}%):`, 
-    value: String(formatCurrency(igstAmount)) 
-  })
-} else {
-  // Use CGST + SGST
-  const cgstAmount = quotationData.cgstAmount || (taxableAmount * (cgstRate / 100))
-  const sgstAmount = quotationData.sgstAmount || (taxableAmount * (sgstRate / 100))
-  taxAmount = cgstAmount + sgstAmount
-  
-  summaryItems.push({ 
-    label: `CGST (${cgstRate}%):`, 
-    value: String(formatCurrency(cgstAmount)) 
-  })
-  summaryItems.push({ 
-    label: `SGST (${sgstRate}%):`, 
-    value: String(formatCurrency(sgstAmount)) 
-  })
-}
-
-// Add special discount if not hidden and exists
-if (!hiddenColumns.hideSpecialDiscount && specialDiscount > 0) {
-  summaryItems.push({ 
-    label: "Special Discount:", 
-    value: `-${String(formatCurrency(specialDiscount))}` 
-  })
-}
-
-// Calculate final total - ALWAYS calculate instead of using quotationData.total
-finalTotal = taxableAmount + taxAmount - (specialDiscount || 0)
-
-// Add final total
-summaryItems.push({ 
-  label: "Grand Total:", 
-  value: String(formatCurrency(finalTotal)) 
-})
-
-// FIXED: Calculate required height and check for page break
-const summaryHeight = summaryItems.length * 8 + 8
-
-// Check if summary section will fit on current page, if not add new page
-if (checkSpace(summaryHeight + 10)) {
-  // Page was added, adjust summaryX and summaryY for new page
-  const summaryY = currentY
-} else {
-  const summaryY = currentY
-}
-
-// Now draw the summary at the correct position
-const summaryY = currentY
-
-// Draw summary box
-doc.setDrawColor(0, 0, 0)
-doc.setLineWidth(0.5)
-doc.rect(summaryX, summaryY, summaryWidth, summaryHeight)
-
-let summaryCurrentY = summaryY + 8
-
-summaryItems.forEach((item, index) => {
-  if (index === summaryItems.length - 1) { // Total row
-    doc.setFont("helvetica", "bold")
-    doc.setFontSize(9)
-    doc.setFillColor(230, 240, 255) // Light blue background for total
-    doc.rect(summaryX, summaryCurrentY - 3, summaryWidth, 7, "F")
-  } else {
-    doc.setFont("helvetica", "normal")
-    doc.setFontSize(8)
-  }
-
-  doc.setTextColor(0, 0, 0)
-  doc.text(item.label, summaryX + 3, summaryCurrentY)
-  doc.text(item.value, summaryX + summaryWidth - 3, summaryCurrentY, { align: "right" })
-  summaryCurrentY += 7
-})
-
-currentY = summaryCurrentY + 15
-
-  // Check if we need a new page for terms and bank details
-  checkSpace(80)
-
-  // Terms & Conditions and Bank Details - FIXED LAYOUT
-  const termsBoxHeight = 60 // Reduced height
-  
-  // Combined box for both Terms & Conditions and Bank Details sections
-  doc.setFillColor(250, 250, 250) // Very light gray background
-  doc.rect(margin, currentY, pageWidth - 2 * margin, termsBoxHeight, "F")
-  doc.setDrawColor(0, 0, 0)
-  doc.setLineWidth(0.5)
-  doc.rect(margin, currentY, pageWidth - 2 * margin, termsBoxHeight)
-
-  // Add vertical separator line between Terms and Bank Details
-  const termsSeparatorX = margin + sectionWidth + 7.5
-  doc.setDrawColor(0, 0, 0)
-  doc.setLineWidth(0.5)
-  doc.line(termsSeparatorX, currentY, termsSeparatorX, currentY + termsBoxHeight)
-
-  const leftColumnX = margin
-  const rightColumnX = margin + sectionWidth + 15
-  const columnWidth = sectionWidth - 10
-
-  // Terms & Conditions header
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(10)
-  doc.setTextColor(0, 50, 100) // Dark blue for section headers
-  doc.text("Terms & Conditions:", leftColumnX + 5, currentY + 10)
+    `Company Name: ${String(quotationData.consigneeName || "N/A")}`,
+    `Contact Name: ${String(quotationData.consigneeContactName || "N/A")}`,
+    `Contact No.: ${String(quotationData.consigneeContactNo || "N/A")}`,
+    `State: ${String(quotationData.consigneeState || "N/A")}`,
+    `GSTIN: ${String(quotationData.consigneeGSTIN || "N/A")}`,
+    `State Code: ${String(quotationData.consigneeStateCode || "N/A")}`,
+  ];
 
   const terms = [
     { label: "Validity", value: quotationData.validity || "The above quoted prices are valid up to 5 days from date of offer." },
@@ -1058,163 +637,595 @@ currentY = summaryCurrentY + 15
     { label: "Freight", value: quotationData.freight || "Extra as per actual." },
     { label: "Insurance", value: quotationData.insurance || "Transit insurance for all shipment is at Buyer's risk." },
     { label: "Taxes", value: quotationData.taxes || "Extra as per actual." },
-  ]
-
-  let termsY = currentY + 15
-  doc.setFontSize(7) // Smaller font for better fit
-
-  terms.forEach((term) => {
-    if (termsY < currentY + termsBoxHeight - 5) {
-      // Label in bold
-      doc.setFont("helvetica", "bold")
-      doc.setTextColor(0, 0, 0)
-      doc.text(`${term.label}:`, leftColumnX + 5, termsY)
-      
-      // Value in normal font with proper spacing
-      doc.setFont("helvetica", "normal")
-      const labelWidth = 25 // Reduced width for better fit
-      const wrappedLines = wrapText(term.value, columnWidth - labelWidth - 5)
-      
-      wrappedLines.forEach((line, index) => {
-        if (termsY + (index * 2.5) < currentY + termsBoxHeight - 3) {
-          doc.text(line, leftColumnX + 5 + labelWidth, termsY + (index * 2.5))
-        }
-      })
-      
-      termsY += Math.max(4, wrappedLines.length * 2.5) + 1
-    }
-  })
-
-  // Bank Details header
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(10)
-  doc.setTextColor(0, 50, 100) // Dark blue for section headers
-  doc.text("Bank Details:", rightColumnX + 5, currentY + 10)
+  ];
 
   const bankDetails = [
-    { label: "Account No", value: String(quotationData.accountNo || "438605000447") },
-    { label: "Bank Name", value: String(quotationData.bankName || "ICICI BANK") },
-    { label: "Bank Address", value: String(quotationData.bankAddress || "FAFADHI, RAIPUR") },
-    { label: "IFSC Code", value: String(quotationData.ifscCode || "ICIC0004386") },
-    { label: "Email", value: String(quotationData.email || "Support@thedivineempire.com") },
-    { label: "Website", value: String(quotationData.website || "www.thedivineempire.com") },
-    { label: "PAN", value: String(quotationData.pan || "AAGCD9326H") },
-  ]
+    { label: "Account No.", value: String(quotationData.accountNo || "N/A") },
+    { label: "Bank Name", value: String(quotationData.bankName || "N/A") },
+    { label: "Bank Address", value: String(quotationData.bankAddress || "N/A") },
+    { label: "IFSC CODE", value: String(quotationData.ifscCode || "N/A") },
+    { label: "Email", value: String(quotationData.email || "N/A") },
+    { label: "Website", value: String(quotationData.website || "N/A") },
+    { label: "Company PAN", value: String(quotationData.pan || "N/A") },
+  ];
 
-  let bankY = currentY + 15
-  doc.setFontSize(7) // Smaller font for better fit
+  // Build table headers based on hidden columns
+  const tableHeaders = ["S No.", "Code", "Product Name", "Description", "GST %", "Qty", "Units", "Rate"];
+  if (!hiddenColumns.hideDisc) tableHeaders.push("Disc %");
+  if (!hiddenColumns.hideFlatDisc) tableHeaders.push("Flat Disc");
+  tableHeaders.push("Amount");
 
-  bankDetails.forEach((detail) => {
-    if (bankY < currentY + termsBoxHeight - 5) {
-      // Label in bold
-      doc.setFont("helvetica", "bold")
-      doc.setTextColor(0, 0, 0)
-      doc.text(`${detail.label}:`, rightColumnX + 5, bankY)
-      
-      // Value in normal font with proper spacing
-      doc.setFont("helvetica", "normal")
-      const labelWidth = 25 // Reduced width for better fit
-      const wrappedLines = wrapText(String(detail.value || ""), columnWidth - labelWidth - 5)
-      
-      wrappedLines.forEach((line, index) => {
-        if (bankY + (index * 2.5) < currentY + termsBoxHeight - 3) {
-          doc.text(line, rightColumnX + 5 + labelWidth, bankY + (index * 2.5))
-        }
-      })
-      
-      bankY += Math.max(4, wrappedLines.length * 2.5) + 1
-    }
-  })
+  // Build items data
+  const itemsData = quotationData.items ? quotationData.items.map((item, index) => {
+    const row = [
+      String(index + 1),
+      String(item.code || "N/A"),
+      String(item.name || "N/A"),
+      String(item.description || "N/A"),
+      String(`${item.gst || 18}%`),
+      String(item.qty || 1),
+      String(item.units || "Nos"),
+      `₹${formatCurrency(item.rate || 0)}`,
+    ];
+    if (!hiddenColumns.hideDisc) row.push(String(`${item.discount || 0}%`));
+    if (!hiddenColumns.hideFlatDisc) row.push(`₹${formatCurrency(item.flatDiscount || 0)}`);
+    row.push(`₹${formatCurrency(item.amount || 0)}`);
+    return row;
+  }) : [
+    (() => {
+      const defaultRow = [
+        "1", 
+        "N/A", 
+        "N/A",
+        "N/A",
+        "18%", 
+        "1", 
+        "Nos", 
+        "₹0.00"
+      ];
+      if (!hiddenColumns.hideDisc) defaultRow.push("0%");
+      if (!hiddenColumns.hideFlatDisc) defaultRow.push("₹0.00");
+      defaultRow.push("₹0.00");
+      return defaultRow;
+    })()
+  ];
 
-  currentY += termsBoxHeight + 15
-
-  // Signature section
-  const signatureY = currentY
-  doc.setFont("helvetica", "normal")
-  doc.setFontSize(9)
-  doc.text(`Prepared By: ${quotationData.preparedBy || "GEETA BHIWAGADE"}`, margin, signatureY)
-
-  // Draw line for signature
-  doc.setDrawColor(0, 0, 0)
-  doc.setLineWidth(0.5)
-  doc.line(pageWidth - margin - 80, signatureY + 10, pageWidth - margin - 10, signatureY + 10)
+  // Financial calculations
+  const subtotal = quotationData.subtotal || 0;
+  const totalFlatDiscount = quotationData.totalFlatDiscount || 0;
+  const taxableAmount = Math.max(0, subtotal - totalFlatDiscount);
   
-  doc.setFont("helvetica", "normal")
-  doc.setFontSize(8)
-  doc.text("Authorized Signature", pageWidth - margin - 45, signatureY + 20, { align: "center" })
+  const cgstRate = quotationData.cgstRate || 9;
+  const sgstRate = quotationData.sgstRate || 9;
+  const cgstAmount = quotationData.cgstAmount || (taxableAmount * (cgstRate / 100));
+  const sgstAmount = quotationData.sgstAmount || (taxableAmount * (sgstRate / 100));
+  const totalTax = cgstAmount + sgstAmount;
+  const grandTotal = taxableAmount + totalTax - (specialDiscount || 0);
 
-  // Special offers section (if exists and not hidden)
-  if (quotationData.specialOffers && quotationData.specialOffers.filter((offer) => offer.trim()).length > 0) {
-    currentY += 25
-    checkSpace(25)
+  const dateStr = quotationData.date ? new Date(quotationData.date).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB');
+
+  return (
+    <div style={{ 
+      width: '210mm', 
+      minHeight: '297mm', 
+      fontFamily: 'Arial, sans-serif', 
+      fontSize: '11px', 
+      lineHeight: '1.3',
+      margin: '0',
+      padding: '15mm',
+      backgroundColor: 'white',
+      color: 'black',
+      boxSizing: 'border-box'
+    }}>
+      
+      {/* Header Section */}
+      {/* Header Section */}
+<div style={{ 
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: '20px',
+  paddingBottom: '15px',
+  borderBottom: '1px solid #000',
+  position: 'relative'
+}}>
+  {/* Logo (Left Side) */}
+  <div style={{ width: '60px', height: '60px' }}>
+    <img 
+      src={logo} 
+      alt="Company Logo" 
+      style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+    />
+  </div>
+
+  {/* Company Name (Centered) */}
+  <div style={{ 
+    position: 'absolute',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    textAlign: 'center'
+  }}>
+    <h1 style={{ 
+      fontSize: '24px', 
+      fontWeight: 'bold', 
+      color: '#8b5cf6',
+      margin: '0',
+      lineHeight: '1.2'
+    }}>
+      DIVINE EMPIRE INDIA PVT. LTD.
+    </h1>
+  </div>
+        
+        {/* Revise Button Placeholder */}
+        {/* <div style={{
+          backgroundColor: '#3b82f6',
+          color: 'white',
+          padding: '8px 16px',
+          borderRadius: '6px',
+          fontSize: '12px',
+          fontWeight: '500'
+        }}>
+          Revise
+        </div> */}
+      </div>
+
+      {/* Main Content Area */}
+      <div style={{ border: '1px solid #000', padding: '20px' }}>
+        
+        {/* Quotation Header */}
+        <div style={{ 
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: '20px'
+        }}>
+          {/* Consignor Name Section */}
+          <div>
+            <h3 style={{ margin: '0', fontSize: '14px', fontWeight: 'bold' }}>Consignor Name</h3>
+            <p style={{ margin: '2px 0', fontSize: '12px' }}>Consignor Address</p>
+            <p style={{ margin: '2px 0', fontSize: '12px' }}>Mobile: N/A</p>
+            <p style={{ margin: '2px 0', fontSize: '12px' }}>Phone: N/A</p>
+            <p style={{ margin: '2px 0', fontSize: '12px' }}>GSTIN: N/A</p>
+            <p style={{ margin: '2px 0', fontSize: '12px' }}>State Code: N/A</p>
+          </div>
+          
+          {/* Quotation Info */}
+          <div style={{ textAlign: 'center' }}>
+            <h2 style={{ 
+              fontSize: '18px', 
+              fontWeight: 'bold',
+              margin: '0',
+              marginBottom: '10px'
+            }}>QUOTATION</h2>
+          </div>
+          
+          {/* Quotation Details */}
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ margin: '2px 0', fontSize: '12px' }}>Quo No: {quotationData.quotationNo || "NBD-002"}</p>
+            <p style={{ margin: '2px 0', fontSize: '12px' }}>Date: {dateStr}</p>
+            <p style={{ margin: '2px 0', fontSize: '12px' }}>Prepared By: {quotationData.preparedBy || "N/A"}</p>
+          </div>
+        </div>
+
+        {/* Consignor and Consignee Details */}
+        <div style={{ 
+          display: 'flex',
+          marginBottom: '20px',
+          borderTop: '1px solid #000',
+          borderBottom: '1px solid #000'
+        }}>
+          {/* Consignor Details */}
+          <div style={{ 
+            width: '50%',
+            borderRight: '1px solid #000',
+            padding: '10px'
+          }}>
+            <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', fontWeight: 'bold' }}>Consignor Details</h4>
+            <div style={{ fontSize: '10px', lineHeight: '1.4' }}>
+              {consignorDetails.map((detail, index) => (
+                <div key={index} style={{ marginBottom: '2px' }}>{detail}</div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Consignee Details */}
+          <div style={{ 
+            width: '50%',
+            padding: '10px'
+          }}>
+            <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', fontWeight: 'bold' }}>Consignee Details</h4>
+            <div style={{ fontSize: '10px', lineHeight: '1.4' }}>
+              {consigneeDetails.map((detail, index) => (
+                <div key={index} style={{ marginBottom: '2px' }}>{detail}</div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Bill To and Ship To */}
+        <div style={{ 
+          display: 'flex',
+          marginBottom: '20px',
+          borderBottom: '1px solid #000'
+        }}>
+          {/* Bill To */}
+          <div style={{ 
+            width: '50%',
+            borderRight: '1px solid #000',
+            padding: '10px'
+          }}>
+            <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', fontWeight: 'bold' }}>Bill To</h4>
+            <p style={{ margin: '0', fontSize: '10px' }}>N/A</p>
+          </div>
+          
+          {/* Ship To */}
+          <div style={{ 
+            width: '50%',
+            padding: '10px'
+          }}>
+            <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', fontWeight: 'bold' }}>Ship To</h4>
+            <p style={{ margin: '0', fontSize: '10px' }}>N/A</p>
+          </div>
+        </div>
+
+        {/* Items Table */}
+        <table style={{ 
+          width: '100%', 
+          border: '1px solid black', 
+          borderCollapse: 'collapse',
+          fontSize: '9px',
+          marginBottom: '20px'
+        }}>
+          {/* Table Header */}
+          <thead>
+            <tr style={{ backgroundColor: '#f8f9fa' }}>
+              {tableHeaders.map((header, index) => (
+                <th key={index} style={{ 
+                  border: '1px solid black', 
+                  padding: '5px 3px', 
+                  textAlign: 'center',
+                  fontWeight: 'bold',
+                  fontSize: '9px'
+                }}>
+                  {header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          
+          {/* Table Body */}
+          <tbody>
+            {itemsData.map((row, rowIndex) => (
+              <tr key={rowIndex}>
+                {row.map((cell, cellIndex) => (
+                  <td key={cellIndex} style={{ 
+                    border: '1px solid black', 
+                    padding: '5px 3px', 
+                    textAlign: cellIndex === 0 || cellIndex === 4 || cellIndex === 5 || cellIndex === 6 ? 'center' : 
+                             cellIndex === 2 || cellIndex === 3 ? 'left' : 'right',
+                    fontSize: '9px',
+                    verticalAlign: 'middle'
+                  }}>
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            
+            {/* Summary Rows */}
+            <tr>
+              <td colSpan={tableHeaders.length - 1} style={{ 
+                border: '1px solid black', 
+                padding: '5px', 
+                textAlign: 'right',
+                fontWeight: 'bold',
+                fontSize: '9px'
+              }}>
+                Subtotal
+              </td>
+              <td style={{ 
+                border: '1px solid black', 
+                padding: '5px', 
+                textAlign: 'right',
+                fontWeight: 'bold',
+                fontSize: '9px'
+              }}>
+                ₹{formatCurrency(subtotal)}
+              </td>
+            </tr>
+            
+            {!hiddenColumns.hideTotalFlatDisc && totalFlatDiscount > 0 && (
+              <tr>
+                <td colSpan={tableHeaders.length - 1} style={{ 
+                  border: '1px solid black', 
+                  padding: '5px', 
+                  textAlign: 'right',
+                  fontSize: '9px'
+                }}>
+                  Total Flat Discount
+                </td>
+                <td style={{ 
+                  border: '1px solid black', 
+                  padding: '5px', 
+                  textAlign: 'right',
+                  fontSize: '9px'
+                }}>
+                  -₹{formatCurrency(totalFlatDiscount)}
+                </td>
+              </tr>
+            )}
+            
+            <tr>
+              <td colSpan={tableHeaders.length - 1} style={{ 
+                border: '1px solid black', 
+                padding: '5px', 
+                textAlign: 'right',
+                fontSize: '9px'
+              }}>
+                Taxable Amount
+              </td>
+              <td style={{ 
+                border: '1px solid black', 
+                padding: '5px', 
+                textAlign: 'right',
+                fontSize: '9px'
+              }}>
+                ₹{formatCurrency(taxableAmount)}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Tax Breakdown and Amount in Words */}
+        <div style={{ display: 'flex', marginBottom: '20px' }}>
+          {/* Tax Breakdown */}
+          <div style={{ width: '50%', marginRight: '20px' }}>
+            <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', fontWeight: 'bold' }}>Tax Breakdown</h4>
+            <table style={{ 
+              width: '100%', 
+              border: '1px solid black', 
+              borderCollapse: 'collapse',
+              fontSize: '10px'
+            }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f8f9fa' }}>
+                  <th style={{ border: '1px solid black', padding: '5px', textAlign: 'center' }}>Tax Type</th>
+                  <th style={{ border: '1px solid black', padding: '5px', textAlign: 'center' }}>Rate</th>
+                  <th style={{ border: '1px solid black', padding: '5px', textAlign: 'center' }}>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style={{ border: '1px solid black', padding: '5px' }}>CGST</td>
+                  <td style={{ border: '1px solid black', padding: '5px', textAlign: 'center' }}>{cgstRate}%</td>
+                  <td style={{ border: '1px solid black', padding: '5px', textAlign: 'right' }}>₹{formatCurrency(cgstAmount)}</td>
+                </tr>
+                <tr>
+                  <td style={{ border: '1px solid black', padding: '5px' }}>SGST</td>
+                  <td style={{ border: '1px solid black', padding: '5px', textAlign: 'center' }}>{sgstRate}%</td>
+                  <td style={{ border: '1px solid black', padding: '5px', textAlign: 'right' }}>₹{formatCurrency(sgstAmount)}</td>
+                </tr>
+                <tr style={{ backgroundColor: '#f8f9fa' }}>
+                  <td style={{ border: '1px solid black', padding: '5px', fontWeight: 'bold' }}>Total Tax</td>
+                  <td style={{ border: '1px solid black', padding: '5px', textAlign: 'center', fontWeight: 'bold' }}>{cgstRate + sgstRate}%</td>
+                  <td style={{ border: '1px solid black', padding: '5px', textAlign: 'right', fontWeight: 'bold' }}>₹{formatCurrency(totalTax)}</td>
+                </tr>
+                {!hiddenColumns.hideSpecialDiscount && specialDiscount > 0 && (
+                  <tr>
+                    <td style={{ border: '1px solid black', padding: '5px' }} colSpan="2">Special Discount</td>
+                    <td style={{ border: '1px solid black', padding: '5px', textAlign: 'right' }}>-₹{formatCurrency(specialDiscount)}</td>
+                  </tr>
+                )}
+                <tr style={{ backgroundColor: '#e6f3ff' }}>
+                  <td style={{ border: '1px solid black', padding: '5px', fontWeight: 'bold' }} colSpan="2">Grand Total</td>
+                  <td style={{ border: '1px solid black', padding: '5px', textAlign: 'right', fontWeight: 'bold' }}>₹{formatCurrency(grandTotal)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Amount in Words */}
+          <div style={{ width: '50%' }}>
+            <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', fontWeight: 'bold' }}>Amount Chargeable (in words)</h4>
+            <p style={{ fontSize: '10px', margin: '0' }}>Rupees Zero Only</p>
+            
+            <div style={{ 
+              marginTop: '20px',
+              textAlign: 'right',
+              fontSize: '16px',
+              fontWeight: 'bold'
+            }}>
+              Grand Total: ₹{formatCurrency(grandTotal)}
+            </div>
+          </div>
+        </div>
+
+        {/* ManiqQuip Logo in center */}
+     <div style={{ 
+          textAlign: 'center', 
+          marginBottom: '20px',
+          padding: '20px 0'
+        }}>
+          <div style={{
+            display: 'inline-block',
+            backgroundColor: '#f0f8ff',
+            padding: '15px 30px',
+            borderRadius: '8px',
+            border: '1px solid #e0e7ff'
+          }}>
+            <img 
+              src={maniquipLogo} 
+              alt="ManiqQuip Logo" 
+              style={{
+                width: '180px',
+                height: '60px',
+                objectFit: 'contain',
+                display: 'block',
+                margin: '0 auto',
+                backgroundColor: 'white'
+              }}
+              onError={(e) => {
+                console.log('Image failed to load, using fallback');
+                e.target.style.display = 'none';
+                const fallback = document.createElement('div');
+                fallback.innerHTML = `
+                  <div style="text-align: center; padding: 10px;">
+                    <div style="font-size: 24px; font-weight: bold;">
+                      <span style="color: #10b981;">Mani</span><span style="color: #2563eb;">Quip</span>
+                    </div>
+                  </div>
+                `;
+                e.target.parentNode.appendChild(fallback);
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Terms & Conditions and Bank Details */}
+        <div style={{ 
+          display: 'flex',
+          marginBottom: '20px'
+        }}>
+          {/* Terms & Conditions */}
+          <div style={{ 
+            width: '50%',
+            marginRight: '20px'
+          }}>
+            <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', fontWeight: 'bold' }}>Terms & Conditions</h4>
+            <div style={{ fontSize: '9px', lineHeight: '1.4' }}>
+              {terms.map((term, index) => (
+                <div key={index} style={{ marginBottom: '5px' }}>
+                  <span style={{ fontWeight: 'bold' }}>{term.label}:</span> {term.value}
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Bank Details and Declaration */}
+          <div style={{ 
+            width: '50%'
+          }}>
+            <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', fontWeight: 'bold' }}>Bank Details</h4>
+            <div style={{ fontSize: '9px', lineHeight: '1.4', marginBottom: '15px' }}>
+              {bankDetails.map((detail, index) => (
+                <div key={index} style={{ marginBottom: '2px' }}>
+                  <span style={{ fontWeight: 'bold' }}>{detail.label}:</span> {detail.value}
+                </div>
+              ))}
+            </div>
+            
+            <h4 style={{ margin: '0 0 5px 0', fontSize: '12px', fontWeight: 'bold' }}>Declaration:</h4>
+            <p style={{ fontSize: '9px', lineHeight: '1.3', margin: '0' }}>
+              We declare that this Quotation shows the actual price of the goods described 
+              and that all particulars are true and correct.
+            </p>
+            
+            <div style={{ marginTop: '10px', textAlign: 'right' }}>
+              <p style={{ fontSize: '9px', margin: '0' }}>Prepared By: {quotationData.preparedBy || "N/A"}</p>
+            </div>
+            
+            <p style={{ 
+              fontSize: '8px', 
+              fontStyle: 'italic', 
+              textAlign: 'center', 
+              margin: '10px 0 0 0',
+              color: '#666'
+            }}>
+              This Quotation is computer-generated and does not require a seal or signature.
+            </p>
+          </div>
+        </div>
+
+        {/* View as Client and Action Buttons */}
+      </div>
+    </div>
+  );
+};
+
+// Function to generate HTML string from React component
+export const generateHTMLFromData = (quotationData, selectedReferences, specialDiscount, hiddenColumns = {}) => {
+  const htmlString = ReactDOMServer.renderToStaticMarkup(
+    React.createElement(QuotationPDFComponent, {
+      quotationData,
+      selectedReferences,
+      specialDiscount,
+      hiddenColumns
+    })
+  );
+  
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Quotation ${quotationData.quotationNo || 'NBD-002'}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: Arial, sans-serif; 
+      -webkit-print-color-adjust: exact;
+      color-adjust: exact;
+    }
+    @media print {
+      body { margin: 0; }
+      @page { 
+        size: A4; 
+        margin: 0; 
+      }
+    }
+    button {
+      font-family: Arial, sans-serif;
+    }
+  </style>
+</head>
+<body>
+  ${htmlString}
+</body>
+</html>`;
+};
+
+// Function to generate PDF using html2pdf library
+export const generatePDFFromData = async (quotationData, selectedReferences, specialDiscount, hiddenColumns = {}) => {
+  try {
+    // Import html2pdf dynamically
+    const html2pdf = (await import('html2pdf.js')).default;
     
-    doc.setFont("helvetica", "bold")
-    doc.setFontSize(10)
-    doc.setTextColor(0, 50, 100)
-    doc.text("DIVINE EMPIRE'S 10TH ANNIVERSARY SPECIAL OFFER", margin, currentY)
-    currentY += 6
-
-    quotationData.specialOffers
-      .filter((offer) => offer.trim())
-      .forEach((offer) => {
-        doc.setTextColor(200, 50, 50)
-        doc.setFont("helvetica", "bold")
-        doc.setFontSize(8)
-        const text = `★ ${offer}`
-        const wrappedLines = wrapText(text, pageWidth - 2 * margin)
-        wrappedLines.forEach((line) => {
-          doc.text(line, margin, currentY)
-          currentY += 4
-        })
-      })
-  }
-
-  // Additional notes section (if exists)
-  if (quotationData.notes && quotationData.notes.length > 0) {
-    currentY += 10
-    checkSpace(20)
+    const htmlString = generateHTMLFromData(quotationData, selectedReferences, specialDiscount, hiddenColumns);
     
-    doc.setFont("helvetica", "bold")
-    doc.setFontSize(10)
-    doc.setTextColor(0, 50, 100)
-    doc.text("ADDITIONAL NOTES", margin, currentY)
-    currentY += 6
-
-    quotationData.notes
-      .filter((note) => note.trim())
-      .forEach((note) => {
-        doc.setTextColor(0, 0, 0)
-        doc.setFont("helvetica", "normal")
-        doc.setFontSize(8)
-        const text = `• ${note}`
-        const wrappedLines = wrapText(text, pageWidth - 2 * margin)
-        wrappedLines.forEach((line) => {
-          doc.text(line, margin, currentY)
-          currentY += 4
-        })
-      })
+    const options = {
+      margin: 0,
+      filename: `Quotation_${quotationData.quotationNo || 'NBD-002'}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { 
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false
+      },
+      jsPDF: { 
+        unit: 'mm', 
+        format: 'a4', 
+        orientation: 'portrait' 
+      }
+    };
+    
+    return html2pdf().set(options).from(htmlString).outputPdf('datauristring');
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    throw error;
   }
+};
 
-  // Footer
-  const pageCount = doc.internal.getNumberOfPages()
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i)
-
-    // Add main document border on each page
-    addMainBorder()
-
-    doc.setFontSize(6)
-    doc.setTextColor(120, 120, 120)
-    doc.setFont("helvetica", "normal")
-
-    doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, pageHeight - 8, { align: "right" })
-
-    doc.text("Generated by Divine Empire Professional Quotation System", margin, pageHeight - 10)
-    doc.text("This is a computer-generated document", margin, pageHeight - 6)
-
-    const now = new Date()
-    doc.text(`Generated on: ${now.toLocaleDateString('en-GB')}, ${now.toLocaleTimeString()}`, pageWidth - margin, pageHeight - 10, { align: "right" })
+// Alternative function that returns base64 directly (for compatibility)
+export const generatePDFBase64 = async (quotationData, selectedReferences, specialDiscount, hiddenColumns = {}) => {
+  try {
+    const pdfDataUri = await generatePDFFromData(quotationData, selectedReferences, specialDiscount, hiddenColumns);
+    const base64Data = pdfDataUri.split(',')[1];
+    return base64Data;
+  } catch (error) {
+    console.error('Error generating PDF base64:', error);
+    throw error;
   }
+};
 
-  return doc.output("datauristring").split(",")[1]
-}
+// Export the React component as well
+export { QuotationPDFComponent };

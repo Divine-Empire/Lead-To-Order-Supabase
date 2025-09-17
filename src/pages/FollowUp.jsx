@@ -257,6 +257,8 @@ function FollowUp() {
   };
 
   // Fixed function to fetch data with pagination
+// Replace the existing fetchFollowUpData function with this updated version:
+
 const fetchFollowUpData = useCallback(async (page = 1, isLoadMore = false, searchTerm = "") => {
   try {
     console.log(`Fetching data - Page: ${page}, LoadMore: ${isLoadMore}, ActiveTab: ${activeTab}`);
@@ -269,56 +271,38 @@ const fetchFollowUpData = useCallback(async (page = 1, isLoadMore = false, searc
 
     const itemsPerPage = 50;
     const from = (page - 1) * itemsPerPage;
+    const to = from + itemsPerPage - 1;
 
-    if (activeTab === "pending") {
-      let pendingQuery = supabase
-        .from('leads_to_order')
-        .select('*', { count: 'exact' })
-        .not('Planned', 'is', null)
-        .is('Actual', null);
+   if (activeTab === "pending") {
+  let pendingQuery = supabase
+    .from('leads_to_order')
+    .select('*', { count: 'exact' })
+    .not('Planned', 'is', null)
+    .is('Actual', null);
 
-      // Enhanced search filter - search all data, not just paginated
-      if (searchTerm) {
-        pendingQuery = pendingQuery.or(`
-          Company_Name.ilike.%${searchTerm}%,
-          "LD-Lead-No".ilike.%${searchTerm}%,
-          Salesperson_Name.ilike.%${searchTerm}%,
-          Phone_Number.ilike.%${searchTerm}%,
-          Lead_Source.ilike.%${searchTerm}%,
-          Location.ilike.%${searchTerm}%,
-          "What_Did_Customer_say".ilike.%${searchTerm}%,
-          Enquiry_Received_Status.ilike.%${searchTerm}%,
-          SC_Name.ilike.%${searchTerm}%
-        `);
-      }
+  // Apply search filter to the query BEFORE pagination
+  if (searchTerm) {
+    pendingQuery = pendingQuery.or(`Company_Name.ilike.%${searchTerm}%,"LD-Lead-No".ilike.%${searchTerm}%,Salesperson_Name.ilike.%${searchTerm}%,Phone_Number.ilike.%${searchTerm}%,Lead_Source.ilike.%${searchTerm}%,Location.ilike.%${searchTerm}%,"What_Did_The_Customer say?".ilike.%${searchTerm}%,Enquiry_Received_Status.ilike.%${searchTerm}%,SC_Name.ilike.%${searchTerm}%`);
+  }
 
-      // Apply user filter if not admin
-      if (!isAdmin() && currentUser && currentUser.username) {
-        pendingQuery = pendingQuery.eq('SC_Name', currentUser.username);
-      }
+  // Apply user filter if not admin
+  if (!isAdmin() && currentUser && currentUser.username) {
+    pendingQuery = pendingQuery.eq('SC_Name', currentUser.username);
+  }
 
-      const { data, error, count } = await pendingQuery;
+  // Add sorting by lead number (LD-Lead-No) in ascending order
+  pendingQuery = pendingQuery.order('id', { ascending: true });
+
+  // Apply pagination with range
+  pendingQuery = pendingQuery.range(from, to);
+
+  const { data, error, count } = await pendingQuery;
 
       if (error) throw error;
 
-      // Sort data by lead number (extract numeric part for proper sorting)
-      const sortedData = data.sort((a, b) => {
-        const leadA = a['LD-Lead-No'] || "";
-        const leadB = b['LD-Lead-No'] || "";
-        
-        // Extract numeric part from lead number (e.g., "LD-3110" -> 3110)
-        const numA = parseInt(leadA.replace(/\D/g, ''), 10) || 0;
-        const numB = parseInt(leadB.replace(/\D/g, ''), 10) || 0;
-        
-        return numA - numB;
-      });
+      console.log(`Fetched ${data?.length || 0} pending records for page ${page}`);
 
-      // Apply pagination to sorted data
-      const paginatedData = sortedData.slice(from, from + itemsPerPage);
-
-      console.log(`Fetched ${paginatedData?.length || 0} pending records for page ${page}`);
-
-      const filteredPending = (paginatedData || []).map(row => ({
+      const filteredPending = (data || []).map(row => ({
         timestamp: row.Next_Call_Date ? formatDateToDDMMYYYY(row.Next_Call_Date) : "",
         id: row.id || "",
         leadId: row['LD-Lead-No'] || "",
@@ -344,11 +328,16 @@ const fetchFollowUpData = useCallback(async (page = 1, isLoadMore = false, searc
         setPendingFollowUps(filteredPending);
       }
 
-      // Check if there's more data to load based on sorted data length
-      const hasMore = (from + filteredPending.length) < sortedData.length;
+      // Check if there's more data based on count and current data length
+      const totalCount = count || 0;
+      const currentDataLength = isLoadMore ? 
+        (pendingFollowUps.length + filteredPending.length) : 
+        filteredPending.length;
+      
+      const hasMore = currentDataLength < totalCount;
       setHasMorePending(hasMore);
       
-      console.log(`HasMorePending: ${hasMore}, Data length: ${filteredPending?.length}`);
+      console.log(`HasMorePending: ${hasMore}, Current: ${currentDataLength}, Total: ${totalCount}`);
 
     } else {
       // History tab data fetching
@@ -356,19 +345,9 @@ const fetchFollowUpData = useCallback(async (page = 1, isLoadMore = false, searc
         .from('leads_tracker')
         .select('*', { count: 'exact' });
 
-      // Enhanced search filter for history
+      // Apply search filter to the query BEFORE pagination
       if (searchTerm) {
-        historyQuery = historyQuery.or(`
-          "LD-Lead-No".ilike.%${searchTerm}%,
-          "What_Did_The_Customer say?".ilike.%${searchTerm}%,
-          Leads_Tracking_Status.ilike.%${searchTerm}%,
-          Enquiry_Received_Status.ilike.%${searchTerm}%,
-          Enquiry_for_State.ilike.%${searchTerm}%,
-          Project_Name.ilike.%${searchTerm}%,
-          Enquiry_Type.ilike.%${searchTerm}%,
-          Next_Action.ilike.%${searchTerm}%,
-          SC_Name.ilike.%${searchTerm}%
-        `);
+        historyQuery = historyQuery.or(`"LD-Lead-No".ilike.%${searchTerm}%,"What_Did_The_Customer say?".ilike.%${searchTerm}%,Leads_Tracking_Status.ilike.%${searchTerm}%,Enquiry_Received_Status.ilike.%${searchTerm}%,Enquiry_for_State.ilike.%${searchTerm}%,Project_Name.ilike.%${searchTerm}%,Enquiry_Type.ilike.%${searchTerm}%,Next_Action.ilike.%${searchTerm}%,SC_Name.ilike.%${searchTerm}%`);
       }
 
       // Apply user filter if not admin
@@ -376,28 +355,16 @@ const fetchFollowUpData = useCallback(async (page = 1, isLoadMore = false, searc
         historyQuery = historyQuery.eq('SC_Name', currentUser.username);
       }
 
+      // Apply pagination with range
+      historyQuery = historyQuery.range(from, to);
+
       const { data, error, count } = await historyQuery;
 
       if (error) throw error;
 
-      // Sort data by lead number (extract numeric part for proper sorting)
-      const sortedData = data.sort((a, b) => {
-        const leadA = a["LD-Lead-No"] || "";
-        const leadB = b["LD-Lead-No"] || "";
-        
-        // Extract numeric part from lead number
-        const numA = parseInt(leadA.replace(/\D/g, ''), 10) || 0;
-        const numB = parseInt(leadB.replace(/\D/g, ''), 10) || 0;
-        
-        return numA - numB;
-      });
+      console.log(`Fetched ${data?.length || 0} history records for page ${page}`);
 
-      // Apply pagination to sorted data
-      const paginatedData = sortedData.slice(from, from + itemsPerPage);
-
-      console.log(`Fetched ${paginatedData?.length || 0} history records for page ${page}`);
-
-      const filteredHistory = (paginatedData || []).map(row => ({
+      const filteredHistory = (data || []).map(row => ({
         timestamp: row["Timestamp"] ? formatDateToDDMMYYYY(row["Timestamp"]) : "",
         leadNo: row["LD-Lead-No"] || "",
         companyName: "",
@@ -434,11 +401,16 @@ const fetchFollowUpData = useCallback(async (page = 1, isLoadMore = false, searc
         setHistoryFollowUps(filteredHistory);
       }
 
-      // Check if there's more data to load based on sorted data length
-      const hasMore = (from + filteredHistory.length) < sortedData.length;
+      // Check if there's more data based on count and current data length
+      const totalCount = count || 0;
+      const currentDataLength = isLoadMore ? 
+        (historyFollowUps.length + filteredHistory.length) : 
+        filteredHistory.length;
+      
+      const hasMore = currentDataLength < totalCount;
       setHasMoreHistory(hasMore);
       
-      console.log(`HasMoreHistory: ${hasMore}, Data length: ${filteredHistory?.length}`);
+      console.log(`HasMoreHistory: ${hasMore}, Current: ${currentDataLength}, Total: ${totalCount}`);
     }
 
   } catch (error) {
@@ -451,20 +423,36 @@ const fetchFollowUpData = useCallback(async (page = 1, isLoadMore = false, searc
   }
 }, [currentUser, isAdmin, activeTab]);
 
-  // Fixed load more data function
-  const loadMoreData = useCallback(() => {
-    if (isLoadingMore) return;
-    
-    if (activeTab === "pending" && hasMorePending) {
-      console.log(`Loading more pending data, page: ${pendingPage}`);
-      fetchFollowUpData(pendingPage, true, searchTerm);
-      setPendingPage(prev => prev + 1);
-    } else if (activeTab === "history" && hasMoreHistory) {
-      console.log(`Loading more history data, page: ${historyPage}`);
-      fetchFollowUpData(historyPage, true, searchTerm);
-      setHistoryPage(prev => prev + 1);
-    }
-  }, [activeTab, isLoadingMore, hasMorePending, hasMoreHistory, pendingPage, historyPage, searchTerm, fetchFollowUpData]);
+
+// Remove or comment out these filter functions since filtering now happens at database level:
+
+// const filteredPendingFollowUps = pendingFollowUps.filter((followUp) => {
+//   ... existing filter logic ...
+// })
+
+// const filteredHistoryFollowUps = historyFollowUps.filter((followUp) => {
+//   ... existing filter logic ...
+// })
+
+
+// Replace the filter variables with direct usage:
+// Change all instances of `filteredPendingFollowUps` to `pendingFollowUps`
+// Change all instances of `filteredHistoryFollowUps` to `historyFollowUps`
+
+// Update the loadMoreData function to pass the current page correctly:
+const loadMoreData = useCallback(() => {
+  if (isLoadingMore) return;
+  
+  if (activeTab === "pending" && hasMorePending) {
+    console.log(`Loading more pending data, page: ${pendingPage + 1}`);
+    fetchFollowUpData(pendingPage + 1, true, searchTerm);
+    setPendingPage(prev => prev + 1);
+  } else if (activeTab === "history" && hasMoreHistory) {
+    console.log(`Loading more history data, page: ${historyPage + 1}`);
+    fetchFollowUpData(historyPage + 1, true, searchTerm);
+    setHistoryPage(prev => prev + 1);
+  }
+}, [activeTab, isLoadingMore, hasMorePending, hasMoreHistory, pendingPage, historyPage, searchTerm, fetchFollowUpData]);
 
   // Fixed scroll event listener for infinite scroll
   useEffect(() => {
