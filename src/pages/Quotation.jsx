@@ -4,7 +4,7 @@
 import { FileTextIcon, PlusIcon, TrashIcon, DownloadIcon, SaveIcon, ShareIcon, CopyIcon, EyeIcon } from "../components/Icons"
 import { useState, useEffect } from "react"
 import image1 from "../assests/WhatsApp Image 2025-05-14 at 4.11.43 PM.jpeg"
-import imageform from "../assests/WhatsApp Image 2025-05-14 at 4.11.54 PM.jpeg"
+import imageform from "../assests/banner.jpeg"
 
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'

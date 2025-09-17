@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { DownloadIcon, SaveIcon, ShareIcon } from "../../components/Icons"
 import image1 from "../../assests/WhatsApp Image 2025-05-14 at 4.11.43 PM.jpeg"
-import imageform from "../../assests/WhatsApp Image 2025-05-14 at 4.11.54 PM.jpeg"
+import imageform from "../../assests/banner.jpeg"
 import QuotationHeader from "./quotation-header"
 import QuotationForm from "./quotation-form"
 import QuotationPreview from "./quotation-preview"
@@ -126,44 +126,44 @@ function Quotation() {
   }
 
   // Fetch existing quotations when component mounts or when revising
-  useEffect(() => {
-    const fetchExistingQuotations = async () => {
-      try {
-        console.log("Fetching existing quotations...")
-        const scriptUrl =
-          "https://script.google.com/macros/s/AKfycbzTPj_x_0Sh6uCNnMDi-KlwVzkGV3nC4tRF6kGUNA1vXG0Ykx4Lq6ccR9kYv6Cst108aQ/exec"
-        const response = await fetch(scriptUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams({
-            sheetName: "Make Quotation",
-            action: "getQuotationNumbers",
-          }),
-        })
+  // useEffect(() => {
+  //   const fetchExistingQuotations = async () => {
+  //     try {
+  //       console.log("Fetching existing quotations...")
+  //       const scriptUrl =
+  //         "https://script.google.com/macros/s/AKfycbzTPj_x_0Sh6uCNnMDi-KlwVzkGV3nC4tRF6kGUNA1vXG0Ykx4Lq6ccR9kYv6Cst108aQ/exec"
+  //       const response = await fetch(scriptUrl, {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/x-www-form-urlencoded",
+  //         },
+  //         body: new URLSearchParams({
+  //           sheetName: "Make Quotation",
+  //           action: "getQuotationNumbers",
+  //         }),
+  //       })
 
-        const result = await response.json()
-        console.log("Quotation numbers result:", result)
+  //       const result = await response.json()
+  //       console.log("Quotation numbers result:", result)
 
-        if (result.success && Array.isArray(result.quotationNumbers)) {
-          setExistingQuotations(result.quotationNumbers)
-        } else {
-          console.error("Invalid response format:", result)
-          setExistingQuotations([])
-        }
-      } catch (error) {
-        console.error("Error fetching quotation numbers:", error)
-        setExistingQuotations([])
-      }
-    }
+  //       if (result.success && Array.isArray(result.quotationNumbers)) {
+  //         setExistingQuotations(result.quotationNumbers)
+  //       } else {
+  //         console.error("Invalid response format:", result)
+  //         setExistingQuotations([])
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching quotation numbers:", error)
+  //       setExistingQuotations([])
+  //     }
+  //   }
 
-    fetchExistingQuotations()
+  //   fetchExistingQuotations()
 
-    if (isRevising) {
-      fetchExistingQuotations()
-    }
-  }, [isRevising])
+  //   if (isRevising) {
+  //     fetchExistingQuotations()
+  //   }
+  // }, [isRevising])
 
   // Initialize quotation number
   useEffect(() => {
@@ -210,119 +210,119 @@ function Quotation() {
     }
   }
 
-  const handleQuotationSelect = async (quotationNo) => {
-    if (!quotationNo) return
+  // const handleQuotationSelect = async (quotationNo) => {
+  //   if (!quotationNo) return
 
-    setIsLoadingQuotation(true)
-    setSelectedQuotation(quotationNo)
+  //   setIsLoadingQuotation(true)
+  //   setSelectedQuotation(quotationNo)
 
-    try {
-      const scriptUrl =
-        "https://script.google.com/macros/s/AKfycbzTPj_x_0Sh6uCNnMDi-KlwVzkGV3nC4tRF6kGUNA1vXG0Ykx4Lq6ccR9kYv6Cst108aQ/exec"
-      const response = await fetch(scriptUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          sheetName: "Make Quotation",
-          action: "getQuotationData",
-          quotationNo: quotationNo,
-        }),
-      })
+  //   try {
+  //     const scriptUrl =
+  //       "https://script.google.com/macros/s/AKfycbzTPj_x_0Sh6uCNnMDi-KlwVzkGV3nC4tRF6kGUNA1vXG0Ykx4Lq6ccR9kYv6Cst108aQ/exec"
+  //     const response = await fetch(scriptUrl, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/x-www-form-urlencoded",
+  //       },
+  //       body: new URLSearchParams({
+  //         sheetName: "Make Quotation",
+  //         action: "getQuotationData",
+  //         quotationNo: quotationNo,
+  //       }),
+  //     })
 
-      const result = await response.json()
-      console.log("Loaded quotation data:", result)
+  //     const result = await response.json()
+  //     console.log("Loaded quotation data:", result)
 
-      if (result.success) {
-        const loadedData = result.quotationData
+  //     if (result.success) {
+  //       const loadedData = result.quotationData
 
-        const references = loadedData.consignorName
-          ? loadedData.consignorName
-              .split(",")
-              .map((r) => r.trim())
-              .filter((r) => r)
-          : []
-        setSelectedReferences(references)
+  //       const references = loadedData.consignorName
+  //         ? loadedData.consignorName
+  //             .split(",")
+  //             .map((r) => r.trim())
+  //             .filter((r) => r)
+  //         : []
+  //       setSelectedReferences(references)
 
-        let items = []
-        const specialDiscountFromItems = loadedData.specialDiscount || 0
+  //       let items = []
+  //       const specialDiscountFromItems = loadedData.specialDiscount || 0
 
-        if (loadedData.items && Array.isArray(loadedData.items) && loadedData.items.length > 0) {
-          items = loadedData.items.map((item, index) => ({
-            id: index + 1,
-            ...item,
-          }))
-        }
+  //       if (loadedData.items && Array.isArray(loadedData.items) && loadedData.items.length > 0) {
+  //         items = loadedData.items.map((item, index) => ({
+  //           id: index + 1,
+  //           ...item,
+  //         }))
+  //       }
 
-        const subtotal = items.reduce((sum, item) => sum + Number(item.amount), 0)
-        const totalFlatDiscount = Number(loadedData.totalFlatDiscount) || 0
-        const cgstRate = Number(loadedData.cgstRate) || 9
-        const sgstRate = Number(loadedData.sgstRate) || 9
-        const taxableAmount = Math.max(0, subtotal - totalFlatDiscount)
-        const cgstAmount = Number((taxableAmount * (cgstRate / 100)).toFixed(2))
-        const sgstAmount = Number((taxableAmount * (sgstRate / 100)).toFixed(2))
-        const total = Number((taxableAmount + cgstAmount + sgstAmount - specialDiscountFromItems).toFixed(2))
+  //       const subtotal = items.reduce((sum, item) => sum + Number(item.amount), 0)
+  //       const totalFlatDiscount = Number(loadedData.totalFlatDiscount) || 0
+  //       const cgstRate = Number(loadedData.cgstRate) || 9
+  //       const sgstRate = Number(loadedData.sgstRate) || 9
+  //       const taxableAmount = Math.max(0, subtotal - totalFlatDiscount)
+  //       const cgstAmount = Number((taxableAmount * (cgstRate / 100)).toFixed(2))
+  //       const sgstAmount = Number((taxableAmount * (sgstRate / 100)).toFixed(2))
+  //       const total = Number((taxableAmount + cgstAmount + sgstAmount - specialDiscountFromItems).toFixed(2))
 
-        // Parse special offers from loaded data
-        let specialOffers = [""]
-        if (loadedData.specialOffers) {
-          if (typeof loadedData.specialOffers === "string") {
-            // If it's a string, split by delimiter
-            specialOffers = loadedData.specialOffers.split("|").filter((offer) => offer.trim())
-            if (specialOffers.length === 0) specialOffers = [""]
-          } else if (Array.isArray(loadedData.specialOffers)) {
-            specialOffers = loadedData.specialOffers
-          }
-        }
+  //       // Parse special offers from loaded data
+  //       let specialOffers = [""]
+  //       if (loadedData.specialOffers) {
+  //         if (typeof loadedData.specialOffers === "string") {
+  //           // If it's a string, split by delimiter
+  //           specialOffers = loadedData.specialOffers.split("|").filter((offer) => offer.trim())
+  //           if (specialOffers.length === 0) specialOffers = [""]
+  //         } else if (Array.isArray(loadedData.specialOffers)) {
+  //           specialOffers = loadedData.specialOffers
+  //         }
+  //       }
 
-        setQuotationData({
-          ...loadedData,
-          items,
-          subtotal,
-          totalFlatDiscount,
-          cgstRate,
-          sgstRate,
-          cgstAmount,
-          sgstAmount,
-          total,
-          accountNo: loadedData.accountNo || "",
-          bankName: loadedData.bankName || "",
-          bankAddress: loadedData.bankAddress || "",
-          ifscCode: loadedData.ifscCode || "",
-          email: loadedData.email || "",
-          website: loadedData.website || "",
-          pan: loadedData.pan || "",
-          consignorState: loadedData.consignorState || "",
-          consignorName: loadedData.consignorName || "",
-          consignorAddress: loadedData.consignorAddress || "",
-          consignorMobile: loadedData.consignorMobile || "",
-          consignorPhone: loadedData.consignorPhone || "",
-          consignorGSTIN: loadedData.consignorGSTIN || "",
-          consignorStateCode: loadedData.consignorStateCode || "",
-          consigneeName: loadedData.consigneeName || "",
-          consigneeAddress: loadedData.consigneeAddress || "",
-          shipTo: loadedData.shipTo || "",
-          consigneeState: loadedData.consigneeState || "",
-          consigneeContactName: loadedData.consigneeContactName || "",
-          consigneeContactNo: loadedData.consigneeContactNo || "",
-          consigneeGSTIN: loadedData.consigneeGSTIN || "",
-          consigneeStateCode: loadedData.consigneeStateCode || "",
-          msmeNumber: loadedData.msmeNumber || "",
-          preparedBy: loadedData.preparedBy || "",
-          specialOffers: specialOffers,
-          notes: Array.isArray(loadedData.notes) ? loadedData.notes : loadedData.notes ? [loadedData.notes] : [""],
-        })
+  //       setQuotationData({
+  //         ...loadedData,
+  //         items,
+  //         subtotal,
+  //         totalFlatDiscount,
+  //         cgstRate,
+  //         sgstRate,
+  //         cgstAmount,
+  //         sgstAmount,
+  //         total,
+  //         accountNo: loadedData.accountNo || "",
+  //         bankName: loadedData.bankName || "",
+  //         bankAddress: loadedData.bankAddress || "",
+  //         ifscCode: loadedData.ifscCode || "",
+  //         email: loadedData.email || "",
+  //         website: loadedData.website || "",
+  //         pan: loadedData.pan || "",
+  //         consignorState: loadedData.consignorState || "",
+  //         consignorName: loadedData.consignorName || "",
+  //         consignorAddress: loadedData.consignorAddress || "",
+  //         consignorMobile: loadedData.consignorMobile || "",
+  //         consignorPhone: loadedData.consignorPhone || "",
+  //         consignorGSTIN: loadedData.consignorGSTIN || "",
+  //         consignorStateCode: loadedData.consignorStateCode || "",
+  //         consigneeName: loadedData.consigneeName || "",
+  //         consigneeAddress: loadedData.consigneeAddress || "",
+  //         shipTo: loadedData.shipTo || "",
+  //         consigneeState: loadedData.consigneeState || "",
+  //         consigneeContactName: loadedData.consigneeContactName || "",
+  //         consigneeContactNo: loadedData.consigneeContactNo || "",
+  //         consigneeGSTIN: loadedData.consigneeGSTIN || "",
+  //         consigneeStateCode: loadedData.consigneeStateCode || "",
+  //         msmeNumber: loadedData.msmeNumber || "",
+  //         preparedBy: loadedData.preparedBy || "",
+  //         specialOffers: specialOffers,
+  //         notes: Array.isArray(loadedData.notes) ? loadedData.notes : loadedData.notes ? [loadedData.notes] : [""],
+  //       })
 
-        setSpecialDiscount(specialDiscountFromItems)
-      }
-    } catch (error) {
-      console.error("Error fetching quotation data:", error)
-      alert("Failed to load quotation data")
-    } finally {
-      setIsLoadingQuotation(false)
-    }
-  }
+  //       setSpecialDiscount(specialDiscountFromItems)
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching quotation data:", error)
+  //     alert("Failed to load quotation data")
+  //   } finally {
+  //     setIsLoadingQuotation(false)
+  //   }
+  // }
 
   const handleGeneratePDF = () => {
     setIsGenerating(true)
@@ -370,288 +370,288 @@ function Quotation() {
     alert("Quotation link has been successfully generated and is ready to share.")
   }
 
-  const handleSaveQuotation = async () => {
-    if (!quotationData.consigneeName) {
-      alert("Please select a company name")
-      return
-    }
+  // const handleSaveQuotation = async () => {
+  //   if (!quotationData.consigneeName) {
+  //     alert("Please select a company name")
+  //     return
+  //   }
 
-    if (!quotationData.preparedBy) {
-      alert("Please enter prepared by name")
-      return
-    }
+  //   if (!quotationData.preparedBy) {
+  //     alert("Please enter prepared by name")
+  //     return
+  //   }
 
-    setIsSubmitting(true)
+  //   setIsSubmitting(true)
 
-    try {
-      const base64Data = generatePDFFromData(quotationData, selectedReferences, specialDiscount)
+  //   try {
+  //     const base64Data = generatePDFFromData(quotationData, selectedReferences, specialDiscount)
 
-      let finalQuotationNo = quotationData.quotationNo
-      if (isRevising && selectedQuotation) {
-        if (!finalQuotationNo.match(/-\d{2}$/)) {
-          finalQuotationNo = `${finalQuotationNo}-01`
-        } else {
-          const parts = finalQuotationNo.split("-")
-          const lastPart = parts[parts.length - 1]
-          const revisionNumber = Number.parseInt(lastPart, 10)
-          const newRevision = (revisionNumber + 1).toString().padStart(2, "0")
-          parts[parts.length - 1] = newRevision
-          finalQuotationNo = parts.join("-")
-        }
-      }
+  //     let finalQuotationNo = quotationData.quotationNo
+  //     if (isRevising && selectedQuotation) {
+  //       if (!finalQuotationNo.match(/-\d{2}$/)) {
+  //         finalQuotationNo = `${finalQuotationNo}-01`
+  //       } else {
+  //         const parts = finalQuotationNo.split("-")
+  //         const lastPart = parts[parts.length - 1]
+  //         const revisionNumber = Number.parseInt(lastPart, 10)
+  //         const newRevision = (revisionNumber + 1).toString().padStart(2, "0")
+  //         parts[parts.length - 1] = newRevision
+  //         finalQuotationNo = parts.join("-")
+  //       }
+  //     }
 
-      const fileName = `Quotation_${finalQuotationNo}.pdf`
+  //     const fileName = `Quotation_${finalQuotationNo}.pdf`
 
-      const scriptUrl =
-        "https://script.google.com/macros/s/AKfycbzTPj_x_0Sh6uCNnMDi-KlwVzkGV3nC4tRF6kGUNA1vXG0Ykx4Lq6ccR9kYv6Cst108aQ/exec"
+  //     const scriptUrl =
+  //       "https://script.google.com/macros/s/AKfycbzTPj_x_0Sh6uCNnMDi-KlwVzkGV3nC4tRF6kGUNA1vXG0Ykx4Lq6ccR9kYv6Cst108aQ/exec"
 
-      const pdfParams = {
-        action: "uploadPDF",
-        pdfData: base64Data,
-        fileName: fileName,
-      }
+  //     const pdfParams = {
+  //       action: "uploadPDF",
+  //       pdfData: base64Data,
+  //       fileName: fileName,
+  //     }
 
-      const pdfUrlParams = new URLSearchParams()
-      for (const key in pdfParams) {
-        pdfUrlParams.append(key, pdfParams[key])
-      }
+  //     const pdfUrlParams = new URLSearchParams()
+  //     for (const key in pdfParams) {
+  //       pdfUrlParams.append(key, pdfParams[key])
+  //     }
 
-      const pdfResponse = await fetch(scriptUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: pdfUrlParams,
-      })
+  //     const pdfResponse = await fetch(scriptUrl, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/x-www-form-urlencoded",
+  //       },
+  //       body: pdfUrlParams,
+  //     })
 
-      const pdfResult = await pdfResponse.json()
+  //     const pdfResult = await pdfResponse.json()
 
-      if (!pdfResult.success) {
-        throw new Error("Failed to upload PDF: " + (pdfResult.error || "Unknown error"))
-      }
+  //     if (!pdfResult.success) {
+  //       throw new Error("Failed to upload PDF: " + (pdfResult.error || "Unknown error"))
+  //     }
 
-      const pdfUrl = pdfResult.fileUrl
+  //     const pdfUrl = pdfResult.fileUrl
 
-      const quotationDetails = [
-        new Date().toLocaleString(),
-        finalQuotationNo,
-        quotationData.date,
-        quotationData.preparedBy,
-      ]
+  //     const quotationDetails = [
+  //       new Date().toLocaleString(),
+  //       finalQuotationNo,
+  //       quotationData.date,
+  //       quotationData.preparedBy,
+  //     ]
 
-      const consignorDetails = [
-        quotationData.consignorState,
-        quotationData.consignorName,
-        quotationData.consignorAddress,
-        quotationData.consignorMobile,
-        quotationData.consignorPhone,
-        quotationData.consignorGSTIN,
-        quotationData.consignorStateCode,
-      ]
+  //     const consignorDetails = [
+  //       quotationData.consignorState,
+  //       quotationData.consignorName,
+  //       quotationData.consignorAddress,
+  //       quotationData.consignorMobile,
+  //       quotationData.consignorPhone,
+  //       quotationData.consignorGSTIN,
+  //       quotationData.consignorStateCode,
+  //     ]
 
-      const consigneeDetails = [
-        quotationData.consigneeName,
-        quotationData.consigneeAddress,
-        quotationData.shipTo || quotationData.consigneeAddress,
-        quotationData.consigneeState,
-        quotationData.consigneeContactName,
-        quotationData.consigneeContactNo,
-        quotationData.consigneeGSTIN,
-        quotationData.consigneeStateCode,
-        quotationData.msmeNumber,
-      ]
+  //     const consigneeDetails = [
+  //       quotationData.consigneeName,
+  //       quotationData.consigneeAddress,
+  //       quotationData.shipTo || quotationData.consigneeAddress,
+  //       quotationData.consigneeState,
+  //       quotationData.consigneeContactName,
+  //       quotationData.consigneeContactNo,
+  //       quotationData.consigneeGSTIN,
+  //       quotationData.consigneeStateCode,
+  //       quotationData.msmeNumber,
+  //     ]
 
-      const termsDetails = [
-        quotationData.validity,
-        quotationData.paymentTerms,
-        quotationData.delivery,
-        quotationData.freight,
-        quotationData.insurance,
-        quotationData.taxes,
-        quotationData.notes.filter((note) => note.trim()).join("|"),
-      ]
+  //     const termsDetails = [
+  //       quotationData.validity,
+  //       quotationData.paymentTerms,
+  //       quotationData.delivery,
+  //       quotationData.freight,
+  //       quotationData.insurance,
+  //       quotationData.taxes,
+  //       quotationData.notes.filter((note) => note.trim()).join("|"),
+  //     ]
 
-      const bankDetails = [
-        quotationData.accountNo,
-        quotationData.bankName,
-        quotationData.bankAddress,
-        quotationData.ifscCode,
-        quotationData.email,
-        quotationData.website,
-        quotationData.pan,
-      ]
+  //     const bankDetails = [
+  //       quotationData.accountNo,
+  //       quotationData.bankName,
+  //       quotationData.bankAddress,
+  //       quotationData.ifscCode,
+  //       quotationData.email,
+  //       quotationData.website,
+  //       quotationData.pan,
+  //     ]
 
-      const itemsString = quotationData.items
-        .map((item) => {
-          return [
-            item.code || "",
-            item.name || "",
-            item.description || "",
-            item.gst || 0,
-            item.qty || 0,
-            item.units || "Nos",
-            item.rate || 0,
-            item.discount || 0,
-            item.flatDiscount || 0,
-            item.amount || 0,
-            specialDiscount.toString(),
-          ].join("|")
-        })
-        .join(";")
+  //     const itemsString = quotationData.items
+  //       .map((item) => {
+  //         return [
+  //           item.code || "",
+  //           item.name || "",
+  //           item.description || "",
+  //           item.gst || 0,
+  //           item.qty || 0,
+  //           item.units || "Nos",
+  //           item.rate || 0,
+  //           item.discount || 0,
+  //           item.flatDiscount || 0,
+  //           item.amount || 0,
+  //           specialDiscount.toString(),
+  //         ].join("|")
+  //       })
+  //       .join(";")
 
-      // Convert special offers array to string for database storage
-      const specialOffersString = quotationData.specialOffers
-        ? quotationData.specialOffers.filter((offer) => offer.trim()).join("|")
-        : ""
+  //     // Convert special offers array to string for database storage
+  //     const specialOffersString = quotationData.specialOffers
+  //       ? quotationData.specialOffers.filter((offer) => offer.trim()).join("|")
+  //       : ""
 
-      const mainRowData = [
-        ...quotationDetails,
-        ...consignorDetails,
-        ...consigneeDetails,
-        ...termsDetails,
-        ...bankDetails,
-        itemsString,
-        specialOffersString, // Add special offers before PDF URL
-        pdfUrl,
-      ]
+  //     const mainRowData = [
+  //       ...quotationDetails,
+  //       ...consignorDetails,
+  //       ...consigneeDetails,
+  //       ...termsDetails,
+  //       ...bankDetails,
+  //       itemsString,
+  //       specialOffersString, // Add special offers before PDF URL
+  //       pdfUrl,
+  //     ]
 
-      const sheetParams = {
-        sheetName: "Make Quotation",
-        action: "insert",
-        rowData: JSON.stringify(mainRowData),
-      }
+  //     const sheetParams = {
+  //       sheetName: "Make Quotation",
+  //       action: "insert",
+  //       rowData: JSON.stringify(mainRowData),
+  //     }
 
-      const sheetUrlParams = new URLSearchParams()
-      for (const key in sheetParams) {
-        sheetUrlParams.append(key, sheetParams[key])
-      }
+  //     const sheetUrlParams = new URLSearchParams()
+  //     for (const key in sheetParams) {
+  //       sheetUrlParams.append(key, sheetParams[key])
+  //     }
 
-      const sheetResponse = await fetch(scriptUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: sheetUrlParams,
-      })
+  //     const sheetResponse = await fetch(scriptUrl, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/x-www-form-urlencoded",
+  //       },
+  //       body: sheetUrlParams,
+  //     })
 
-      const sheetResult = await sheetResponse.json()
+  //     const sheetResult = await sheetResponse.json()
 
-      if (!sheetResult.success) {
-        throw new Error("Error saving quotation: " + (sheetResult.error || "Unknown error"))
-      }
+  //     if (!sheetResult.success) {
+  //       throw new Error("Error saving quotation: " + (sheetResult.error || "Unknown error"))
+  //     }
 
-      const itemPromises = quotationData.items.map(async (item) => {
-        const itemData = [
-          finalQuotationNo,
-          item.code,
-          item.name,
-          item.description,
-          item.gst,
-          item.qty,
-          item.units,
-          item.rate,
-          item.discount,
-          item.flatDiscount,
-          item.amount,
-        ]
+  //     const itemPromises = quotationData.items.map(async (item) => {
+  //       const itemData = [
+  //         finalQuotationNo,
+  //         item.code,
+  //         item.name,
+  //         item.description,
+  //         item.gst,
+  //         item.qty,
+  //         item.units,
+  //         item.rate,
+  //         item.discount,
+  //         item.flatDiscount,
+  //         item.amount,
+  //       ]
 
-        const itemParams = {
-          sheetName: "Quotation Items",
-          action: "insert",
-          rowData: JSON.stringify(itemData),
-        }
+  //       const itemParams = {
+  //         sheetName: "Quotation Items",
+  //         action: "insert",
+  //         rowData: JSON.stringify(itemData),
+  //       }
 
-        const itemUrlParams = new URLSearchParams()
-        for (const key in itemParams) {
-          itemUrlParams.append(key, itemParams[key])
-        }
+  //       const itemUrlParams = new URLSearchParams()
+  //       for (const key in itemParams) {
+  //         itemUrlParams.append(key, itemParams[key])
+  //       }
 
-        return fetch(scriptUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: itemUrlParams,
-        })
-      })
+  //       return fetch(scriptUrl, {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/x-www-form-urlencoded",
+  //         },
+  //         body: itemUrlParams,
+  //       })
+  //     })
 
-      await Promise.all(itemPromises)
+  //     await Promise.all(itemPromises)
 
-      setPdfUrl(pdfUrl)
+  //     setPdfUrl(pdfUrl)
 
-      if (isRevising && selectedQuotation) {
-        setQuotationData((prev) => ({
-          ...prev,
-          quotationNo: finalQuotationNo,
-        }))
-      }
+  //     if (isRevising && selectedQuotation) {
+  //       setQuotationData((prev) => ({
+  //         ...prev,
+  //         quotationNo: finalQuotationNo,
+  //       }))
+  //     }
 
-      alert("Quotation saved successfully with all items!")
+  //     alert("Quotation saved successfully with all items!")
 
-      const nextQuotationNumber = await getNextQuotationNumber()
-      setQuotationData({
-        quotationNo: nextQuotationNumber,
-        date: new Date().toLocaleDateString("en-GB"),
-        consignorState: "",
-        consignorName: "",
-        consignorAddress: "",
-        consignorMobile: "",
-        consignorPhone: "",
-        consignorGSTIN: "",
-        consignorStateCode: "",
-        companyName: "",
-        consigneeName: "",
-        consigneeAddress: "",
-        consigneeState: "",
-        consigneeContactName: "",
-        consigneeContactNo: "",
-        consigneeGSTIN: "",
-        consigneeStateCode: "",
-        msmeNumber: "",
-        items: [
-          {
-            id: 1,
-            code: "",
-            name: "",
-            gst: 18,
-            qty: 1,
-            units: "Nos",
-            rate: 0,
-            discount: 0,
-            flatDiscount: 0,
-            amount: 0,
-          },
-        ],
-        totalFlatDiscount: 0,
-        subtotal: 0,
-        cgstRate: 9,
-        sgstRate: 9,
-        cgstAmount: 0,
-        sgstAmount: 0,
-        total: 0,
-        validity: "The above quoted prices are valid up to 5 days from date of offer.",
-        paymentTerms: "100% advance payment in the mode of NEFT, RTGS & DD",
-        delivery: "Material is ready in our stock",
-        freight: "Extra as per actual.",
-        insurance: "Transit insurance for all shipment is at Buyer's risk.",
-        taxes: "Extra as per actual.",
-        accountNo: "",
-        bankName: "",
-        bankAddress: "",
-        ifscCode: "",
-        email: "",
-        website: "",
-        pan: "",
-        notes: [""],
-        preparedBy: "",
-        specialOffers: [""],
-      })
-    } catch (error) {
-      alert("Error: " + error.message)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
+  //     const nextQuotationNumber = await getNextQuotationNumber()
+  //     setQuotationData({
+  //       quotationNo: nextQuotationNumber,
+  //       date: new Date().toLocaleDateString("en-GB"),
+  //       consignorState: "",
+  //       consignorName: "",
+  //       consignorAddress: "",
+  //       consignorMobile: "",
+  //       consignorPhone: "",
+  //       consignorGSTIN: "",
+  //       consignorStateCode: "",
+  //       companyName: "",
+  //       consigneeName: "",
+  //       consigneeAddress: "",
+  //       consigneeState: "",
+  //       consigneeContactName: "",
+  //       consigneeContactNo: "",
+  //       consigneeGSTIN: "",
+  //       consigneeStateCode: "",
+  //       msmeNumber: "",
+  //       items: [
+  //         {
+  //           id: 1,
+  //           code: "",
+  //           name: "",
+  //           gst: 18,
+  //           qty: 1,
+  //           units: "Nos",
+  //           rate: 0,
+  //           discount: 0,
+  //           flatDiscount: 0,
+  //           amount: 0,
+  //         },
+  //       ],
+  //       totalFlatDiscount: 0,
+  //       subtotal: 0,
+  //       cgstRate: 9,
+  //       sgstRate: 9,
+  //       cgstAmount: 0,
+  //       sgstAmount: 0,
+  //       total: 0,
+  //       validity: "The above quoted prices are valid up to 5 days from date of offer.",
+  //       paymentTerms: "100% advance payment in the mode of NEFT, RTGS & DD",
+  //       delivery: "Material is ready in our stock",
+  //       freight: "Extra as per actual.",
+  //       insurance: "Transit insurance for all shipment is at Buyer's risk.",
+  //       taxes: "Extra as per actual.",
+  //       accountNo: "",
+  //       bankName: "",
+  //       bankAddress: "",
+  //       ifscCode: "",
+  //       email: "",
+  //       website: "",
+  //       pan: "",
+  //       notes: [""],
+  //       preparedBy: "",
+  //       specialOffers: [""],
+  //     })
+  //   } catch (error) {
+  //     alert("Error: " + error.message)
+  //   } finally {
+  //     setIsSubmitting(false)
+  //   }
+  // }
 
   return (
     <div className="container mx-auto py-6 px-4">

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { DownloadIcon, SaveIcon, ShareIcon } from "../../components/Icons"
 import image1 from "../../assests/WhatsApp Image 2025-05-14 at 4.11.43 PM.jpeg"
-import imageform from "../../assests/WhatsApp Image 2025-05-14 at 4.11.54 PM.jpeg"
+import imageform from "../../assests/banner.jpeg"
 import QuotationHeader from "./quotation-header"
 import QuotationForm from "./quotation-form"
 import QuotationPreview from "./quotation-preview"
