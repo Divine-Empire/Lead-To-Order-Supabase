@@ -65,6 +65,7 @@ function CallTracker() {
   const [orderStatuses, setOrderStatuses] = useState({});
 const [orderRemarks, setOrderRemarks] = useState({});
 
+const [orderDates, setOrderDates] = useState({});
   // NEW: Add serial number filter state
   const [serialFilter, setSerialFilter] = useState([])
   const [showSerialDropdown, setShowSerialDropdown] = useState(false)
@@ -1045,12 +1046,12 @@ const handleSelectAllOrders = (isChecked) => {
   }
 }
 
-const handleStatusChange = (orderNo, status) => {
-  setOrderStatuses(prev => ({
-    ...prev,
-    [orderNo]: status
-  }));
-};
+// const handleStatusChange = (orderNo, status) => {
+//   setOrderStatuses(prev => ({
+//     ...prev,
+//     [orderNo]: status
+//   }));
+// };
 
 const handleRemarkChange = (orderNo, remark) => {
   setOrderRemarks(prev => ({
@@ -1060,6 +1061,30 @@ const handleRemarkChange = (orderNo, remark) => {
 };
 
 // Update the submit function to include status and remarks
+const handleStatusChange = (orderNo, status) => {
+  setOrderStatuses(prev => ({
+    ...prev,
+    [orderNo]: status
+  }));
+  
+  // Clear date if status is "done"
+  if (status === 'done') {
+    setOrderDates(prev => ({
+      ...prev,
+      [orderNo]: ''
+    }));
+  }
+};
+
+// 3. Add handleDateChange function
+const handleDateChange = (orderNo, date) => {
+  setOrderDates(prev => ({
+    ...prev,
+    [orderNo]: date
+  }));
+};
+
+// 4. Update handleSubmitSelected function to include dates
 const handleSubmitSelected = async () => {
   if (selectedOrders.length === 0) {
     alert("Please select at least one order to submit")
@@ -1072,11 +1097,12 @@ const handleSubmitSelected = async () => {
     formData.append('action', 'updateTenDaysOrders')
     formData.append('sheetName', 'ORDER-DISPATCH')
     
-    // Prepare data with status and remarks - FIXED: Remove default 'done'
+    // Prepare data with status, remarks, and dates
     const ordersData = selectedOrders.map(orderNo => ({
       orderNo,
-      status: orderStatuses[orderNo] || 'pending',  // Default to 'pending' instead of 'done'
-      remark: orderRemarks[orderNo] || ''
+      status: orderStatuses[orderNo] || 'pending',
+      remark: orderRemarks[orderNo] || '',
+      date: orderDates[orderNo] || '' // Add date to the data
     }));
     
     formData.append('ordersData', JSON.stringify(ordersData))
@@ -1093,15 +1119,18 @@ const handleSubmitSelected = async () => {
     if (result.success) {
       alert("Selected orders updated successfully!")
       setSelectedOrders([])
-      // Clear the status and remarks for submitted orders
+      // Clear the status, remarks, and dates for submitted orders
       const newStatuses = {...orderStatuses};
       const newRemarks = {...orderRemarks};
+      const newDates = {...orderDates};
       selectedOrders.forEach(orderNo => {
         delete newStatuses[orderNo];
         delete newRemarks[orderNo];
+        delete newDates[orderNo];
       });
       setOrderStatuses(newStatuses);
       setOrderRemarks(newRemarks);
+      setOrderDates(newDates);
       // Refresh the data
       fetchTenDaysData()
     } else {
@@ -1113,6 +1142,7 @@ const handleSubmitSelected = async () => {
   }
   setIsSubmitting(false)
 }
+
 
 // 4. Create a function to convert callingDaysFilter to dateFilters object
 const getDateFiltersFromCallingDays = () => {
@@ -2956,6 +2986,8 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
             </th>
             {/* Add Status column */}
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            {/* Add Date column */}
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
             {/* Add Remarks column */}
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
@@ -2999,6 +3031,19 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                     <option value="done">Done</option>
                   </select>
                 </td>
+                {/* Date input - only show when status is pending */}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {(orderStatuses[order.orderNo] || 'pending') === 'pending' ? (
+                    <input
+                      type="date"
+                      value={orderDates[order.orderNo] || ''}
+                      onChange={(e) => handleDateChange(order.orderNo, e.target.value)}
+                      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )}
+                </td>
                 {/* Remarks input */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <input
@@ -3031,7 +3076,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
             ))
           ) : (
             <tr>
-              <td colSpan={19} className="px-6 py-4 text-center text-sm text-slate-500">
+              <td colSpan={20} className="px-6 py-4 text-center text-sm text-slate-500">
                 {isLoading ? 'Loading 10 days data...' : 'No orders found for 10 days criteria'}
               </td>
             </tr>
