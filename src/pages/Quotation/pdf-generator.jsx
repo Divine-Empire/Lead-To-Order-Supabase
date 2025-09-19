@@ -3,7 +3,7 @@ import ReactDOMServer from 'react-dom/server';
 import logo from '../../assests/WhatsApp Image 2025-05-14 at 4.11.43 PM.jpeg';
 import maniquipLogo from '../../assests/banner.jpeg';
 
-// React PDF Component that matches your web interface exactly
+// React PDF Component that matches your preview interface exactly
 const QuotationPDFComponent = ({ quotationData, selectedReferences, specialDiscount, hiddenColumns = {} }) => {
   const formatCurrency = (value) => {
     return new Intl.NumberFormat("en-IN", {
@@ -16,45 +16,6 @@ const QuotationPDFComponent = ({ quotationData, selectedReferences, specialDisco
       .replace("₹", "")
       .trim();
   };
-
-  const consignorDetails = [
-    String(selectedReferences && selectedReferences[0] ? selectedReferences[0] : "NEERAJ SIR"),
-    `Plot no 27, PATRAPADA Bhagabanpur Industrial Estate`,
-    `PATRAPADA, PS - TAMANDO, Bhubaneswar, Odisha 751019`,
-    `State: ${String(quotationData.consignorState || "Odisha")}`,
-    `Mobile: ${String(quotationData.consignorMobile && typeof quotationData.consignorMobile === 'string' ? quotationData.consignorMobile.split(",")[0] : quotationData.consignorMobile || "7024425225")}`,
-    `Phone: ${String(quotationData.consignorPhone || "N/A")}`,
-    `GSTIN: ${String(quotationData.consignorGSTIN || "21AAGCD9326H1ZS")}`,
-    `State Code: ${String(quotationData.consignorStateCode || "21")}`,
-  ];
-
-  const consigneeDetails = [
-    `Company Name: ${String(quotationData.consigneeName || "N/A")}`,
-    `Contact Name: ${String(quotationData.consigneeContactName || "N/A")}`,
-    `Contact No.: ${String(quotationData.consigneeContactNo || "N/A")}`,
-    `State: ${String(quotationData.consigneeState || "N/A")}`,
-    `GSTIN: ${String(quotationData.consigneeGSTIN || "N/A")}`,
-    `State Code: ${String(quotationData.consigneeStateCode || "N/A")}`,
-  ];
-
-  const terms = [
-    { label: "Validity", value: quotationData.validity || "The above quoted prices are valid up to 5 days from date of offer." },
-    { label: "Payment Terms", value: quotationData.paymentTerms || "100% advance payment in the mode of NEFT, RTGS & DD" },
-    { label: "Delivery", value: quotationData.delivery || "Material is ready in our stock" },
-    { label: "Freight", value: quotationData.freight || "Extra as per actual." },
-    { label: "Insurance", value: quotationData.insurance || "Transit insurance for all shipment is at Buyer's risk." },
-    { label: "Taxes", value: quotationData.taxes || "Extra as per actual." },
-  ];
-
-  const bankDetails = [
-    { label: "Account No.", value: String(quotationData.accountNo || "N/A") },
-    { label: "Bank Name", value: String(quotationData.bankName || "N/A") },
-    { label: "Bank Address", value: String(quotationData.bankAddress || "N/A") },
-    { label: "IFSC CODE", value: String(quotationData.ifscCode || "N/A") },
-    { label: "Email", value: String(quotationData.email || "N/A") },
-    { label: "Website", value: String(quotationData.website || "N/A") },
-    { label: "Company PAN", value: String(quotationData.pan || "N/A") },
-  ];
 
   // Build table headers based on hidden columns
   const tableHeaders = ["S No.", "Code", "Product Name", "Description", "GST %", "Qty", "Units", "Rate"];
@@ -112,20 +73,20 @@ const QuotationPDFComponent = ({ quotationData, selectedReferences, specialDisco
   const dateStr = quotationData.date ? new Date(quotationData.date).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB');
 
   return (
-   <div style={{ 
-  width: '210mm', 
-  minHeight: 'auto', // Changed from '297mm' to 'auto'
-  fontFamily: 'Arial, sans-serif', 
-  fontSize: '11px', 
-  lineHeight: '1.3',
-  margin: '0',
-  padding: '5mm',
-  backgroundColor: 'white',
-  color: 'black',
-  boxSizing: 'border-box'
-}}>
+    <div style={{ 
+      width: '210mm', 
+      minHeight: 'auto',
+      fontFamily: 'Arial, sans-serif', 
+      fontSize: '12px', 
+      lineHeight: '1.4',
+      margin: '0',
+      padding: '20px',
+      backgroundColor: 'white',
+      color: 'black',
+      boxSizing: 'border-box'
+    }}>
       
-      {/* Header Section */}
+      {/* Header Section with Company Logo - RESTORED */}
       <div style={{ 
         display: 'flex',
         justifyContent: 'space-between',
@@ -133,7 +94,8 @@ const QuotationPDFComponent = ({ quotationData, selectedReferences, specialDisco
         marginBottom: '20px',
         paddingBottom: '15px',
         borderBottom: '1px solid #000',
-        position: 'relative'
+        position: 'relative',
+        pageBreakInside: 'avoid'
       }}>
         {/* Logo (Left Side) */}
         <div style={{ width: '60px', height: '60px' }}>
@@ -162,82 +124,96 @@ const QuotationPDFComponent = ({ quotationData, selectedReferences, specialDisco
           </h1>
         </div>
       </div>
-
-      {/* Main Content Area */}
-      {/* <div style={{ border: '1px solid #000', padding: '20px' }}> */}
+      
+      {/* Main Content - Matches Preview Layout */}
       <div style={{ 
-  border: '1px solid #000', 
-  padding: '20px',
-  pageBreakInside: 'avoid', // Add this
-  breakInside: 'avoid' // Add this for better browser support
-}}>
+        border: '1px solid #ccc', 
+        padding: '24px',
+        borderRadius: '8px',
+        backgroundColor: '#fff',
+        pageBreakInside: 'avoid'
+      }}>
         
-        {/* Quotation Header */}
+        {/* Header Section - Simple layout like preview */}
         <div style={{ 
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-start',
-          marginBottom: '20px'
+          marginBottom: '16px',
+          paddingBottom: '16px',
+          borderBottom: '1px solid #ddd'
         }}>
-          {/* Consignor Name Section */}
-          <div>
-            <h3 style={{ margin: '0', fontSize: '14px', fontWeight: 'bold' }}>Consignor Name</h3>
-            <p style={{ margin: '2px 0', fontSize: '12px' }}>Consignor Address</p>
-            <p style={{ margin: '2px 0', fontSize: '12px' }}>Mobile: N/A</p>
-            <p style={{ margin: '2px 0', fontSize: '12px' }}>Phone: N/A</p>
-            <p style={{ margin: '2px 0', fontSize: '12px' }}>GSTIN: N/A</p>
-            <p style={{ margin: '2px 0', fontSize: '12px' }}>State Code: N/A</p>
+          <div style={{ width: '33%' }}>
+            <p style={{ margin: '0', fontSize: '14px', fontWeight: 'bold' }}>
+              {selectedReferences && selectedReferences[0] ? selectedReferences[0] : "Consignor Name"}
+            </p>
+            <p style={{ margin: '2px 0', fontSize: '12px' }}>
+              {quotationData.consignorAddress || "Consignor Address"}
+            </p>
+            <p style={{ margin: '2px 0', fontSize: '12px' }}>
+              Mobile: {quotationData.consignorMobile?.split(",")[0] || "N/A"}
+            </p>
+            <p style={{ margin: '2px 0', fontSize: '12px' }}>
+              Phone: {quotationData.consignorPhone || "N/A"}
+            </p>
+            <p style={{ margin: '2px 0', fontSize: '12px' }}>
+              GSTIN: {quotationData.consignorGSTIN || "N/A"}
+            </p>
+            <p style={{ margin: '2px 0', fontSize: '12px' }}>
+              State Code: {quotationData.consignorStateCode || "N/A"}
+            </p>
           </div>
           
-          {/* Quotation Info */}
-          <div style={{ textAlign: 'center' }}>
-            <h2 style={{ 
-              fontSize: '18px', 
+          <div style={{ width: '33%', textAlign: 'center' }}>
+            <h1 style={{ 
+              fontSize: '20px', 
               fontWeight: 'bold',
               margin: '0',
-              marginBottom: '10px'
-            }}>QUOTATION</h2>
+              color: '#333'
+            }}>QUOTATION</h1>
           </div>
           
-          {/* Quotation Details */}
-          <div style={{ textAlign: 'right' }}>
-            <p style={{ margin: '2px 0', fontSize: '12px' }}>Quo No: {quotationData.quotationNo || "NBD-002"}</p>
+          <div style={{ width: '33%', textAlign: 'right' }}>
+            <p style={{ margin: '2px 0', fontSize: '12px', fontWeight: 'bold' }}>
+              Quo No: {quotationData.quotationNo || "NBD-002"}
+            </p>
             <p style={{ margin: '2px 0', fontSize: '12px' }}>Date: {dateStr}</p>
-            <p style={{ margin: '2px 0', fontSize: '12px' }}>Prepared By: {quotationData.preparedBy || "N/A"}</p>
+            <p style={{ margin: '2px 0', fontSize: '12px' }}>
+              Prepared By: {quotationData.preparedBy || "N/A"}
+            </p>
           </div>
         </div>
 
-        {/* Consignor and Consignee Details */}
+        {/* Consignor and Consignee Details - Grid layout like preview */}
         <div style={{ 
           display: 'flex',
-          marginBottom: '20px',
-          borderTop: '1px solid #000',
-          borderBottom: '1px solid #000'
+          marginBottom: '16px',
+          gap: '16px'
         }}>
-          {/* Consignor Details */}
-          <div style={{ 
-            width: '50%',
-            borderRight: '1px solid #000',
-            padding: '10px'
-          }}>
-            <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', fontWeight: 'bold' }}>Consignor Details</h4>
-            <div style={{ fontSize: '10px', lineHeight: '1.4' }}>
-              {consignorDetails.map((detail, index) => (
-                <div key={index} style={{ marginBottom: '2px' }}>{detail}</div>
-              ))}
+          <div style={{ width: '50%' }}>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 'bold' }}>
+              Consignor Details
+            </h3>
+            <div style={{ fontSize: '11px', lineHeight: '1.4' }}>
+              <p style={{ margin: '2px 0' }}>{selectedReferences && selectedReferences[0] ? selectedReferences[0] : "N/A"}</p>
+              <p style={{ margin: '2px 0' }}>{quotationData.consignorAddress || "N/A"}</p>
+              <p style={{ margin: '2px 0' }}>GSTIN: {quotationData.consignorGSTIN || "N/A"}</p>
+              <p style={{ margin: '2px 0' }}>State Code: {quotationData.consignorStateCode || "N/A"}</p>
+              <p style={{ margin: '2px 0' }}>MSME Number: {quotationData.msmeNumber || "N/A"}</p>
             </div>
           </div>
           
-          {/* Consignee Details */}
-          <div style={{ 
-            width: '50%',
-            padding: '10px'
-          }}>
-            <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', fontWeight: 'bold' }}>Consignee Details</h4>
-            <div style={{ fontSize: '10px', lineHeight: '1.4' }}>
-              {consigneeDetails.map((detail, index) => (
-                <div key={index} style={{ marginBottom: '2px' }}>{detail}</div>
-              ))}
+          <div style={{ width: '50%' }}>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 'bold' }}>
+              Consignee Details
+            </h3>
+            <div style={{ fontSize: '11px', lineHeight: '1.4' }}>
+              <p style={{ margin: '2px 0' }}>Company Name: {quotationData.consigneeName || "N/A"}</p>
+              <p style={{ margin: '2px 0' }}>Contact Name: {quotationData.consigneeContactName || "N/A"}</p>
+              <p style={{ margin: '2px 0' }}>Contact No.: {quotationData.consigneeContactNo || "N/A"}</p>
+              <p style={{ margin: '2px 0' }}>State: {quotationData.consigneeState || "N/A"}</p>
+              <p style={{ margin: '2px 0' }}>GSTIN: {quotationData.consigneeGSTIN || "N/A"}</p>
+              <p style={{ margin: '2px 0' }}>State Code: {quotationData.consigneeStateCode || "N/A"}</p>
             </div>
           </div>
         </div>
@@ -245,330 +221,352 @@ const QuotationPDFComponent = ({ quotationData, selectedReferences, specialDisco
         {/* Bill To and Ship To */}
         <div style={{ 
           display: 'flex',
-          marginBottom: '20px',
-          borderBottom: '1px solid #000'
+          marginBottom: '16px',
+          gap: '16px',
+          paddingBottom: '16px',
+          borderBottom: '1px solid #ddd'
         }}>
-          {/* Bill To */}
-          <div style={{ 
-            width: '50%',
-            borderRight: '1px solid #000',
-            padding: '10px'
-          }}>
-            <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', fontWeight: 'bold' }}>Bill To</h4>
-            <p style={{ margin: '0', fontSize: '10px' }}>N/A</p>
+          <div style={{ width: '50%' }}>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 'bold' }}>Bill To</h3>
+            <p style={{ margin: '0', fontSize: '11px' }}>{quotationData.consigneeAddress || "N/A"}</p>
           </div>
           
-          {/* Ship To */}
-          <div style={{ 
-            width: '50%',
-            padding: '10px'
-          }}>
-            <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', fontWeight: 'bold' }}>Ship To</h4>
-            <p style={{ margin: '0', fontSize: '10px' }}>N/A</p>
+          <div style={{ width: '50%' }}>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 'bold' }}>Ship To</h3>
+            <p style={{ margin: '0', fontSize: '11px' }}>{quotationData.shipTo || "N/A"}</p>
           </div>
         </div>
 
-        {/* Items Table */}
-        <table style={{ 
-          width: '100%', 
-          border: '1px solid black', 
-          borderCollapse: 'collapse',
-          fontSize: '9px',
-          marginBottom: '20px'
-        }}>
-          {/* Table Header */}
-          <thead>
-            <tr style={{ backgroundColor: '#f8f9fa' }}>
-              {tableHeaders.map((header, index) => (
-                <th key={index} style={{ 
-                  border: '1px solid black', 
-                  padding: '5px 3px', 
-                  textAlign: 'center',
-                  fontWeight: 'bold',
-                  fontSize: '9px'
-                }}>
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          
-          {/* Table Body */}
-          <tbody>
-            {itemsData.map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                {row.map((cell, cellIndex) => (
-                  <td key={cellIndex} style={{ 
-                    border: '1px solid black', 
-                    padding: '5px 3px', 
-                    textAlign: cellIndex === 0 || cellIndex === 4 || cellIndex === 5 || cellIndex === 6 ? 'center' : 
-                             cellIndex === 2 || cellIndex === 3 ? 'left' : 'right',
-                    fontSize: '9px',
-                    verticalAlign: 'middle'
+        {/* Items Table - Clean design like preview */}
+        <div style={{ marginBottom: '16px' }}>
+          <table style={{ 
+            width: '100%', 
+            borderCollapse: 'collapse',
+            fontSize: '10px',
+            border: '1px solid #ccc'
+          }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f8f9fa' }}>
+                {tableHeaders.map((header, index) => (
+                  <th key={index} style={{ 
+                    border: '1px solid #ddd', 
+                    padding: '8px 4px', 
+                    textAlign: 'left',
+                    fontWeight: 'bold',
+                    fontSize: '10px'
                   }}>
-                    {cell}
-                  </td>
+                    {header}
+                  </th>
                 ))}
               </tr>
-            ))}
+            </thead>
             
-            {/* Summary Rows */}
-            <tr>
-              <td colSpan={tableHeaders.length - 1} style={{ 
-                border: '1px solid black', 
-                padding: '5px', 
-                textAlign: 'right',
-                fontWeight: 'bold',
-                fontSize: '9px'
-              }}>
-                Subtotal
-              </td>
-              <td style={{ 
-                border: '1px solid black', 
-                padding: '5px', 
-                textAlign: 'right',
-                fontWeight: 'bold',
-                fontSize: '9px'
-              }}>
-                ₹{formatCurrency(subtotal)}
-              </td>
-            </tr>
-            
-            {!hiddenColumns.hideTotalFlatDisc && totalFlatDiscount > 0 && (
-              <tr>
+            <tbody>
+              {itemsData.map((row, rowIndex) => (
+                <tr key={rowIndex} style={{ borderBottom: '1px solid #ddd' }}>
+                  {row.map((cell, cellIndex) => (
+                    <td key={cellIndex} style={{ 
+                      border: '1px solid #ddd', 
+                      padding: '8px 4px', 
+                      textAlign: cellIndex === 0 || cellIndex === 4 || cellIndex === 5 || cellIndex === 6 ? 'center' : 
+                               cellIndex === 2 || cellIndex === 3 ? 'left' : 'right',
+                      fontSize: '10px',
+                      verticalAlign: 'top'
+                    }}>
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              
+              {/* Summary Rows */}
+              <tr style={{ borderTop: '2px solid #000' }}>
                 <td colSpan={tableHeaders.length - 1} style={{ 
-                  border: '1px solid black', 
-                  padding: '5px', 
+                  border: '1px solid #ddd', 
+                  padding: '8px 4px', 
                   textAlign: 'right',
-                  fontSize: '9px'
+                  fontWeight: 'bold',
+                  fontSize: '10px'
                 }}>
-                  Total Flat Discount
+                  Subtotal
                 </td>
                 <td style={{ 
-                  border: '1px solid black', 
-                  padding: '5px', 
+                  border: '1px solid #ddd', 
+                  padding: '8px 4px', 
                   textAlign: 'right',
-                  fontSize: '9px'
+                  fontWeight: 'bold',
+                  fontSize: '10px'
                 }}>
-                  -₹{formatCurrency(totalFlatDiscount)}
+                  ₹{formatCurrency(subtotal)}
                 </td>
               </tr>
-            )}
-            
-            <tr>
-              <td colSpan={tableHeaders.length - 1} style={{ 
-                border: '1px solid black', 
-                padding: '5px', 
-                textAlign: 'right',
-                fontSize: '9px'
-              }}>
-                Taxable Amount
-              </td>
-              <td style={{ 
-                border: '1px solid black', 
-                padding: '5px', 
-                textAlign: 'right',
-                fontSize: '9px'
-              }}>
-                ₹{formatCurrency(taxableAmount)}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              
+              {!hiddenColumns.hideTotalFlatDisc && totalFlatDiscount > 0 && (
+                <tr>
+                  <td colSpan={tableHeaders.length - 1} style={{ 
+                    border: '1px solid #ddd', 
+                    padding: '8px 4px', 
+                    textAlign: 'right',
+                    fontSize: '10px'
+                  }}>
+                    Total Flat Discount
+                  </td>
+                  <td style={{ 
+                    border: '1px solid #ddd', 
+                    padding: '8px 4px', 
+                    textAlign: 'right',
+                    fontSize: '10px'
+                  }}>
+                    -₹{formatCurrency(totalFlatDiscount)}
+                  </td>
+                </tr>
+              )}
+              
+              <tr>
+                <td colSpan={tableHeaders.length - 1} style={{ 
+                  border: '1px solid #ddd', 
+                  padding: '8px 4px', 
+                  textAlign: 'right',
+                  fontSize: '10px'
+                }}>
+                  Taxable Amount
+                </td>
+                <td style={{ 
+                  border: '1px solid #ddd', 
+                  padding: '8px 4px', 
+                  textAlign: 'right',
+                  fontSize: '10px'
+                }}>
+                  ₹{formatCurrency(taxableAmount)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-        {/* Tax Breakdown and Amount in Words */}
-        <div style={{ display: 'flex', marginBottom: '20px' }}>
-          {/* Tax Breakdown */}
-          <div style={{ width: '50%', marginRight: '20px' }}>
-            <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', fontWeight: 'bold' }}>Tax Breakdown</h4>
+        {/* Tax Breakdown and Amount in Words - Side by side like preview */}
+        <div style={{ display: 'flex', marginBottom: '20px', gap: '16px' }}>
+          <div style={{ width: '50%' }}>
+            <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 'bold' }}>Tax Breakdown</h4>
             <table style={{ 
               width: '100%', 
-              border: '1px solid black', 
               borderCollapse: 'collapse',
-              fontSize: '10px'
+              fontSize: '10px',
+              border: '1px solid #ccc'
             }}>
               <thead>
                 <tr style={{ backgroundColor: '#f8f9fa' }}>
-                  <th style={{ border: '1px solid black', padding: '5px', textAlign: 'center' }}>Tax Type</th>
-                  <th style={{ border: '1px solid black', padding: '5px', textAlign: 'center' }}>Rate</th>
-                  <th style={{ border: '1px solid black', padding: '5px', textAlign: 'center' }}>Amount</th>
+                  <th style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'left' }}>Tax Type</th>
+                  <th style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'left' }}>Rate</th>
+                  <th style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'left' }}>Amount</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td style={{ border: '1px solid black', padding: '5px' }}>CGST</td>
-                  <td style={{ border: '1px solid black', padding: '5px', textAlign: 'center' }}>{cgstRate}%</td>
-                  <td style={{ border: '1px solid black', padding: '5px', textAlign: 'right' }}>₹{formatCurrency(cgstAmount)}</td>
-                </tr>
-                <tr>
-                  <td style={{ border: '1px solid black', padding: '5px' }}>SGST</td>
-                  <td style={{ border: '1px solid black', padding: '5px', textAlign: 'center' }}>{sgstRate}%</td>
-                  <td style={{ border: '1px solid black', padding: '5px', textAlign: 'right' }}>₹{formatCurrency(sgstAmount)}</td>
-                </tr>
-                <tr style={{ backgroundColor: '#f8f9fa' }}>
-                  <td style={{ border: '1px solid black', padding: '5px', fontWeight: 'bold' }}>Total Tax</td>
-                  <td style={{ border: '1px solid black', padding: '5px', textAlign: 'center', fontWeight: 'bold' }}>{cgstRate + sgstRate}%</td>
-                  <td style={{ border: '1px solid black', padding: '5px', textAlign: 'right', fontWeight: 'bold' }}>₹{formatCurrency(totalTax)}</td>
+                {quotationData.isIGST ? (
+                  <tr>
+                    <td style={{ border: '1px solid #ddd', padding: '6px' }}>IGST</td>
+                    <td style={{ border: '1px solid #ddd', padding: '6px' }}>{quotationData.igstRate || 18}%</td>
+                    <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(quotationData.igstAmount || 0)}</td>
+                  </tr>
+                ) : (
+                  <>
+                    <tr>
+                      <td style={{ border: '1px solid #ddd', padding: '6px' }}>CGST</td>
+                      <td style={{ border: '1px solid #ddd', padding: '6px' }}>{cgstRate}%</td>
+                      <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(cgstAmount)}</td>
+                    </tr>
+                    <tr>
+                      <td style={{ border: '1px solid #ddd', padding: '6px' }}>SGST</td>
+                      <td style={{ border: '1px solid #ddd', padding: '6px' }}>{sgstRate}%</td>
+                      <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(sgstAmount)}</td>
+                    </tr>
+                  </>
+                )}
+                <tr style={{ backgroundColor: '#f8f9fa', fontWeight: 'bold' }}>
+                  <td style={{ border: '1px solid #ddd', padding: '6px' }}>Total Tax</td>
+                  <td style={{ border: '1px solid #ddd', padding: '6px' }}>
+                    {quotationData.isIGST ? quotationData.igstRate || 18 : cgstRate + sgstRate}%
+                  </td>
+                  <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(totalTax)}</td>
                 </tr>
                 {!hiddenColumns.hideSpecialDiscount && specialDiscount > 0 && (
                   <tr>
-                    <td style={{ border: '1px solid black', padding: '5px' }} colSpan="2">Special Discount</td>
-                    <td style={{ border: '1px solid black', padding: '5px', textAlign: 'right' }}>-₹{formatCurrency(specialDiscount)}</td>
+                    <td style={{ border: '1px solid #ddd', padding: '6px' }} colSpan="2">Special Discount</td>
+                    <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>-₹{formatCurrency(specialDiscount)}</td>
                   </tr>
                 )}
-                <tr style={{ backgroundColor: '#e6f3ff' }}>
-                  <td style={{ border: '1px solid black', padding: '5px', fontWeight: 'bold' }} colSpan="2">Grand Total</td>
-                  <td style={{ border: '1px solid black', padding: '5px', textAlign: 'right', fontWeight: 'bold' }}>₹{formatCurrency(grandTotal)}</td>
+                <tr style={{ backgroundColor: '#e6f3ff', fontWeight: 'bold' }}>
+                  <td style={{ border: '1px solid #ddd', padding: '6px' }} colSpan="2">Grand Total</td>
+                  <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(grandTotal)}</td>
                 </tr>
               </tbody>
             </table>
           </div>
           
-          {/* Amount in Words */}
-          <div style={{ width: '50%' }}>
-            <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', fontWeight: 'bold' }}>Amount Chargeable (in words)</h4>
-            <p style={{ fontSize: '10px', margin: '0' }}>Rupees Zero Only</p>
-            
-            <div style={{ 
-              marginTop: '20px',
-              textAlign: 'right',
-              fontSize: '16px',
-              fontWeight: 'bold'
-            }}>
-              Grand Total: ₹{formatCurrency(grandTotal)}
+          <div style={{ width: '50%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 'bold' }}>Amount Chargeable (in words)</h4>
+              <p style={{ fontSize: '11px', margin: '0', textTransform: 'capitalize' }}>
+                Rupees {Number(grandTotal) > 0
+                  ? new Intl.NumberFormat("en-IN", {
+                      style: "currency",
+                      currency: "INR",
+                      minimumFractionDigits: 2,
+                    })
+                      .format(grandTotal)
+                      .replace("₹", "")
+                      .trim() + " Only"
+                  : "Zero Only"}
+              </p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ fontSize: '18px', fontWeight: 'bold', margin: '0' }}>
+                Grand Total: ₹{formatCurrency(grandTotal)}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* ManiqQuip Logo in center - PROPERLY CENTERED */}
-       <div style={{ 
-          textAlign: 'center', 
-          marginBottom: '20px',
-          padding: '15px 0',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center'
+        {/* ManiqQuip Logo and Terms Section - Better page break handling */}
+        <div style={{ 
+          marginTop: '20px', 
+          borderTop: '1px solid #ddd', 
+          paddingTop: '16px',
+          pageBreakInside: 'avoid',
+          breakInside: 'avoid'
         }}>
-          <img 
-            src={maniquipLogo} 
-            alt="ManiqQuip Logo" 
-            style={{
-              width: '500px',
-              height: '200px',
-              objectFit: 'contain',
-              border: '1px solid #ddd',
-              backgroundColor: '#f0f8ff',
-              padding: '10px',
-              margin: '0 auto'
-            }}
-          />
+          <div style={{ display: 'flex', gap: '32px' }}>
+            {/* ManiqQuip Logo Section - FIXED */}
+           <div
+  style={{
+    width: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '24px',
+    border: '1px solid #ddd',
+    borderRadius: '8px',
+    backgroundColor: '#f0f8ff',
+  }}
+>
+  <img
+    src={maniquipLogo}
+    alt="ManiQuip Logo"
+    style={{
+      width: '400px',    // Increase width here
+      height: 'auto',    // Keeps aspect ratio
+      objectFit: 'contain',
+    }}
+  />
+</div>
+
+
+            {/* Terms & Conditions */}
+            <div style={{ width: '50%' }}>
+              <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 'bold' }}>
+                Terms & Conditions
+              </h4>
+              <table style={{ width: '100%', fontSize: '11px', lineHeight: '1.4' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: '4px 0', fontWeight: 'bold', verticalAlign: 'top', width: '100px' }}>Validity</td>
+                    <td style={{ padding: '4px 0' }}>{quotationData.validity || "The above quoted prices are valid up to 5 days from date of offer."}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '4px 0', fontWeight: 'bold', verticalAlign: 'top' }}>Payment Terms</td>
+                    <td style={{ padding: '4px 0' }}>{quotationData.paymentTerms || "100% advance payment in the mode of NEFT, RTGS & DD"}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '4px 0', fontWeight: 'bold', verticalAlign: 'top' }}>Delivery</td>
+                    <td style={{ padding: '4px 0' }}>{quotationData.delivery || "Material is ready in our stock"}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '4px 0', fontWeight: 'bold', verticalAlign: 'top' }}>Freight</td>
+                    <td style={{ padding: '4px 0' }}>{quotationData.freight || "Extra as per actual."}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '4px 0', fontWeight: 'bold', verticalAlign: 'top' }}>Insurance</td>
+                    <td style={{ padding: '4px 0' }}>{quotationData.insurance || "Transit insurance for all shipment is at Buyer's risk."}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '4px 0', fontWeight: 'bold', verticalAlign: 'top' }}>Taxes</td>
+                    <td style={{ padding: '4px 0' }}>{quotationData.taxes || "Extra as per actual."}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Special Offers */}
+              {quotationData.specialOffers && quotationData.specialOffers.filter(offer => offer.trim()).length > 0 && (
+                <div style={{ marginTop: '16px' }}>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 'bold', color: '#e65100' }}>
+                    Divine Empire's 10th Anniversary Special Offer
+                  </h4>
+                  <div style={{ 
+                    backgroundColor: '#fff3e0', 
+                    padding: '12px', 
+                    borderRadius: '4px',
+                    border: '1px solid #ffcc80',
+                    fontSize: '10px'
+                  }}>
+                    {quotationData.specialOffers.filter(offer => offer.trim()).map((offer, index) => (
+                      <p key={index} style={{ margin: '4px 0' }}>• {offer}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Notes */}
+              {quotationData.notes && quotationData.notes.filter(note => note.trim()).length > 0 && (
+                <div style={{ marginTop: '16px' }}>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 'bold' }}>Notes</h4>
+                  <ul style={{ paddingLeft: '20px', margin: '0', fontSize: '10px' }}>
+                    {quotationData.notes.filter(note => note.trim()).map((note, index) => (
+                      <li key={index} style={{ padding: '2px 0' }}>{note}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Terms & Conditions and Bank Details - CLEAN LAYOUT */}
+        {/* Bank Details and Declaration - Better page break handling */}
         <div style={{ 
-  display: 'flex',
-  marginBottom: '25px',
-  gap: '25px',
-  minHeight: 'auto', // Changed from '200px' to 'auto'
-  pageBreakInside: 'avoid', // Add this
-  breakInside: 'avoid' // Add this
-}}>
-          {/* Terms & Conditions */}
-          <div style={{ 
-            width: '48%',
-            padding: '15px',
-            border: '1px solid #ddd',
-            borderRadius: '5px',
-            backgroundColor: '#fafafa'
-          }}>
-            <h4 style={{ 
-              margin: '0 0 15px 0', 
-              fontSize: '13px', 
-              fontWeight: 'bold',
-              color: '#333',
-              borderBottom: '2px solid #007bff',
-              paddingBottom: '8px'
-            }}>
-              Terms & Conditions
-            </h4>
-            <div style={{ fontSize: '9px', lineHeight: '1.6' }}>
-              {terms.map((term, index) => (
-                <div key={index} style={{ marginBottom: '8px' }}>
-                  <div style={{ fontWeight: 'bold', color: '#555', marginBottom: '2px' }}>{term.label}:</div>
-                  <div style={{ color: '#666', paddingLeft: '5px' }}>{term.value}</div>
-                </div>
-              ))}
+          display: 'flex', 
+          gap: '16px', 
+          marginTop: '20px',
+          borderTop: '1px solid #ddd',
+          paddingTop: '16px',
+          pageBreakInside: 'avoid',
+          breakInside: 'avoid'
+        }}>
+          <div style={{ width: '50%' }}>
+            <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 'bold' }}>Bank Details</h4>
+            <div style={{ fontSize: '11px', lineHeight: '1.4' }}>
+              <p style={{ margin: '2px 0' }}>Account No.: {quotationData.accountNo || "N/A"}</p>
+              <p style={{ margin: '2px 0' }}>Bank Name: {quotationData.bankName || "N/A"}</p>
+              <p style={{ margin: '2px 0' }}>Bank Address: {quotationData.bankAddress || "N/A"}</p>
+              <p style={{ margin: '2px 0' }}>IFSC CODE: {quotationData.ifscCode || "N/A"}</p>
+              <p style={{ margin: '2px 0' }}>Email: {quotationData.email || "N/A"}</p>
+              <p style={{ margin: '2px 0' }}>Website: {quotationData.website || "N/A"}</p>
+              <p style={{ margin: '2px 0' }}>Company PAN: {quotationData.pan || "N/A"}</p>
             </div>
           </div>
           
-          {/* Bank Details and Declaration */}
-          <div style={{ 
-            width: '48%',
-            padding: '15px',
-            border: '1px solid #ddd',
-            borderRadius: '5px',
-            backgroundColor: '#fafafa'
-          }}>
-            <h4 style={{ 
-              margin: '0 0 15px 0', 
-              fontSize: '13px', 
-              fontWeight: 'bold',
-              color: '#333',
-              borderBottom: '2px solid #28a745',
-              paddingBottom: '8px'
-            }}>
-              Bank Details
-            </h4>
-            <div style={{ fontSize: '9px', lineHeight: '1.6', marginBottom: '20px' }}>
-              {bankDetails.map((detail, index) => (
-                <div key={index} style={{ marginBottom: '4px', display: 'flex' }}>
-                  <span style={{ fontWeight: 'bold', color: '#555', minWidth: '80px' }}>{detail.label}:</span>
-                  <span style={{ color: '#666', flex: '1' }}>{detail.value}</span>
-                </div>
-              ))}
-            </div>
-            
-            <h4 style={{ 
-              margin: '15px 0 8px 0', 
-              fontSize: '12px', 
-              fontWeight: 'bold',
-              color: '#333',
-              borderBottom: '1px solid #ddd',
-              paddingBottom: '5px'
-            }}>
-              Declaration:
-            </h4>
-            <p style={{ fontSize: '9px', lineHeight: '1.5', margin: '0 0 15px 0', color: '#666' }}>
+          <div style={{ width: '50%', textAlign: 'right' }}>
+            <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 'bold' }}>Declaration:</h4>
+            <p style={{ fontSize: '11px', lineHeight: '1.4', margin: '0 0 16px 0' }}>
               We declare that this Quotation shows the actual price of the goods described 
               and that all particulars are true and correct.
             </p>
-            
-            <div style={{ 
-              marginTop: '20px', 
-              textAlign: 'right',
-              borderTop: '1px solid #eee',
-              paddingTop: '10px'
-            }}>
-              <p style={{ fontSize: '9px', margin: '0', fontWeight: 'bold', color: '#333' }}>
-                Prepared By: {quotationData.preparedBy || "N/A"}
-              </p>
-            </div>
-            
-            <p style={{ 
-              fontSize: '7px', 
-              fontStyle: 'italic', 
-              textAlign: 'center', 
-              margin: '15px 0 0 0',
-              color: '#999',
-              borderTop: '1px solid #eee',
-              paddingTop: '8px'
-            }}>
+            <p style={{ fontSize: '11px', margin: '16px 0' }}>
+              Prepared By: {quotationData.preparedBy || "N/A"}
+            </p>
+            <p style={{ fontSize: '9px', fontStyle: 'italic', margin: '16px 0 0 0' }}>
               This Quotation is computer-generated and does not require a seal or signature.
             </p>
           </div>
         </div>
-
-        {/* View as Client and Action Buttons */}
       </div>
     </div>
   );
@@ -596,16 +594,18 @@ export const generateHTMLFromData = (quotationData, selectedReferences, specialD
       font-family: Arial, sans-serif; 
       -webkit-print-color-adjust: exact;
       color-adjust: exact;
-      line-height: 1.3;
+      print-color-adjust: exact;
+      line-height: 1.4;
     }
     @media print {
       body { margin: 0; }
       @page { 
         size: A4; 
-        margin: 20mm 15mm 20mm 15mm; /* top right bottom left margins */
+        margin: 15mm 10mm 15mm 10mm;
       }
       .page-break {
         page-break-before: always;
+        break-before: page;
       }
       .avoid-break {
         page-break-inside: avoid;
@@ -624,9 +624,26 @@ export const generateHTMLFromData = (quotationData, selectedReferences, specialD
       tbody {
         display: table-row-group;
       }
+      /* Prevent orphaned content */
+      h1, h2, h3, h4 {
+        page-break-after: avoid;
+        break-after: avoid;
+      }
+      /* Keep logo sections together */
+      img {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
     }
-    button {
-      font-family: Arial, sans-serif;
+    /* Ensure proper spacing and breaks */
+    .content-section {
+      page-break-inside: avoid;
+      break-inside: avoid;
+      margin-bottom: 10px;
+    }
+    .header-section {
+      page-break-after: avoid;
+      break-after: avoid;
     }
   </style>
 </head>
@@ -645,8 +662,7 @@ export const generatePDFFromData = async (quotationData, selectedReferences, spe
     const htmlString = generateHTMLFromData(quotationData, selectedReferences, specialDiscount, hiddenColumns);
     
     const options = {
-      // margin: 0,
-      margin: [5, 0, 0, 0], // top, right, bottom, left margins in mm
+      margin: [5, 0, 0, 0],
       filename: `Quotation_${quotationData.quotationNo || 'NBD-002'}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { 

@@ -421,6 +421,7 @@ const formatItemQty = (itemQtyString) => {
 
   // Add this function near your other fetch functions
 // Replace your fetchTenDaysData function with this fixed version
+// Replace your fetchTenDaysData function with this updated version
 const fetchTenDaysData = async () => {
   setIsLoading(true);
   try {
@@ -430,7 +431,6 @@ const fetchTenDaysData = async () => {
 
     const text = await response.text();
     
-    // Try to parse as JSON, but handle cases where it's not
     let result;
     try {
       result = JSON.parse(text);
@@ -445,7 +445,7 @@ const fetchTenDaysData = async () => {
       const headers = result.data[0];
       const rows = result.data.slice(4);
       
-      // Find column indices by name for better reliability
+      // Find column indices
       const awIndex = headers.findIndex(h => 
         h && typeof h === 'string' && h.toLowerCase().includes('delivery status')
       );
@@ -455,16 +455,26 @@ const fetchTenDaysData = async () => {
       const cgIndex = headers.findIndex(h => 
         h && typeof h === 'string' && h.toLowerCase().includes('revised order status')
       );
+      const chIndex = headers.findIndex(h => 
+        h && typeof h === 'string' && h.toLowerCase().includes('revised order date2')
+      ); // New column for Date
+      const ciIndex = headers.findIndex(h => 
+        h && typeof h === 'string' && h.toLowerCase().includes('sales coordinator')
+      );
+      const cjIndex = headers.findIndex(h => 
+        h && typeof h === 'string' && h.toLowerCase().includes('revised order remark')
+      ); // New column for Remarks
       
-      console.log('Column indices - AW:', awIndex, 'CF:', cfIndex, 'CG:', cgIndex);
-      
-      // If specific column names not found, use fallback indices
+      // Use fallback indices if specific column names not found
       const awCol = awIndex >= 0 ? awIndex : 48;
       const cfCol = cfIndex >= 0 ? cfIndex : 83;
       const cgCol = cgIndex >= 0 ? cgIndex : 84;
+      const chCol = chIndex >= 0 ? chIndex : 85; // Assuming CH is column 85
+      const ciCol = ciIndex >= 0 ? ciIndex : 86;
+      const cjCol = cjIndex >= 0 ? cjIndex : 87; // Assuming CJ is column 87
       
       const today = new Date();
-      today.setHours(0, 0, 0, 0); // Set to start of day for comparison
+      today.setHours(0, 0, 0, 0);
       
       const tenDaysOrders = [];
       
@@ -472,111 +482,83 @@ const fetchTenDaysData = async () => {
         try {
           const awValue = row[awCol];
           const cfValue = row[cfCol];
-          const cgValue = row[cgCol];
+          const cgValue = row[cgCol]; // Status
+          const chValue = row[chCol]; // Date
+          const ciValue = row[ciCol]; // Sales Coordinator
+          const cjValue = row[cjCol]; // Remarks
           
-          // Check conditions: AW = "complete", CF date is not empty, CG is null/empty
-          if (awValue && awValue.toString().toLowerCase() === "complete" && 
-              (!cgValue || cgValue === "" || cgValue === null) && 
+          // Skip rows where status is "done"
+          if (cgValue && cgValue.toString().toLowerCase().trim() === "done") {
+            return; // Skip this row
+          }
+          
+          const isUserRow = isAdmin() || (currentUser && currentUser.username && 
+            ciValue && ciValue.toString().trim() === currentUser.username.trim());
+          
+          if (isUserRow && awValue && awValue.toString().toLowerCase() === "complete" && 
               cfValue) {
             
             let cfDate;
             
-            // Parse date from CF column - handle different date formats
             if (cfValue instanceof Date) {
               cfDate = cfValue;
             } else if (typeof cfValue === 'string') {
-              // Try to parse as date string
               cfDate = new Date(cfValue);
               
-              // If that fails, try to parse as Excel serial date
               if (isNaN(cfDate.getTime())) {
                 const serialDate = parseFloat(cfValue);
                 if (!isNaN(serialDate)) {
-                  // Convert Excel serial date to JS date
                   cfDate = new Date((serialDate - 25569) * 86400 * 1000);
                 }
               }
             } else if (typeof cfValue === 'number') {
-              // Google Sheets serial date
               cfDate = new Date((cfValue - 25569) * 86400 * 1000);
             }
             
-            // Check if date is valid and is within the last 10 days
             if (cfDate && !isNaN(cfDate.getTime())) {
-              // Normalize both dates to midnight for accurate comparison
               const normalizedCfDate = new Date(cfDate);
               normalizedCfDate.setHours(0, 0, 0, 0);
               
               const normalizedToday = new Date(today);
               normalizedToday.setHours(0, 0, 0, 0);
               
-              // Calculate difference in days
               const diffTime = normalizedToday.getTime() - normalizedCfDate.getTime();
               const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
               
-              // Check if the date is within the last 10 days (0-10 days ago)
-              // Check if the date is overdue OR within the last 10 days
-if (diffDays >= 0) {
-  const order = {
-    id: index + 2, // Row number (accounting for header)
-    timestamp: row[0] || "",
-    orderNo: row[1] || "",
-    quotationNo: row[2] || "",
-    companyName: row[3] || "",
-    contactPersonName: row[4] || "",
-    contactNumber: row[5] || "",
-    billingAddress: row[6] || "",
-    shippingAddress: row[7] || "",
-    paymentMode: row[8] || "",
-    paymentTerms: row[9] || "",
-    referenceName: row[10] || "",
-    email: row[11] || "",
-    itemName1: row[12] || "",
-    quantity1: row[13] || "",
-    itemName2: row[14] || "",
-    quantity2: row[15] || "",
-    itemName3: row[16] || "",
-    quantity3: row[17] || "",
-    itemName4: row[18] || "",
-    quantity4: row[19] || "",
-    itemName5: row[20] || "",
-    quantity5: row[21] || "",
-    itemName6: row[22] || "",
-    quantity6: row[23] || "",
-    itemName7: row[24] || "",
-    quantity7: row[25] || "",
-    itemName8: row[26] || "",
-    quantity8: row[27] || "",
-    itemName9: row[28] || "",
-    quantity9: row[29] || "",
-    itemName10: row[30] || "",
-    quantity10: row[31] || "",
-    transportMode: row[32] || "",
-    destination: row[33] || "",
-    itemQty: row[34] || "",
-    poNumber: row[35] || "",
-    quotationCopy: row[36] || "",
-    acceptanceCopy: row[37] || "",
-    offerShow: row[38] || "",
-    conveyedForRegistrationForm: row[39] || "",
-    totalOrderQty: row[40] || "",
-    amountTotal: row[41] || "",
-    dispatchQuantityDelivered: row[42] || "",
-    orderCancel: row[43] || "",
-    pendingDeliveryQty: row[44] || "",
-    pendingDispatchQty: row[45] || "",
-    materialReturn: row[46] || "",
-    deliveryStatus: row[47] || "",
-    dispatchStatus: row[48] || "",
-    dispatchCompleteDate: row[49] || "",
-    deliveryCompleteDate: row[50] || "",
-    cfDate: cfDate.toLocaleDateString(),
-    daysAgo: diffDays,
-    status: diffDays <= 10 ? "within 10 days" : "overdue" // 🔥 mark overdue vs recent
-  };
-  tenDaysOrders.push(order);
-}
-
+              if (diffDays >= 0) {
+                const order = {
+                  id: index + 2,
+                  timestamp: row[0] || "",
+                  orderNo: row[1] || "",
+                  quotationNo: row[2] || "",
+                  companyName: row[3] || "",
+                  contactPersonName: row[4] || "",
+                  contactNumber: row[5] || "",
+                  billingAddress: row[6] || "",
+                  shippingAddress: row[7] || "",
+                  paymentMode: row[8] || "",
+                  paymentTerms: row[9] || "",
+                  referenceName: row[10] || "",
+                  email: row[11] || "",
+                  // ... include other fields as needed
+                  transportMode: row[32] || "",
+                  destination: row[33] || "",
+                  itemQty: row[34] || "",
+                  poNumber: row[35] || "",
+                  totalOrderQty: row[40] || "",
+                  amountTotal: row[41] || "",
+                  dispatchStatus: row[48] || "",
+                  salesCoordinator: ciValue || "",
+                  cfDate: cfDate.toLocaleDateString(),
+                  daysAgo: diffDays,
+                  status: diffDays <= 10 ? "within 10 days" : "overdue",
+                  // Fetch existing values for editable fields
+                  existingStatus: cgValue || 'pending',
+                  existingDate: chValue ? new Date(chValue).toISOString().split('T')[0] : '',
+                  existingRemarks: cjValue || ''
+                };
+                tenDaysOrders.push(order);
+              }
             }
           }
         } catch (error) {
@@ -586,6 +568,22 @@ if (diffDays >= 0) {
       
       console.log('Filtered 10 days orders:', tenDaysOrders);
       setTenDaysData(tenDaysOrders);
+      
+      // Initialize state with existing values
+      const initialStatuses = {};
+      const initialDates = {};
+      const initialRemarks = {};
+      
+      tenDaysOrders.forEach(order => {
+        initialStatuses[order.orderNo] = order.existingStatus;
+        initialDates[order.orderNo] = order.existingDate;
+        initialRemarks[order.orderNo] = order.existingRemarks;
+      });
+      
+      setOrderStatuses(initialStatuses);
+      setOrderDates(initialDates);
+      setOrderRemarks(initialRemarks);
+      
     } else {
       console.error("Error fetching 10 days data:", result.error);
       setTenDaysData([]);
@@ -1269,6 +1267,34 @@ useEffect(() => {
 
   return () => clearTimeout(handler);
 }, [searchTerm, activeTab, callingDaysFilter]);
+
+// Handle checkbox selection - populate form fields with existing data
+useEffect(() => {
+  selectedOrders.forEach(orderNo => {
+    const order = tenDaysData.find(o => o.orderNo === orderNo);
+    if (order) {
+      // Only set if not already set (to avoid overwriting user changes)
+      if (!orderStatuses[orderNo]) {
+        setOrderStatuses(prev => ({
+          ...prev,
+          [orderNo]: order.existingStatus || 'pending'
+        }));
+      }
+      if (!orderDates[orderNo]) {
+        setOrderDates(prev => ({
+          ...prev,
+          [orderNo]: order.existingDate || ''
+        }));
+      }
+      if (!orderRemarks[orderNo]) {
+        setOrderRemarks(prev => ({
+          ...prev,
+          [orderNo]: order.existingRemarks || ''
+        }));
+      }
+    }
+  });
+}, [selectedOrders, tenDaysData]);
 
 const LoadingIndicator = () => {
   if (!isLoading) return null
@@ -3021,39 +3047,54 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                   />
                 </td>
                 {/* Status dropdown */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <select
-                    value={orderStatuses[order.orderNo] || 'pending'}
-                    onChange={(e) => handleStatusChange(order.orderNo, e.target.value)}
-                    className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  >
-                    <option value="pending">Pending</option>
-                    <option value="done">Done</option>
-                  </select>
-                </td>
-                {/* Date input - only show when status is pending */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {(orderStatuses[order.orderNo] || 'pending') === 'pending' ? (
-                    <input
-                      type="date"
-                      value={orderDates[order.orderNo] || ''}
-                      onChange={(e) => handleDateChange(order.orderNo, e.target.value)}
-                      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  ) : (
-                    <span className="text-gray-400">-</span>
-                  )}
-                </td>
-                {/* Remarks input */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <input
-                    type="text"
-                    value={orderRemarks[order.orderNo] || ''}
-                    onChange={(e) => handleRemarkChange(order.orderNo, e.target.value)}
-                    placeholder="Enter remarks"
-                    className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                </td>
+               {/* Status cell */}
+<td className="px-6 py-4 whitespace-nowrap">
+  {selectedOrders.includes(order.orderNo) ? (
+    <select
+      value={orderStatuses[order.orderNo] || order.existingStatus || 'pending'}
+      onChange={(e) => handleStatusChange(order.orderNo, e.target.value)}
+      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+    >
+      <option value="pending">Pending</option>
+      <option value="done">Done</option>
+    </select>
+  ) : (
+    <span className="text-sm text-gray-900">{order.existingStatus || 'pending'}</span>
+  )}
+</td>
+
+{/* Date cell */}
+<td className="px-6 py-4 whitespace-nowrap">
+  {selectedOrders.includes(order.orderNo) ? (
+    (orderStatuses[order.orderNo] || order.existingStatus || 'pending') === 'pending' ? (
+      <input
+        type="date"
+        value={orderDates[order.orderNo] || order.existingDate || ''}
+        onChange={(e) => handleDateChange(order.orderNo, e.target.value)}
+        className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+      />
+    ) : (
+      <span className="text-gray-400">-</span>
+    )
+  ) : (
+    <span className="text-sm text-gray-900">{order.existingDate || '-'}</span>
+  )}
+</td>
+
+{/* Remarks cell */}
+<td className="px-6 py-4 whitespace-nowrap">
+  {selectedOrders.includes(order.orderNo) ? (
+    <input
+      type="text"
+      value={orderRemarks[order.orderNo] || order.existingRemarks || ''}
+      onChange={(e) => handleRemarkChange(order.orderNo, e.target.value)}
+      placeholder="Enter remarks"
+      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+    />
+  ) : (
+    <span className="text-sm text-gray-900">{order.existingRemarks || '-'}</span>
+  )}
+</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.timestamp}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{order.orderNo}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.quotationNo}</td>
