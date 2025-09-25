@@ -76,6 +76,9 @@ function DashboardMetrics() {
           .neq('Quotation Number', '')
         
         // No user filtering for quotations - show all data
+          if (!isAdmin() && currentUser?.username) {
+          quotationsQuery = quotationsQuery.eq('Sales Cordinator', currentUser.username)
+        }
         
         const { count: quotationsCount, error: quotationsError } = await quotationsQuery
         
@@ -92,6 +95,9 @@ function DashboardMetrics() {
           .eq('"Is Order Received? Status"', 'yes')
         
         // No user filtering for orders - show all data
+          if (!isAdmin() && currentUser?.username) {
+          ordersQuery = ordersQuery.eq('Sales Cordinator', currentUser.username)
+        }
         
         const { count: ordersCount, error: ordersError } = await ordersQuery
         
@@ -107,6 +113,9 @@ function DashboardMetrics() {
           .select('*', { count: 'exact', head: true })
         
         // No user filtering - show all enquiries for everyone
+          if (!isAdmin() && currentUser?.username) {
+          totalEnquiryQuery = totalEnquiryQuery.eq('sales_coordinator_name', currentUser.username)
+        }
         
         const { count: totalEnquiryCount, error: totalEnquiryError } = await totalEnquiryQuery
         
@@ -124,6 +133,9 @@ function DashboardMetrics() {
           .is('actual1', null)
         
         // No user filtering - show all data
+          if (!isAdmin() && currentUser?.username) {
+          pendingEnquiryQuery = pendingEnquiryQuery.eq('sales_coordinator_name', currentUser.username)
+        }
         
         const { count: pendingEnquiryCount, error: pendingEnquiryError } = await pendingEnquiryQuery
         
