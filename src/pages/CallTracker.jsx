@@ -465,13 +465,17 @@ const fetchTenDaysData = async () => {
         h && typeof h === 'string' && h.toLowerCase().includes('revised order remark')
       ); // New column for Remarks
       
-      // Use fallback indices if specific column names not found
-      const awCol = awIndex >= 0 ? awIndex : 48;
-      const cfCol = cfIndex >= 0 ? cfIndex : 83;
-      const cgCol = cgIndex >= 0 ? cgIndex : 84;
-      const chCol = chIndex >= 0 ? chIndex : 85; // Assuming CH is column 85
-      const ciCol = ciIndex >= 0 ? ciIndex : 86;
-      const cjCol = cjIndex >= 0 ? cjIndex : 87; // Assuming CJ is column 87
+    // Use fallback indices if specific column names not found
+const awCol = awIndex >= 0 ? awIndex : 48;
+const cfCol = cfIndex >= 0 ? cfIndex : 83;
+const cgCol = cgIndex >= 0 ? cgIndex : 84;
+const chCol = chIndex >= 0 ? chIndex : 85; // Date column - adjust this number if needed
+const ciCol = ciIndex >= 0 ? ciIndex : 86;
+const cjCol = cjIndex >= 0 ? cjIndex : 87; // Remarks column - adjust this number if needed
+
+console.log('Using column positions:', {
+  awCol, cfCol, cgCol, chCol, ciCol, cjCol
+});
       
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -480,87 +484,179 @@ const fetchTenDaysData = async () => {
       
       rows.forEach((row, index) => {
         try {
+        
           const awValue = row[awCol];
-          const cfValue = row[cfCol];
-          const cgValue = row[cgCol]; // Status
-          const chValue = row[chCol]; // Date
-          const ciValue = row[ciCol]; // Sales Coordinator
-          const cjValue = row[cjCol]; // Remarks
-          
-          // Skip rows where status is "done"
-          if (cgValue && cgValue.toString().toLowerCase().trim() === "done") {
-            return; // Skip this row
-          }
-          
-          const isUserRow = isAdmin() || (currentUser && currentUser.username && 
-            ciValue && ciValue.toString().trim() === currentUser.username.trim());
-          
-          if (isUserRow && awValue && awValue.toString().toLowerCase() === "complete" && 
-              cfValue) {
-            
-            let cfDate;
-            
-            if (cfValue instanceof Date) {
-              cfDate = cfValue;
-            } else if (typeof cfValue === 'string') {
-              cfDate = new Date(cfValue);
-              
-              if (isNaN(cfDate.getTime())) {
-                const serialDate = parseFloat(cfValue);
-                if (!isNaN(serialDate)) {
-                  cfDate = new Date((serialDate - 25569) * 86400 * 1000);
+const cfValue = row[cfCol];
+const cgValue = row[cgCol]; // Status
+const chValue = row[chCol]; // Remarks (CH column)
+const ciValue = row[ciCol]; // Sales Coordinator
+const cjValue = row[cjCol]; // Date (CJ column)
+                // Debug logging
+                console.log('Processing row:', { 
+                  cfValue, 
+                  cgValue, 
+                  cgValueType: typeof cgValue,
+                  ciValue,
+                  currentUser: currentUser?.username,
+                  isAdmin: isAdmin()
+                });
+
+                const statusStr = String(cgValue || '').toLowerCase().trim();
+                
+                const isUserRow = isAdmin() ||
+                    (currentUser?.username && ciValue &&
+                        ciValue.toString().trim() === currentUser.username.trim());
+// Debug for DO-6 specifically - check if it exists at all
+if (row[1] && (row[1].toString().includes('DO-6') || row[1].toString().includes('DO-03'))) {
+  console.log(`${row[1]} Found in raw data:`, {
+    orderNo: row[1],
+    cgValue,
+    statusStr,
+    ciValue,
+    currentUser: currentUser?.username,
+    isUserRow,
+    isAdmin: isAdmin(),
+    awValue: row[awCol],
+    awValueLower: awValue ? awValue.toString().toLowerCase() : 'undefined'
+  });
+}
+                        
+                // Check if order is not dispatched/completed
+                const awValueLower = awValue ? awValue.toString().toLowerCase().trim() : '';
+                const isNotDispatched = !awValueLower || 
+                  (!awValueLower.includes('dispatched') && 
+                   !awValueLower.includes('delivered') && 
+                   !awValueLower.includes('completed') &&
+                   !awValueLower.includes('done'));
+                
+// Only include orders that are not done
+
+const includeByStatus = !statusStr || statusStr === '' || statusStr === 'null' || statusStr === 'undefined' || statusStr !== 'done';
+if (isUserRow && isNotDispatched && includeByStatus && cfValue) {
+                    let cfDate = null;
+                    if (cfValue) {
+                        if (cfValue instanceof Date) {
+                            cfDate = new Date(cfValue);
+                        } else if (typeof cfValue === 'string') {
+                            let parsed = new Date(cfValue);
+                            if (isNaN(parsed.getTime())) {
+                                const m = cfValue.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+                                if (m) {
+                                    const day = parseInt(m[1], 10);
+                                    const month = parseInt(m[2], 10) - 1;
+                                    const year = parseInt(m[3], 10) + (m[3].length === 2 ? 2000 : 0);
+                                    parsed = new Date(year, month, day);
+                                }
+                            }
+                            if (isNaN(parsed.getTime())) {
+                                const serialDate = parseFloat(cfValue);
+                                if (!isNaN(serialDate)) {
+                                    parsed = new Date((serialDate - 25569) * 86400 * 1000);
+                                }
+                            }
+                            if (!isNaN(parsed.getTime())) {
+                                cfDate = parsed;
+                            }
+                        } else if (typeof cfValue === 'number') {
+                            const parsed = new Date((cfValue - 25569) * 86400 * 1000);
+                            if (!isNaN(parsed.getTime())) {
+                                cfDate = parsed;
+                            }
+                        }
+                    }
+
+                    const order = {
+                        id: index + 2,
+                        timestamp: row[0] || "",
+                        orderNo: row[1] || "",
+                        quotationNo: row[2] || "",
+                        companyName: row[3] || "",
+                        contactPersonName: row[4] || "",
+                        contactNumber: row[5] || "",
+                        billingAddress: row[6] || "",
+                        shippingAddress: row[7] || "",
+                        paymentMode: row[8] || "",
+                        paymentTerms: row[9] || "",
+                        referenceName: row[10] || "",
+                        email: row[11] || "",
+                        transportMode: row[32] || "",
+                        destination: row[33] || "",
+                        itemQty: row[34] || "",
+                        poNumber: row[35] || "",
+                        totalOrderQty: row[40] || "",
+                        amountTotal: row[41] || "",
+                        dispatchStatus: row[48] || "",
+                        salesCoordinator: ciValue || "",
+                        existingStatus: (statusStr && statusStr !== 'null' && statusStr !== 'undefined' && statusStr !== '') ? statusStr : 'pending',
+                        existingDate: (() => {
+                          if (!cjValue) return '';
+                          try {
+                            let date;
+                            
+                            // Handle different date formats
+                            if (cjValue instanceof Date) {
+                              date = new Date(cjValue);
+                            } else if (typeof cjValue === 'string') {
+                              // Try parsing as string
+                              date = new Date(cjValue);
+                              
+                              // If invalid, try DD/MM/YYYY format
+                              if (isNaN(date.getTime())) {
+                                const match = cjValue.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+                                if (match) {
+                                  const day = parseInt(match[1], 10);
+                                  const month = parseInt(match[2], 10) - 1; // Month is 0-indexed
+                                  const year = parseInt(match[3], 10) + (match[3].length === 2 ? 2000 : 0);
+                                  date = new Date(year, month, day);
+                                }
+                              }
+                            } else if (typeof cjValue === 'number') {
+                              // Handle Excel serial date
+                              date = new Date((cjValue - 25569) * 86400 * 1000);
+                            }
+                            
+                            if (date && !isNaN(date.getTime())) {
+                              // Format as YYYY-MM-DD in local timezone to avoid timezone issues
+                              const year = date.getFullYear();
+                              const month = String(date.getMonth() + 1).padStart(2, '0');
+                              const day = String(date.getDate()).padStart(2, '0');
+                              return `${year}-${month}-${day}`;
+                            }
+                            
+                            return '';
+                          } catch (e) {
+                            console.error('Error parsing date:', cjValue, e);
+                            return '';
+                          }
+                      })(),
+existingRemarks: chValue || ''
+                    };
+
+                    if (cfDate && !isNaN(cfDate.getTime())) {
+                        const normalizedCfDate = new Date(cfDate);
+                        normalizedCfDate.setHours(0, 0, 0, 0);
+                        const normalizedToday = new Date(today);
+                        normalizedToday.setHours(0, 0, 0, 0);
+                        const diffTime = normalizedToday.getTime() - normalizedCfDate.getTime();
+                        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+                        if (diffDays >= 0) {
+                            order.cfDate = cfDate.toLocaleDateString();
+                            order.daysAgo = diffDays;
+                            order.status = diffDays <= 10 ? "within 10 days" : "overdue";
+                        } else {
+                            order.cfDate = cfDate.toLocaleDateString();
+                            order.daysAgo = diffDays;
+                            order.status = "pending"; // Future date
+                        }
+                    } else {
+                        order.cfDate = "";
+                        order.daysAgo = "";
+                        order.status = "pending";
+                    }
+                    
+                    tenDaysOrders.push(order);
                 }
-              }
-            } else if (typeof cfValue === 'number') {
-              cfDate = new Date((cfValue - 25569) * 86400 * 1000);
-            }
-            
-            if (cfDate && !isNaN(cfDate.getTime())) {
-              const normalizedCfDate = new Date(cfDate);
-              normalizedCfDate.setHours(0, 0, 0, 0);
-              
-              const normalizedToday = new Date(today);
-              normalizedToday.setHours(0, 0, 0, 0);
-              
-              const diffTime = normalizedToday.getTime() - normalizedCfDate.getTime();
-              const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-              
-              if (diffDays >= 0) {
-                const order = {
-                  id: index + 2,
-                  timestamp: row[0] || "",
-                  orderNo: row[1] || "",
-                  quotationNo: row[2] || "",
-                  companyName: row[3] || "",
-                  contactPersonName: row[4] || "",
-                  contactNumber: row[5] || "",
-                  billingAddress: row[6] || "",
-                  shippingAddress: row[7] || "",
-                  paymentMode: row[8] || "",
-                  paymentTerms: row[9] || "",
-                  referenceName: row[10] || "",
-                  email: row[11] || "",
-                  // ... include other fields as needed
-                  transportMode: row[32] || "",
-                  destination: row[33] || "",
-                  itemQty: row[34] || "",
-                  poNumber: row[35] || "",
-                  totalOrderQty: row[40] || "",
-                  amountTotal: row[41] || "",
-                  dispatchStatus: row[48] || "",
-                  salesCoordinator: ciValue || "",
-                  cfDate: cfDate.toLocaleDateString(),
-                  daysAgo: diffDays,
-                  status: diffDays <= 10 ? "within 10 days" : "overdue",
-                  // Fetch existing values for editable fields
-                  existingStatus: cgValue || 'pending',
-                  existingDate: chValue ? new Date(chValue).toISOString().split('T')[0] : '',
-                  existingRemarks: cjValue || ''
-                };
-                tenDaysOrders.push(order);
-              }
-            }
-          }
         } catch (error) {
           console.error("Error processing row:", error, row);
         }
@@ -1302,7 +1398,7 @@ const LoadingIndicator = () => {
   return (
     <div className="flex justify-center items-center py-4 bg-gray-50">
       <div className="flex items-center space-x-2">
-        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
+        <div className="w-4 h-4 rounded-full border-b-2 border-purple-600 animate-spin"></div>
         <span className="text-sm text-gray-600">Loading more data...</span>
       </div>
     </div>
@@ -1674,11 +1770,11 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
     return (
       <div className="space-y-4 md:hidden">
         {data.map((tracker, index) => (
-          <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+          <div key={index} className="overflow-hidden bg-white rounded-xl border border-gray-100 shadow-lg">
             {/* Header Section */}
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 border-b border-gray-200">
+            <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-gray-200">
               <div className="flex justify-between items-center mb-2">
-                <h3 className="font-bold text-gray-900 text-lg">{tracker.lead_no}</h3>
+                <h3 className="text-lg font-bold text-gray-900">{tracker.lead_no}</h3>
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
                   tracker.priority === "High"
                     ? "bg-red-100 text-red-700"
@@ -1690,7 +1786,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                 </span>
               </div>
               <div className="flex items-center text-sm text-gray-600">
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <svg className="mr-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                 </svg>
                 <span>{tracker.Lead_Receiver_Name}</span>
@@ -1700,37 +1796,37 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
             {/* Content Section */}
             <div className="p-4 space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 mb-1">Company</p>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="mb-1 text-xs text-gray-500">Company</p>
                   <p className="text-sm font-medium text-gray-900 truncate">{tracker.Company_Name}</p>
                 </div>
                 
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 mb-1">Phone</p>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="mb-1 text-xs text-gray-500">Phone</p>
                   <p className="text-sm font-medium text-gray-900">{tracker.Phone_Number}</p>
                 </div>
               </div>
               
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 mb-1">Salesperson</p>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="mb-1 text-xs text-gray-500">Salesperson</p>
                   <p className="text-sm font-medium text-gray-900 truncate">{tracker.salesperson_Name}</p>
                 </div>
                 
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 mb-1">Call Date</p>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="mb-1 text-xs text-gray-500">Call Date</p>
                   <p className="text-sm font-medium text-gray-900">{tracker.Timestamp}</p>
                 </div>
               </div>
               
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="text-xs text-gray-500 mb-1">Current Stage</p>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="mb-1 text-xs text-gray-500">Current Stage</p>
                 <p className="text-sm font-medium text-gray-900">{tracker.Current_Stage}</p>
               </div>
               
               {tracker.itemQty && (
-                <div className="bg-amber-50 p-3 rounded-lg border border-amber-100">
-                  <p className="text-xs text-amber-600 font-medium mb-1">Items</p>
+                <div className="p-3 bg-amber-50 rounded-lg border border-amber-100">
+                  <p className="mb-1 text-xs font-medium text-amber-600">Items</p>
                   <p className="text-sm font-medium text-gray-900">{formatItemQty(tracker.itemQty)}</p>
                 </div>
               )}
@@ -1741,9 +1837,9 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
               <Link 
                 state={{ activeTab: "pending", sc_name: tracker.sc_name }} 
                 to={`/call-tracker/new?leadId=${tracker.lead_no}`}
-                className="w-full flex items-center justify-center px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg shadow-md hover:from-purple-700 hover:to-pink-700 transition-all duration-200"
+                className="flex justify-center items-center px-4 py-3 w-full text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg shadow-md transition-all duration-200 hover:from-purple-700 hover:to-pink-700"
               >
-                <ArrowRightIcon className="w-5 h-5 mr-2" />
+                <ArrowRightIcon className="mr-2 w-5 h-5" />
                 Process Now
               </Link>
             </div>
@@ -1755,11 +1851,11 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
     return (
       <div className="space-y-4 md:hidden">
         {data.map((tracker, index) => (
-          <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+          <div key={index} className="overflow-hidden bg-white rounded-xl border border-gray-100 shadow-lg">
             {/* Header Section */}
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 border-b border-gray-200">
+            <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-gray-200">
               <div className="flex justify-between items-center mb-2">
-                <h3 className="font-bold text-gray-900 text-lg">{tracker.enquiry_no}</h3>
+                <h3 className="text-lg font-bold text-gray-900">{tracker.enquiry_no}</h3>
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
                   tracker.priority === "High"
                     ? "bg-red-100 text-red-700"
@@ -1771,7 +1867,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                 </span>
               </div>
               <div className="flex items-center text-sm text-gray-600">
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <svg className="mr-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                 </svg>
                 <span>{tracker.lead_receiver_name}</span>
@@ -1781,43 +1877,43 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
             {/* Content Section */}
             <div className="p-4 space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 mb-1">Company</p>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="mb-1 text-xs text-gray-500">Company</p>
                   <p className="text-sm font-medium text-gray-900 truncate">{tracker.company_name}</p>
                 </div>
                 
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 mb-1">Call Date</p>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="mb-1 text-xs text-gray-500">Call Date</p>
                   <p className="text-sm font-medium text-gray-900">{tracker.timestamp}</p>
                 </div>
               </div>
               
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="text-xs text-gray-500 mb-1">Current Stage</p>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="mb-1 text-xs text-gray-500">Current Stage</p>
                 <p className="text-sm font-medium text-gray-900">{tracker.current_stage}</p>
               </div>
               
               {tracker.item_qty && (
-                <div className="bg-amber-50 p-3 rounded-lg border border-amber-100">
-                  <p className="text-xs text-amber-600 font-medium mb-1">Items</p>
+                <div className="p-3 bg-amber-50 rounded-lg border border-amber-100">
+                  <p className="mb-1 text-xs font-medium text-amber-600">Items</p>
                   <p className="text-sm font-medium text-gray-900">{formatItemQty(tracker.item_qty)}</p>
                 </div>
               )}
             </div>
             
             {/* Action Section */}
-            <div className="px-4 pb-4 flex space-x-2">
+            <div className="flex px-4 pb-4 space-x-2">
               <Link 
                 state={{ activeTab: "directEnquiry", sc_name: tracker.sc_name }} 
                 to={`/call-tracker/new?leadId=${tracker.enquiry_no}`}
-                className="flex-1 flex items-center justify-center px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg shadow-md hover:from-purple-700 hover:to-pink-700 transition-all duration-200"
+                className="flex flex-1 justify-center items-center px-4 py-3 text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg shadow-md transition-all duration-200 hover:from-purple-700 hover:to-pink-700"
               >
-                <ArrowRightIcon className="w-5 h-5 mr-2" />
+                <ArrowRightIcon className="mr-2 w-5 h-5" />
                 Process
               </Link>
               <button
                 onClick={() => onView(tracker)}
-                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200"
+                className="flex-1 px-4 py-3 text-gray-700 rounded-lg border border-gray-300 transition-all duration-200 hover:bg-gray-50"
               >
                 View
               </button>
@@ -1831,11 +1927,11 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
     return (
       <div className="space-y-4 md:hidden">
         {data.map((tracker, index) => (
-          <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+          <div key={index} className="overflow-hidden bg-white rounded-xl border border-gray-100 shadow-lg">
             {/* Header Section */}
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 border-b border-gray-200">
+            <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-gray-200">
               <div className="flex justify-between items-center mb-2">
-                <h3 className="font-bold text-gray-900 text-lg">{tracker.enquiryNo}</h3>
+                <h3 className="text-lg font-bold text-gray-900">{tracker.enquiryNo}</h3>
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
                   tracker.priority === "High"
                     ? "bg-red-100 text-red-700"
@@ -1848,7 +1944,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
               </div>
               {tracker.Timestamp && (
                 <div className="flex items-center text-sm text-gray-600">
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <svg className="mr-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                   </svg>
                   <span>{tracker.Timestamp}</span>
@@ -1859,26 +1955,26 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
             {/* Content Section */}
             <div className="p-4 space-y-3">
               {tracker.customerFeedback && (
-                <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                  <p className="text-xs text-blue-600 font-medium mb-1 flex items-center">
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                  <p className="flex items-center mb-1 text-xs font-medium text-blue-600">
+                    <svg className="mr-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
                     </svg>
                     Customer Said
                   </p>
-                  <p className="text-sm text-gray-800 italic">"{tracker.customerFeedback}"</p>
+                  <p className="text-sm italic text-gray-800">"{tracker.customerFeedback}"</p>
                 </div>
               )}
               
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="text-xs text-gray-500 mb-1">Current Stage</p>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="mb-1 text-xs text-gray-500">Current Stage</p>
                 <p className="text-sm font-medium text-gray-900">{tracker.currentStage}</p>
               </div>
               
               {tracker.nextCallDate && (
-                <div className="bg-green-50 p-3 rounded-lg border border-green-100">
-                  <p className="text-xs text-green-600 font-medium mb-1 flex items-center">
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <div className="p-3 bg-green-50 rounded-lg border border-green-100">
+                  <p className="flex items-center mb-1 text-xs font-medium text-green-600">
+                    <svg className="mr-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                     </svg>
                     Next Follow-up
@@ -1890,8 +1986,8 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
               )}
               
               {tracker.orderStatus && (
-                <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
-                  <p className="text-xs text-purple-600 font-medium mb-1">Order Status</p>
+                <div className="p-3 bg-purple-50 rounded-lg border border-purple-100">
+                  <p className="mb-1 text-xs font-medium text-purple-600">Order Status</p>
                   <p className="text-sm font-medium text-gray-900">{tracker.orderStatus}</p>
                 </div>
               )}
@@ -1904,17 +2000,17 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
 };
 
   return (
-    <div className="container mx-auto py-10 px-4">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+    <div className="container px-4 py-10 mx-auto">
+      <div className="flex flex-col gap-4 justify-between items-start mb-6 md:flex-row md:items-center">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
             Enquiry Tracker
           </h1>
-          <p className="text-slate-600 mt-1">Track the progress of enquiries through the sales pipeline</p>
-          {isAdmin() && <p className="text-green-600 font-semibold mt-1">Admin View: Showing all data</p>}
+          <p className="mt-1 text-slate-600">Track the progress of enquiries through the sales pipeline</p>
+          {isAdmin() && <p className="mt-1 font-semibold text-green-600">Admin View: Showing all data</p>}
         </div>
 
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-wrap gap-2">
           <div className="relative">
             <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
             <input
@@ -1930,7 +2026,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
        {/* Calling Days Filter */}
 <div className="relative dropdown-container">
   <button
-    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white flex items-center"
+    className="flex items-center px-3 py-2 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
     onClick={toggleCallingDaysDropdown}
   >
     <span>Calling Days {callingDaysFilter.length > 0 && `(${callingDaysFilter.length})`}</span>
@@ -1945,11 +2041,11 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
     </svg>
   </button>
   {showCallingDaysDropdown && (
-    <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 min-w-full">
+    <div className="absolute left-0 top-full z-10 mt-1 min-w-full bg-white rounded-md border border-gray-300 shadow-lg">
       <div className="p-2">
         {activeTab === "history" ? (
           <>
-            <label className="flex items-center justify-between p-2 hover:bg-gray-50 cursor-pointer w-full">
+            <label className="flex justify-between items-center p-2 w-full cursor-pointer hover:bg-gray-50">
               <div className="flex items-center">
                 <input
                   type="checkbox"
@@ -1959,9 +2055,9 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                 />
                 <span>Today's Calls</span>
               </div>
-              <span className="text-xs text-gray-500 ml-2">({callingDaysCounts.historyToday})</span>
+              <span className="ml-2 text-xs text-gray-500">({callingDaysCounts.historyToday})</span>
             </label>
-            <label className="flex items-center justify-between p-2 hover:bg-gray-50 cursor-pointer w-full">
+            <label className="flex justify-between items-center p-2 w-full cursor-pointer hover:bg-gray-50">
               <div className="flex items-center">
                 <input
                   type="checkbox"
@@ -1971,12 +2067,12 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                 />
                 <span>Older Calls</span>
               </div>
-              <span className="text-xs text-gray-500 ml-2">({callingDaysCounts.historyOlder})</span>
+              <span className="ml-2 text-xs text-gray-500">({callingDaysCounts.historyOlder})</span>
             </label>
           </>
         ) : (
           <>
-            <label className="flex items-center justify-between p-2 hover:bg-gray-50 cursor-pointer w-full">
+            <label className="flex justify-between items-center p-2 w-full cursor-pointer hover:bg-gray-50">
               <div className="flex items-center">
                 <input
                   type="checkbox"
@@ -1986,9 +2082,9 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                 />
                 <span>Today</span>
               </div>
-              <span className="text-xs text-gray-500 ml-2">({activeTab==="pending"?callingDaysCounts.pendingToday:callingDaysCounts.directToday})</span>
+              <span className="ml-2 text-xs text-gray-500">({activeTab==="pending"?callingDaysCounts.pendingToday:callingDaysCounts.directToday})</span>
             </label>
-            <label className="flex items-center justify-between p-2 hover:bg-gray-50 cursor-pointer w-full">
+            <label className="flex justify-between items-center p-2 w-full cursor-pointer hover:bg-gray-50">
               <div className="flex items-center">
                 <input
                   type="checkbox"
@@ -1998,9 +2094,9 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                 />
                 <span>Overdue</span>
               </div>
-              <span className="text-xs text-gray-500 ml-2">({activeTab==="pending"?callingDaysCounts.pendingOverdue:callingDaysCounts.directOverdue})</span>
+              <span className="ml-2 text-xs text-gray-500">({activeTab==="pending"?callingDaysCounts.pendingOverdue:callingDaysCounts.directOverdue})</span>
             </label>
-            <label className="flex items-center justify-between p-2 hover:bg-gray-50 cursor-pointer w-full">
+            <label className="flex justify-between items-center p-2 w-full cursor-pointer hover:bg-gray-50">
               <div className="flex items-center">
                 <input
                   type="checkbox"
@@ -2010,7 +2106,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                 />
                 <span>Upcoming</span>
               </div>
-              <span className="text-xs text-gray-500 ml-2">({activeTab==="pending"?callingDaysCounts.pendingUpcoming:callingDaysCounts.directUpcoming})</span>
+              <span className="ml-2 text-xs text-gray-500">({activeTab==="pending"?callingDaysCounts.pendingUpcoming:callingDaysCounts.directUpcoming})</span>
             </label>
           </>
         )}
@@ -2018,9 +2114,9 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
     </div>
   )}
   {callingDaysFilter.length > 0 && (
-    <div className="mt-1 flex flex-wrap gap-1">
+    <div className="flex flex-wrap gap-1 mt-1">
       {callingDaysFilter.map((filter) => (
-        <span key={filter} className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">
+        <span key={filter} className="inline-flex items-center px-2 py-1 text-xs text-purple-800 bg-purple-100 rounded">
           {filter}
           <button
             onClick={() => setCallingDaysFilter(callingDaysFilter.filter((item) => item !== filter))}
@@ -2038,7 +2134,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
          {/* Enquiry No Filter */}
 <div className="relative dropdown-container">
   <button
-    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white flex items-center"
+    className="flex items-center px-3 py-2 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
     onClick={toggleEnquiryNoDropdown}
   >
     <span>Enquiry No. {enquiryNoFilter.length > 0 && `(${enquiryNoFilter.length})`}</span>
@@ -2053,20 +2149,20 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
     </svg>
   </button>
   {showEnquiryNoDropdown && (
-    <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 min-w-full max-h-60 overflow-y-auto">
+    <div className="overflow-y-auto absolute left-0 top-full z-10 mt-1 min-w-full max-h-60 bg-white rounded-md border border-gray-300 shadow-lg">
       <div className="p-2">
         {/* Search input for enquiry numbers */}
         <input
           type="text"
           placeholder="Search enquiry numbers..."
-          className="w-full px-2 py-1 mb-2 border border-gray-300 rounded text-sm"
+          className="px-2 py-1 mb-2 w-full text-sm rounded border border-gray-300"
           onChange={(e) => {
             // You can implement search functionality here if needed
           }}
         />
         
         {/* Select all option */}
-        <label className="flex items-center p-2 hover:bg-gray-50 cursor-pointer">
+        <label className="flex items-center p-2 cursor-pointer hover:bg-gray-50">
           <input
             type="checkbox"
             className="mr-2"
@@ -2082,9 +2178,9 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
           <span className="text-sm font-medium">Select All</span>
         </label>
         
-        <div className="max-h-40 overflow-y-auto">
+        <div className="overflow-y-auto max-h-40">
           {availableEnquiryNos.map((enquiryNo) => (
-            <label key={enquiryNo} className="flex items-center p-2 hover:bg-gray-50 cursor-pointer">
+            <label key={enquiryNo} className="flex items-center p-2 cursor-pointer hover:bg-gray-50">
               <input
                 type="checkbox"
                 className="mr-2"
@@ -2099,9 +2195,9 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
     </div>
   )}
   {enquiryNoFilter.length > 0 && (
-    <div className="mt-1 flex flex-wrap gap-1">
+    <div className="flex flex-wrap gap-1 mt-1">
       {enquiryNoFilter.slice(0, 3).map((filter) => (
-        <span key={filter} className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">
+        <span key={filter} className="inline-flex items-center px-2 py-1 text-xs text-purple-800 bg-purple-100 rounded">
           {filter}
           <button
             onClick={() => setEnquiryNoFilter(enquiryNoFilter.filter((item) => item !== filter))}
@@ -2112,7 +2208,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
         </span>
       ))}
       {enquiryNoFilter.length > 3 && (
-        <span className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">
+        <span className="inline-flex items-center px-2 py-1 text-xs text-purple-800 bg-purple-100 rounded">
           +{enquiryNoFilter.length - 3} more
         </span>
       )}
@@ -2123,7 +2219,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
           {/* Current Stage Filter */}
           <div className="relative dropdown-container">
             <button
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white flex items-center"
+              className="flex items-center px-3 py-2 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
               onClick={toggleCurrentStageDropdown}
             >
               <span>Current Stage {currentStageFilter.length > 0 && `(${currentStageFilter.length})`}</span>
@@ -2138,9 +2234,9 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
               </svg>
             </button>
             {showCurrentStageDropdown && (
-              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 min-w-full">
+              <div className="absolute left-0 top-full z-10 mt-1 min-w-full bg-white rounded-md border border-gray-300 shadow-lg">
                 <div className="p-2">
-                  <label className="flex items-center p-2 hover:bg-gray-50 cursor-pointer">
+                  <label className="flex items-center p-2 cursor-pointer hover:bg-gray-50">
                     <input
                       type="checkbox"
                       className="mr-2"
@@ -2149,7 +2245,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                     />
                     <span>Make Quotation</span>
                   </label>
-                  <label className="flex items-center p-2 hover:bg-gray-50 cursor-pointer">
+                  <label className="flex items-center p-2 cursor-pointer hover:bg-gray-50">
                     <input
                       type="checkbox"
                       className="mr-2"
@@ -2158,7 +2254,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                     />
                     <span>Quotation Validation</span>
                   </label>
-                  <label className="flex items-center p-2 hover:bg-gray-50 cursor-pointer">
+                  <label className="flex items-center p-2 cursor-pointer hover:bg-gray-50">
                     <input
                       type="checkbox"
                       className="mr-2"
@@ -2167,7 +2263,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                     />
                     <span>Order Status</span>
                   </label>
-                  <label className="flex items-center p-2 hover:bg-gray-50 cursor-pointer">
+                  <label className="flex items-center p-2 cursor-pointer hover:bg-gray-50">
                     <input
                       type="checkbox"
                       className="mr-2"
@@ -2180,9 +2276,9 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
               </div>
             )}
             {currentStageFilter.length > 0 && (
-              <div className="mt-1 flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1 mt-1">
                 {currentStageFilter.map((filter) => (
-                  <span key={filter} className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">
+                  <span key={filter} className="inline-flex items-center px-2 py-1 text-xs text-purple-800 bg-purple-100 rounded">
                     {filter.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
                     <button
                       onClick={() => setCurrentStageFilter(currentStageFilter.filter((item) => item !== filter))}
@@ -2201,7 +2297,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
             <div className="relative dropdown-container">
               <button
                 onClick={() => setShowColumnDropdown(!showColumnDropdown)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white flex items-center"
+                className="flex items-center px-3 py-2 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <span>Select Columns</span>
                 <svg
@@ -2215,16 +2311,16 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
               </button>
 
               {showColumnDropdown && (
-                <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-gray-300 rounded-md shadow-lg z-50 max-h-80 overflow-y-auto">
+                <div className="overflow-y-auto absolute left-0 top-full z-50 mt-1 w-64 max-h-80 bg-white rounded-md border border-gray-300 shadow-lg">
                   <div className="p-2">
                     {/* Select All Option */}
-                    <div className="flex items-center p-2 hover:bg-gray-50 rounded">
+                    <div className="flex items-center p-2 rounded hover:bg-gray-50">
                       <input
                         type="checkbox"
                         id="select-all-history"
                         checked={Object.values(visibleColumns).every(Boolean)}
                         onChange={handleSelectAll}
-                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                        className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
                       />
                       <label htmlFor="select-all-history" className="ml-2 text-sm font-medium text-gray-900 cursor-pointer">
                         All Columns
@@ -2235,17 +2331,17 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
 
                     {/* Individual Column Options */}
                     {columnOptions.map((option) => (
-                      <div key={option.key} className="flex items-center p-2 hover:bg-gray-50 rounded">
+                      <div key={option.key} className="flex items-center p-2 rounded hover:bg-gray-50">
                         <input
                           type="checkbox"
                           id={`column-${option.key}`}
                           checked={visibleColumns[option.key]}
                           onChange={() => handleColumnToggle(option.key)}
-                          className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                          className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
                         />
                         <label
                           htmlFor={`column-${option.key}`}
-                          className="ml-2 text-sm text-gray-700 cursor-pointer flex-1"
+                          className="flex-1 ml-2 text-sm text-gray-700 cursor-pointer"
                         >
                           {option.label}
                         </label>
@@ -2260,7 +2356,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
           {/* Clear Filters Button */}
           {(callingDaysFilter.length > 0 || enquiryNoFilter.length > 0 || currentStageFilter.length > 0) && (
             <button
-              className="px-3 py-2 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 text-sm text-gray-700 rounded-md border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500"
               onClick={() => {
                 setCallingDaysFilter([])
                 setEnquiryNoFilter([])
@@ -2272,10 +2368,10 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
           )}
 
           <button
-            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+            className="px-4 py-2 font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-md hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
             onClick={() => setShowNewCallTrackerForm(true)}
           >
-            <PlusIcon className="inline-block mr-2 h-4 w-4" /> Direct Enquiry
+            <PlusIcon className="inline-block mr-2 w-4 h-4" /> Direct Enquiry
           </button>
         </div>
       </div>
@@ -2347,76 +2443,76 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
         // Handle process action if needed
       }}
     />
-                <div className="hidden md:block rounded-md border overflow-x-auto">
-                <div className="rounded-md border overflow-x-auto">
+                <div className="hidden overflow-x-auto rounded-md border md:block">
+                <div className="overflow-x-auto rounded-md border">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-slate-50">
                       <tr>
                         <th
                           scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
                         >
                           Actions
                         </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
       Timestamp
     </th>
                         <th
                           scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
                         >
                           Lead No.
                         </th>
                         <th
                           scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
                         >
                           Lead Receiver Name
                         </th>
                         <th
                           scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
                         >
                           Lead Source
                         </th>
                         <th
                           scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
                         >
                           Phone No.
                         </th>
                         <th
                           scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
                         >
                           Salesperson Name
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                           Company Name
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                           Current Stage
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                           Calling Date
                         </th>
                         {isAdmin() && (
                           <th
                             scope="col"
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
                           >
                             Assigned To
                           </th>
                         )}
                         <th
   scope="col"
-  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+  className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
 >
   Item/Qty
 </th>
   <th
   scope="col"
-  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+  className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
 >
  Total Qty
 </th>
@@ -2431,22 +2527,22 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
       ref={index === filteredPendingCallTrackers.length - 1 ? lastElementRef : null}
     >
     
-        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+        <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
           <div className="flex space-x-2">
             <Link state={{ activeTab: activeTab, sc_name: tracker.sc_name }} to={`/call-tracker/new?leadId=${tracker.lead_no}`}>
-              <button className="px-3 py-1 text-xs border border-purple-200 text-purple-600 hover:bg-purple-50 rounded-md">
-                Process <ArrowRightIcon className="ml-1 h-3 w-3 inline" />
+              <button className="px-3 py-1 text-xs text-purple-600 rounded-md border border-purple-200 hover:bg-purple-50">
+                Process <ArrowRightIcon className="inline ml-1 w-3 h-3" />
               </button>
             </Link>
           </div>
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
           {tracker.Timestamp}
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+        <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
           {tracker.lead_no}
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
           {tracker.Lead_Receiver_Name}
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
@@ -2463,27 +2559,27 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
           </span>
         </td>
         <td className="px-4 py-4 text-sm text-gray-500">{tracker.Phone_Number}</td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
           {tracker.salesperson_Name}
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
           <div className="flex items-center">
-            <BuildingIcon className="h-4 w-4 mr-2 text-slate-400" />
+            <BuildingIcon className="mr-2 w-4 h-4 text-slate-400" />
             {tracker.Company_Name}
           </div>
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
           {tracker.Current_Stage}
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
           {formatDateToDDMMYYYY(tracker.nextCallDate1)}
         </td>
         {isAdmin() && (
-          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
             {tracker.sc_name}
           </td>
         )}
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
           <div
             className="min-w-[100px] break-words whitespace-normal"
             title={tracker.itemQty}
@@ -2491,7 +2587,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
             {tracker.itemQty}
           </div>
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
           {tracker.totalQty}
         </td>
       </tr>
@@ -2500,7 +2596,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
     <tr>
       <td
         colSpan={isAdmin() ? 13 : 12} // Fixed: 12 base columns + 1 for admin column
-        className="px-6 py-4 text-center text-sm text-slate-500"
+        className="px-6 py-4 text-sm text-center text-slate-500"
       >
         No pending call trackers found
       </td>
@@ -2522,121 +2618,121 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
       data={filteredHistoryCallTrackers} 
       type="history" 
     />
-    <div className="hidden md:block rounded-md border overflow-x-auto">
-  <div className="rounded-md border overflow-x-auto">
+    <div className="hidden overflow-x-auto rounded-md border md:block">
+  <div className="overflow-x-auto rounded-md border">
     <table className="min-w-full divide-y divide-gray-200">
       <thead className="bg-slate-50">
         <tr>
           {visibleColumns.timestamp && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Timestamp</th>
           )}
           {visibleColumns.enquiryNo && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Enquiry No.</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Enquiry No.</th>
           )}
           {visibleColumns.enquiryStatus && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Enquiry Status</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Enquiry Status</th>
           )}
           {visibleColumns.customerFeedback && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">What Did Customer Say</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">What Did Customer Say</th>
           )}
           {visibleColumns.currentStage && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Stage</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Current Stage</th>
           )}
           {visibleColumns.sendQuotationNo && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Send Quotation No.</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Send Quotation No.</th>
           )}
           {visibleColumns.quotationSharedBy && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quotation Shared By</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Quotation Shared By</th>
           )}
           {visibleColumns.quotationNumber && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quotation Number</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Quotation Number</th>
           )}
           {visibleColumns.valueWithoutTax && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quotation Value Without Tax</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Quotation Value Without Tax</th>
           )}
           {visibleColumns.valueWithTax && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quotation Value With Tax</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Quotation Value With Tax</th>
           )}
           {visibleColumns.quotationUpload && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quotation Upload</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Quotation Upload</th>
           )}
           {visibleColumns.quotationRemarks && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quotation Remarks</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Quotation Remarks</th>
           )}
           {visibleColumns.validatorName && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quotation Validator Name</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Quotation Validator Name</th>
           )}
           {visibleColumns.sendStatus && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quotation Send Status</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Quotation Send Status</th>
           )}
           {visibleColumns.validationRemark && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quotation Validation Remark</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Quotation Validation Remark</th>
           )}
           {visibleColumns.faqVideo && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Send FAQ Video</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Send FAQ Video</th>
           )}
           {visibleColumns.productVideo && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Send Product Video</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Send Product Video</th>
           )}
           {visibleColumns.offerVideo && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Send Offer Video</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Send Offer Video</th>
           )}
           {visibleColumns.productCatalog && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Send Product Catalog</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Send Product Catalog</th>
           )}
           {visibleColumns.productImage && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Send Product Image</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Send Product Image</th>
           )}
           {visibleColumns.nextCallDate && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Next Call Date</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Next Call Date</th>
           )}
           {visibleColumns.nextCallTime && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Next Call Time</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Next Call Time</th>
           )}
           {visibleColumns.orderStatus && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Is Order Received? Status</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Is Order Received? Status</th>
           )}
           {visibleColumns.acceptanceVia && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acceptance Via</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Acceptance Via</th>
           )}
           {visibleColumns.paymentMode && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Mode</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Payment Mode</th>
           )}
           {visibleColumns.paymentTerms && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Terms (In Days)</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Payment Terms (In Days)</th>
           )}
           {visibleColumns.transportMode && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transport Mode</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Transport Mode</th>
           )}
           {visibleColumns.registrationFrom && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CONVEYED FOR REGISTRATION FORM</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">CONVEYED FOR REGISTRATION FORM</th>
           )}
           {visibleColumns.orderVideo && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order Video</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Order Video</th>
           )}
           {visibleColumns.acceptanceFile && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acceptance File Upload</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Acceptance File Upload</th>
           )}
           {visibleColumns.orderRemark && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remark</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Remark</th>
           )}
           {visibleColumns.apologyVideo && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order Lost Apology Video</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Order Lost Apology Video</th>
           )}
           {visibleColumns.reasonStatus && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">If No Then Get Relevant Reason Status</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">If No Then Get Relevant Reason Status</th>
           )}
           {visibleColumns.reasonRemark && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">If No Then Get Relevant Reason Remark</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">If No Then Get Relevant Reason Remark</th>
           )}
           {visibleColumns.holdReason && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer Order Hold Reason Category</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Customer Order Hold Reason Category</th>
           )}
           {visibleColumns.holdingDate && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Holding Date</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Holding Date</th>
           )}
           {visibleColumns.holdRemark && (
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hold Remark</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Hold Remark</th>
           )}
         </tr>
       </thead>
@@ -2649,10 +2745,10 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
         ref={index === filteredHistoryCallTrackers.length - 1 ? lastElementRef : null}
       >
               {visibleColumns.timestamp && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.Timestamp}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.Timestamp}</td>
               )}
               {visibleColumns.enquiryNo && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tracker.enquiryNo}</td>
+                <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">{tracker.enquiryNo}</td>
               )}
               {visibleColumns.enquiryStatus && (
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -2673,25 +2769,25 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                 <td className="px-6 py-4 text-sm text-gray-500 max-w-[200px] truncate" title={tracker.customerFeedback}>{tracker.customerFeedback}</td>
               )}
               {visibleColumns.currentStage && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.currentStage}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.currentStage}</td>
               )}
               {visibleColumns.sendQuotationNo && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.sendQuotationNo}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.sendQuotationNo}</td>
               )}
               {visibleColumns.quotationSharedBy && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.quotationSharedBy}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.quotationSharedBy}</td>
               )}
               {visibleColumns.quotationNumber && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.quotationNumber}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.quotationNumber}</td>
               )}
               {visibleColumns.valueWithoutTax && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.valueWithoutTax}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.valueWithoutTax}</td>
               )}
               {visibleColumns.valueWithTax && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.valueWithTax}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.valueWithTax}</td>
               )}
               {visibleColumns.quotationUpload && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                   {tracker.quotationUpload && (
                     <a 
                       href={tracker.quotationUpload} 
@@ -2708,58 +2804,58 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                 <td className="px-6 py-4 text-sm text-gray-500 max-w-[200px] truncate" title={tracker.quotationRemarks}>{tracker.quotationRemarks}</td>
               )}
               {visibleColumns.validatorName && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.validatorName}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.validatorName}</td>
               )}
               {visibleColumns.sendStatus && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.sendStatus}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.sendStatus}</td>
               )}
               {visibleColumns.validationRemark && (
                 <td className="px-6 py-4 text-sm text-gray-500 max-w-[200px] truncate" title={tracker.validationRemark}>{tracker.validationRemark}</td>
               )}
               {visibleColumns.faqVideo && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.faqVideo}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.faqVideo}</td>
               )}
               {visibleColumns.productVideo && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.productVideo}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.productVideo}</td>
               )}
               {visibleColumns.offerVideo && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.offerVideo}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.offerVideo}</td>
               )}
               {visibleColumns.productCatalog && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.productCatalog}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.productCatalog}</td>
               )}
               {visibleColumns.productImage && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.productImage}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.productImage}</td>
               )}
               {visibleColumns.nextCallDate && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDateToDDMMYYYY(tracker.nextCallDate)}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{formatDateToDDMMYYYY(tracker.nextCallDate)}</td>
               )}
               {visibleColumns.nextCallTime && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.nextCallTime}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.nextCallTime}</td>
               )}
               {visibleColumns.orderStatus && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.orderStatus}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.orderStatus}</td>
               )}
               {visibleColumns.acceptanceVia && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.acceptanceVia}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.acceptanceVia}</td>
               )}
               {visibleColumns.paymentMode && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.paymentMode}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.paymentMode}</td>
               )}
               {visibleColumns.paymentTerms && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.paymentTerms}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.paymentTerms}</td>
               )}
               {visibleColumns.transportMode && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.transportMode}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.transportMode}</td>
               )}
               {visibleColumns.registrationFrom && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.registrationFrom}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.registrationFrom}</td>
               )}
               {visibleColumns.orderVideo && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.orderVideo}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.orderVideo}</td>
               )}
               {visibleColumns.acceptanceFile && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                   {tracker.acceptanceFile && (
                     <a 
                       href={tracker.acceptanceFile} 
@@ -2776,7 +2872,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                 <td className="px-6 py-4 text-sm text-gray-500 max-w-[200px] truncate" title={tracker.orderRemark}>{tracker.orderRemark}</td>
               )}
               {visibleColumns.apologyVideo && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                   {tracker.apologyVideo && (
                     <a href={tracker.apologyVideo} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                       View Video
@@ -2794,7 +2890,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                 <td className="px-6 py-4 text-sm text-gray-500 max-w-[200px] truncate" title={tracker.holdReason}>{tracker.holdReason}</td>
               )}
               {visibleColumns.holdingDate && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tracker.holdingDate}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{tracker.holdingDate}</td>
               )}
               {visibleColumns.holdRemark && (
                 <td className="px-6 py-4 text-sm text-gray-500 max-w-[200px] truncate" title={tracker.holdRemark}>{tracker.holdRemark}</td>
@@ -2803,7 +2899,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
           ))
         ) : (
           <tr>
-            <td colSpan={Object.values(visibleColumns).filter(Boolean).length} className="px-6 py-4 text-center text-sm text-slate-500">
+            <td colSpan={Object.values(visibleColumns).filter(Boolean).length} className="px-6 py-4 text-sm text-center text-slate-500">
               No history found
             </td>
           </tr>
@@ -2834,60 +2930,60 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
         setShowPopup(true);
       }}
     />
- <div className="hidden md:block rounded-md border overflow-x-auto">
+ <div className="hidden overflow-x-auto rounded-md border md:block">
      
-                <div className="rounded-md border overflow-x-auto">
+                <div className="overflow-x-auto rounded-md border">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-slate-50">
                       <tr>
                         <th
                           scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
                         >
                           Actions
                         </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
       Timestamp
     </th>
                         <th
                           scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
                         >
                           Lead No.
                         </th>
                         <th
                           scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
                         >
                           Lead Source
                         </th>
                         <th
                           scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
                         >
                           Company Name
                         </th>
                         <th
                           scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
                         >
                           Current Stage
                         </th>
                         <th
                           scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
                         >
                           Calling Days
                         </th>
                         <th
   scope="col"
-  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+  className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
 >
   Item/Qty
 </th>
   <th
                           scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
                         >
                           Total Qty
                         </th>
@@ -2901,11 +2997,11 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
         className="hover:bg-slate-50"
         ref={index === filteredDirectEnquiryPendingTrackers.length - 1 ? lastElementRef : null}
       >
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
                               <div className="flex space-x-2">
                                 <Link  state={{ activeTab: activeTab, sc_name: tracker.sc_name }} to={`/call-tracker/new?leadId=${tracker.enquiry_no}`}>
-                                  <button className="px-3 py-1 text-xs border border-purple-200 text-purple-600 hover:bg-purple-50 rounded-md">
-                                    Process <ArrowRightIcon className="ml-1 h-3 w-3 inline" />
+                                  <button className="px-3 py-1 text-xs text-purple-600 rounded-md border border-purple-200 hover:bg-purple-50">
+                                    Process <ArrowRightIcon className="inline ml-1 w-3 h-3" />
                                   </button>
                                 </Link>
                                 <button
@@ -2913,22 +3009,22 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                                     setSelectedTracker(tracker)
                                     setShowPopup(true)
                                   }}
-                                  className="px-3 py-1 text-xs border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-md"
+                                  className="px-3 py-1 text-xs rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50"
                                 >
                                   View
                                 </button>
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
   {tracker.timestamp}
 </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
                               {tracker.enquiry_no}
                             </td>
-                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                             <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                               {tracker.lead_source}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                               {tracker.company_name}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -2944,10 +3040,10 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                                 {tracker.current_stage}
                               </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                               {formatDateToDDMMYYYY(tracker.nextCallDate)}
                          </td>
-<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+<td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
   <div
     className="min-w-[100px] break-words whitespace-normal"
     title={tracker.item_qty}
@@ -2955,7 +3051,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
     {tracker.item_qty}
   </div>
 </td>
-<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+<td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
   {tracker.total_qty}
 </td>
 
@@ -2963,7 +3059,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={7} className="px-6 py-4 text-center text-sm text-slate-500">
+                          <td colSpan={7} className="px-6 py-4 text-sm text-center text-slate-500">
                             No direct enquiry pending trackers found
                           </td>
                         </tr>
@@ -2982,15 +3078,15 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
   <>
     {/* Submit Button - Show when orders are selected */}
     {selectedOrders.length > 0 && (
-      <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-        <div className="flex items-center justify-between">
+      <div className="p-4 mb-4 bg-blue-50 rounded-lg border border-blue-200">
+        <div className="flex justify-between items-center">
           <span className="text-sm text-blue-700">
             {selectedOrders.length} order(s) selected
           </span>
           <button
             onClick={handleSubmitSelected}
             disabled={isSubmitting}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Submitting...' : 'Submit Selected'}
           </button>
@@ -2998,40 +3094,40 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
       </div>
     )}
 
-    <div className="rounded-md border overflow-x-auto">
+    <div className="overflow-x-auto rounded-md border">
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-slate-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
               <input
                 type="checkbox"
                 checked={selectedOrders.length === tenDaysData.length && tenDaysData.length > 0}
                 onChange={(e) => handleSelectAllOrders(e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
               />
             </th>
             {/* Add Status column */}
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Status</th>
             {/* Add Date column */}
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Date</th>
             {/* Add Remarks column */}
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order No.</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quotation No.</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company Name</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Person</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Number</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Mode</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Terms</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transport Mode</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destination</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item/Qty</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PO Number</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Order Qty</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount Total</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dispatch Status</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CF Date</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Remarks</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Timestamp</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Order No.</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Quotation No.</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Company Name</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Contact Person</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Contact Number</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Payment Mode</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Payment Terms</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Transport Mode</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Destination</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Item/Qty</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">PO Number</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Total Order Qty</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Amount Total</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Dispatch Status</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">CF Date</th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
@@ -3043,7 +3139,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                     type="checkbox"
                     checked={selectedOrders.includes(order.orderNo)}
                     onChange={(e) => handleOrderSelect(order.orderNo, e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                   />
                 </td>
                 {/* Status dropdown */}
@@ -3053,7 +3149,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
     <select
       value={orderStatuses[order.orderNo] || order.existingStatus || 'pending'}
       onChange={(e) => handleStatusChange(order.orderNo, e.target.value)}
-      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+      className="block px-3 py-2 w-full bg-white rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
     >
       <option value="pending">Pending</option>
       <option value="done">Done</option>
@@ -3071,7 +3167,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
         type="date"
         value={orderDates[order.orderNo] || order.existingDate || ''}
         onChange={(e) => handleDateChange(order.orderNo, e.target.value)}
-        className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+        className="block px-3 py-2 w-full bg-white rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
       />
     ) : (
       <span className="text-gray-400">-</span>
@@ -3089,35 +3185,35 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
       value={orderRemarks[order.orderNo] || order.existingRemarks || ''}
       onChange={(e) => handleRemarkChange(order.orderNo, e.target.value)}
       placeholder="Enter remarks"
-      className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+      className="block px-3 py-2 w-full bg-white rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
     />
   ) : (
     <span className="text-sm text-gray-900">{order.existingRemarks || '-'}</span>
   )}
 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.timestamp}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{order.orderNo}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.quotationNo}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.companyName}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.contactPersonName}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.contactNumber}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.paymentMode}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.paymentTerms}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.transportMode}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.destination}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{order.timestamp}</td>
+                <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">{order.orderNo}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{order.quotationNo}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{order.companyName}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{order.contactPersonName}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{order.contactNumber}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{order.paymentMode}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{order.paymentTerms}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{order.transportMode}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{order.destination}</td>
                 <td className="px-6 py-4 text-sm text-gray-500 max-w-[200px] truncate" title={order.itemQty}>
                   {order.itemQty}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.poNumber}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.totalOrderQty}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.amountTotal}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.dispatchStatus}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.cfDate}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{order.poNumber}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{order.totalOrderQty}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{order.amountTotal}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{order.dispatchStatus}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{order.cfDate}</td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan={20} className="px-6 py-4 text-center text-sm text-slate-500">
+              <td colSpan={20} className="px-6 py-4 text-sm text-center text-slate-500">
                 {isLoading ? 'Loading 10 days data...' : 'No orders found for 10 days criteria'}
               </td>
             </tr>
@@ -3134,7 +3230,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
 
       {/* New Call Tracker Form Modal */}
       {showNewCallTrackerForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="flex fixed inset-0 z-50 justify-center items-center p-4 bg-black bg-opacity-50">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b">
               <div className="flex justify-between items-center">
@@ -3142,7 +3238,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                 <button onClick={() => setShowNewCallTrackerForm(false)} className="text-gray-500 hover:text-gray-700">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6"
+                    className="w-6 h-6"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -3159,15 +3255,15 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
 
       {/* View Popup Modal */}
       {showPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="flex fixed inset-0 z-50 justify-center items-center">
           <div
-            className={`absolute inset-0 bg-black/50 backdrop-blur-sm ${fadeIn}`}
+            className={`absolute inset-0 backdrop-blur-sm bg-black/50 ${fadeIn}`}
             onClick={() => setShowPopup(false)}
           ></div>
           <div
-            className={`relative bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-auto ${slideIn}`}
+            className={`overflow-auto relative w-full max-w-3xl bg-white rounded-lg shadow-xl max-h-[90vh] ${slideIn}`}
           >
-            <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
+            <div className="flex sticky top-0 justify-between items-center p-4 bg-white border-b">
               <h3 className="text-lg font-bold text-gray-900">
                 {activeTab === "pending" || activeTab === "directEnquiry"
                   ? `Call Tracker Details: ${selectedTracker?.leadId}`
@@ -3179,7 +3275,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
+                  className="w-6 h-6"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -3191,7 +3287,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
 
             <div className="p-6 space-y-6">
               {activeTab === "pending" || activeTab === "directEnquiry" ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   {/* Column B - Lead ID */}
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-gray-500">Lead Number</p>
@@ -3271,7 +3367,7 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   {/* Enquiry No */}
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-gray-500">Enquiry No.</p>
@@ -3359,17 +3455,17 @@ const MobileCardView = ({ data, type, onProcess, onView }) => {
               </div>
             </div>
 
-            <div className="border-t p-4 flex justify-end space-x-3">
+            <div className="flex justify-end p-4 space-x-3 border-t">
               <button
                 onClick={() => setShowPopup(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                className="px-4 py-2 text-gray-700 rounded-md border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
               >
                 Close
               </button>
               {(activeTab === "pending" || activeTab === "directEnquiry") && (
                 <Link to={`/call-tracker/new?leadId=${selectedTracker?.leadId}`}>
-                  <button className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
-                    Process <ArrowRightIcon className="ml-1 h-4 w-4 inline" />
+                  <button className="px-4 py-2 font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-md hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                    Process <ArrowRightIcon className="inline ml-1 w-4 h-4" />
                   </button>
                 </Link>
               )}

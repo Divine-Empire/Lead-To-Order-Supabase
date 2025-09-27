@@ -222,7 +222,7 @@ function App() {
                   }
                 />
                 <Route
-                  path="/call-tracker/new"
+                  path="/call-tracker"
                   element={
                     <ProtectedRoute>
                       <NewCallTracker />
