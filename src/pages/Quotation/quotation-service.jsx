@@ -11,38 +11,99 @@ import { generatePDFFromData } from "./pdf-generator"
 import { useQuotationData } from "./use-quotation-data"
 import supabase from "../../utils/supabase"
 
-export const getNextQuotationNumber = async (companyPrefix = "NBD") => {
+// export const getNextQuotationNumber = async (companyPrefix = "NBD") => {
+//   try {
+//     // Get the latest quotation number with the given prefix
+//     const { data, error } = await supabase
+//       .from('Make_Quotation')
+//       .select('Quotation_No')
+//       .ilike('Quotation_No', `${companyPrefix}-%`)
+//       .order('Timestamp', { ascending: false })
+//       .limit(1)
+
+//     if (error) {
+//       console.error('Error fetching quotation numbers:', error)
+//       return `${companyPrefix}-001`
+//     }
+
+//     if (!data || data.length === 0) {
+//       return `${companyPrefix}-001`
+//     }
+
+//     const lastQuotationNo = data[0].Quotation_No
+//     const parts = lastQuotationNo.split('-')
+    
+//     if (parts.length >= 2) {
+//       const lastNumber = parseInt(parts[parts.length - 1]) || 0
+//       const newNumber = (lastNumber + 1).toString().padStart(3, '0')
+//       return `${companyPrefix}-${newNumber}`
+//     }
+
+//     return `${companyPrefix}-001`
+//   } catch (error) {
+//     console.error("Error getting next quotation number:", error)
+//     return `${companyPrefix}-001`
+//   }
+// }
+
+export const getCurrentFinancialYear = () => {
+  const currentDate = new Date()
+  const currentYear = currentDate.getFullYear()
+  const currentMonth = currentDate.getMonth() + 1 // January is 0
+  
+  let financialYearStart, financialYearEnd
+  
+  if (currentMonth >= 4) {
+    // April to March - current year to next year
+    financialYearStart = currentYear
+    financialYearEnd = currentYear + 1
+  } else {
+    // January to March - previous year to current year
+    financialYearStart = currentYear - 1
+    financialYearEnd = currentYear
+  }
+  
+  // Return last two digits of years
+  return {
+    start: financialYearStart.toString().slice(-2),
+    end: financialYearEnd.toString().slice(-2)
+  }
+}
+
+// Update the getNextQuotationNumber function
+export const getNextQuotationNumber = async (prefix = "NBD") => {
   try {
-    // Get the latest quotation number with the given prefix
+    const financialYear = getCurrentFinancialYear()
+    const yearPrefix = `${prefix}-${financialYear.start}-${financialYear.end}`
+    
     const { data, error } = await supabase
       .from('Make_Quotation')
       .select('Quotation_No')
-      .ilike('Quotation_No', `${companyPrefix}-%`)
-      .order('Timestamp', { ascending: false })
+      .like('Quotation_No', `${yearPrefix}-%`)
+      .order('Quotation_No', { ascending: false })
       .limit(1)
 
     if (error) {
-      console.error('Error fetching quotation numbers:', error)
-      return `${companyPrefix}-001`
+      console.error('Error fetching latest quotation:', error)
+      return `${yearPrefix}-001`
     }
 
-    if (!data || data.length === 0) {
-      return `${companyPrefix}-001`
-    }
-
-    const lastQuotationNo = data[0].Quotation_No
-    const parts = lastQuotationNo.split('-')
+    let nextNumber = 1
     
-    if (parts.length >= 2) {
-      const lastNumber = parseInt(parts[parts.length - 1]) || 0
-      const newNumber = (lastNumber + 1).toString().padStart(3, '0')
-      return `${companyPrefix}-${newNumber}`
+    if (data && data.length > 0) {
+      const latestQuotation = data[0].Quotation_No
+      const match = latestQuotation.match(/-(\d+)$/)
+      
+      if (match) {
+        nextNumber = parseInt(match[1]) + 1
+      }
     }
 
-    return `${companyPrefix}-001`
+    return `${yearPrefix}-${nextNumber.toString().padStart(3, '0')}`
   } catch (error) {
-    console.error("Error getting next quotation number:", error)
-    return `${companyPrefix}-001`
+    console.error('Error generating quotation number:', error)
+    const financialYear = getCurrentFinancialYear()
+    return `${prefix}-${financialYear.start}-${financialYear.end}-001`
   }
 }
 
