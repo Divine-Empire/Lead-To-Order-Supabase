@@ -193,17 +193,19 @@ const ItemsTable = ({
                       <option value="18">18%</option>
                     </select>
                   </td>
-                  <td className="px-4 py-2">
-                    <input
-                      type="number"
-                      value={item.qty}
-                      onChange={(e) => handleItemChange(item.id, "qty", Number.parseInt(e.target.value) || 0)}
-                      className="w-16 p-1 border border-gray-300 rounded-md"
-                      placeholder="0"
-                      required
-                      disabled={isLoading}
-                    />
-                  </td>
+                 <td className="px-4 py-2">
+  <input
+    type="number"
+    value={item.qty}
+    onChange={(e) => handleItemChange(item.id, "qty", Number.parseFloat(e.target.value) || 0)}
+    className="w-16 p-1 border border-gray-300 rounded-md"
+    placeholder="0"
+    step="0.01" // Add this to allow decimal values
+    min="0" // Add this to prevent negative values
+    required
+    disabled={isLoading}
+  />
+</td>
                   <td className="px-4 py-2">
                     <select
                       value={item.units}

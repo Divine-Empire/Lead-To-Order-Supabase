@@ -1097,39 +1097,40 @@ const QuotationPDFComponent = ({ quotationData, selectedReferences, specialDisco
       }}>
         
         {/* Header Section - Simplified without contact details */}
-        <div style={{ 
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: '16px',
-          paddingBottom: '16px',
-          borderBottom: '1px solid #ddd'
-        }}>
-          <div style={{ width: '33%' }}>
-            <p style={{ margin: '0', fontSize: '14px', fontWeight: 'bold' }}>
-              {selectedReferences && selectedReferences[0] ? selectedReferences[0] : "Consignor Name"}
-            </p>
-          </div>
-          
-          <div style={{ width: '33%', textAlign: 'center' }}>
-            <h1 style={{ 
-              fontSize: '20px', 
-              fontWeight: 'bold',
-              margin: '0',
-              color: '#333'
-            }}>QUOTATION</h1>
-          </div>
-          
-          <div style={{ width: '33%', textAlign: 'right' }}>
-            <p style={{ margin: '2px 0', fontSize: '12px', fontWeight: 'bold' }}>
-              Quo No: {quotationData.quotationNo || "NBD-002"}
-            </p>
-            <p style={{ margin: '2px 0', fontSize: '12px' }}>Date: {dateStr}</p>
-            <p style={{ margin: '2px 0', fontSize: '12px' }}>
-              Prepared By: {quotationData.preparedBy || "N/A"}
-            </p>
-          </div>
-        </div>
+        <div
+  style={{
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: '16px',
+    paddingBottom: '16px',
+    borderBottom: '1px solid #ddd',
+  }}
+>
+  <div style={{ width: '33%', textAlign: 'left' }}>
+    <h1
+      style={{
+        fontSize: '20px',
+        fontWeight: 'bold',
+        margin: '0',
+        color: '#333',
+      }}
+    >
+      QUOTATION
+    </h1>
+  </div>
+
+  <div style={{ width: '33%', textAlign: 'right' }}>
+    <p style={{ margin: '2px 0', fontSize: '12px', fontWeight: 'bold' }}>
+      Quo No: {quotationData.quotationNo || 'NBD-002'}
+    </p>
+    <p style={{ margin: '2px 0', fontSize: '12px' }}>Date: {dateStr}</p>
+    {/* <p style={{ margin: '2px 0', fontSize: '12px' }}>
+      Prepared By: {quotationData.preparedBy || 'N/A'}
+    </p> */}
+  </div>
+</div>
+
 
         {/* Consignor and Consignee Details - Updated with mobile and phone */}
         <div style={{ 
@@ -1146,7 +1147,7 @@ const QuotationPDFComponent = ({ quotationData, selectedReferences, specialDisco
               <p style={{ margin: '2px 0' }}>{quotationData.consignorAddress || "N/A"}</p>
               <p style={{ margin: '2px 0' }}>Mobile: {quotationData.consignorMobile || "N/A"}</p>
               {/* <p style={{ margin: '2px 0' }}>Phone: {quotationData.consignorPhone || "0772-400515"}</p> */}
-              <p style={{ margin: '2px 0' }}>Phone: "0772-400515"</p>
+              <p style={{ margin: '2px 0' }}>Phone: 0772-400515</p>
               <p style={{ margin: '2px 0' }}>GSTIN: {quotationData.consignorGSTIN || "N/A"}</p>
               <p style={{ margin: '2px 0' }}>State Code: {quotationData.consignorStateCode || "N/A"}</p>
               <p style={{ margin: '2px 0' }}>MSME Number: {quotationData.msmeNumber || "N/A"}</p>
