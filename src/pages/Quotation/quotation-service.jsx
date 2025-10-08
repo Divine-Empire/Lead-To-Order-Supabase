@@ -85,25 +85,47 @@ export const getNextQuotationNumber = async (prefix = "NBD") => {
 
     if (error) {
       console.error('Error fetching latest quotation:', error)
-      return `${yearPrefix}-001`
+      return `${yearPrefix}-2001` // Start from 2001
     }
 
-    let nextNumber = 1
+    let nextNumber = 2001 // Start from 2001
     
     if (data && data.length > 0) {
       const latestQuotation = data[0].Quotation_No
-      const match = latestQuotation.match(/-(\d+)$/)
+      console.log("Latest quotation found:", latestQuotation)
       
-      if (match) {
-        nextNumber = parseInt(match[1]) + 1
+      // Handle different formats:
+      // CRR-25-26-2001 (base quotation)
+      // CRR-25-26-2001-01 (first revision)
+      // CRR-25-26-2001-02 (second revision)
+      // CRR-25-26-2002 (next base quotation)
+      
+      const parts = latestQuotation.split('-')
+      console.log("Parts:", parts)
+      
+      if (parts.length === 4) {
+        // Format: CRR-25-26-2001 (base quotation without revision)
+        const lastNumber = parseInt(parts[3])
+        if (!isNaN(lastNumber)) {
+          nextNumber = lastNumber + 1
+        }
+      } else if (parts.length === 5) {
+        // Format: CRR-25-26-2001-01 (quotation with revision)
+        // For new base quotations, we want to increment the main number, not the revision
+        const mainNumber = parseInt(parts[3])
+        if (!isNaN(mainNumber)) {
+          nextNumber = mainNumber + 1
+        }
       }
+      
+      console.log("Next number calculated:", nextNumber)
     }
 
-    return `${yearPrefix}-${nextNumber.toString().padStart(3, '0')}`
+    return `${yearPrefix}-${nextNumber.toString().padStart(4, '0')}`
   } catch (error) {
     console.error('Error generating quotation number:', error)
     const financialYear = getCurrentFinancialYear()
-    return `${prefix}-${financialYear.start}-${financialYear.end}-001`
+    return `${prefix}-${financialYear.start}-${financialYear.end}-2001`
   }
 }
 
