@@ -999,7 +999,7 @@ const QuotationPDFComponent = ({ quotationData, selectedReferences, specialDisco
     }}>
       
       {/* Fixed Bottom Corner Images for All Pages */}
-      <div style={{
+      {/* <div style={{
         position: 'fixed',
         bottom: '10mm',
         right: '10mm',
@@ -1029,7 +1029,7 @@ const QuotationPDFComponent = ({ quotationData, selectedReferences, specialDisco
             objectFit: 'contain' 
           }} 
         />
-      </div>
+      </div> */}
       
       {/* Header Section with Company Logo */}
       <div style={{ 
