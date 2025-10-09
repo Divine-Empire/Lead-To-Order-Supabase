@@ -904,6 +904,8 @@ import logo from '../../assests/WhatsApp Image 2025-05-14 at 4.11.43 PM.jpeg';
 import maniquipLogo from '../../assests/banner.jpeg';
 import qr from '../../assests/qrlogo.png';
 import maniquipLogo1 from "../../assests/Screenshot 2025-09-25 at 2.48.03 PM.png"
+import html2pdf from 'html2pdf.js';
+
 
 // React PDF Component that matches your preview interface exactly
 const QuotationPDFComponent = ({ quotationData, selectedReferences, specialDiscount, hiddenColumns = {} }) => {
@@ -1679,12 +1681,10 @@ export const generateHTMLFromData = (quotationData, selectedReferences, specialD
 </html>`;
 };
 
-// Function to generate PDF using html2pdf library
+
+// ✅ Fixed - No more dynamic import issues
 export const generatePDFFromData = async (quotationData, selectedReferences, specialDiscount, hiddenColumns = {}) => {
   try {
-    // Import html2pdf dynamically
-    const html2pdf = (await import('html2pdf.js')).default;
-    
     const htmlString = generateHTMLFromData(quotationData, selectedReferences, specialDiscount, hiddenColumns);
     
     const options = {
