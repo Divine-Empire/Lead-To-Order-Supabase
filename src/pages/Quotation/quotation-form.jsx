@@ -67,10 +67,10 @@ const QuotationForm = ({
         if (error) {
           console.error('Error fetching dropdown data:', error)
           // Use fallback data
-          setStateOptions(["Select State", "Chhattisgarh", "Maharashtra", "Delhi"])
-          setCompanyOptions(["Select Company", "ABC Corp", "XYZ Industries", "PQR Ltd"])
-          setReferenceOptions(["Select Reference", "John Doe", "Jane Smith", "Mike Johnson"])
-          setPreparedByOptions(["", "Admin", "Manager", "Sales"])
+          setStateOptions([""])
+          setCompanyOptions([""])
+          setReferenceOptions([""])
+          setPreparedByOptions([""])
           
           setDropdownData({
             states: {
