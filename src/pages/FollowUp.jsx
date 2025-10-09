@@ -153,6 +153,29 @@ function FollowUp() {
     }
   }
 
+  // ✅ Filter History tab using Timestamp (not calling_days)
+const checkDateFilterHistory = (followUp, filterType) => {
+  if (filterType === "all") return true;
+  if (!followUp.timestamp) return false;
+
+  try {
+    const [day, month, year] = followUp.timestamp.split("/");
+    const followUpDate = new Date(year, month - 1, day);
+    followUpDate.setHours(0, 0, 0, 0);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (filterType === "today") return followUpDate.getTime() === today.getTime();
+    if (filterType === "older") return followUpDate < today;
+    return true;
+  } catch (err) {
+    console.error("Error in checkDateFilterHistory:", err);
+    return false;
+  }
+};
+
+
   const formatItemQty = (itemQtyString) => {
     if (!itemQtyString) return ""
     
@@ -250,6 +273,30 @@ function FollowUp() {
 
     return counts
   }
+
+  // ✅ Count history calls (Today / Older)
+const calculateHistoryCounts = () => {
+  let today = 0, older = 0;
+  const current = new Date();
+  current.setHours(0, 0, 0, 0);
+
+  historyFollowUps.forEach((f) => {
+    if (!f.timestamp) return;
+    try {
+      const [day, month, year] = f.timestamp.split("/");
+      const d = new Date(year, month - 1, day);
+      d.setHours(0, 0, 0, 0);
+
+      if (d.getTime() === current.getTime()) today++;
+      else if (d < current) older++;
+    } catch (err) {
+      console.error("Error counting history calls:", err);
+    }
+  });
+
+  return { today, older };
+};
+
 
   // Fixed scroll detection function
   const isBottom = () => {
@@ -590,7 +637,9 @@ const loadMoreData = useCallback(() => {
       }
     })()
 
-    const matchesDateFilter = checkDateFilter(followUp, dateFilter)
+    // const matchesDateFilter = checkDateFilter(followUp, dateFilter)
+    const matchesDateFilter = checkDateFilterHistory(followUp, dateFilter)
+
 
     return matchesSearch && matchesFilterType && matchesDateFilter
   })
@@ -638,6 +687,8 @@ const loadMoreData = useCallback(() => {
   ]
 
   const dateFilterCounts = calculateDateFilterCounts()
+  const historyCounts = calculateHistoryCounts();
+
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -915,18 +966,19 @@ const MobileCardView = ({ data, type }) => {
                   className="w-full px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
                 >
                   <option value="all">All</option>
-                  {activeTab === "pending" ? (
-                    <>
-                      <option value="today">Today ({dateFilterCounts.today})</option>
-                      <option value="overdue">Overdue ({dateFilterCounts.overdue})</option>
-                      <option value="upcoming">Upcoming ({dateFilterCounts.upcoming})</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="today">Today's Calls</option>
-                      <option value="older">Older Calls</option>
-                    </>
-                  )}
+                {activeTab === "pending" ? (
+  <>
+    <option value="today">Today ({dateFilterCounts.today})</option>
+    <option value="overdue">Overdue ({dateFilterCounts.overdue})</option>
+    <option value="upcoming">Upcoming ({dateFilterCounts.upcoming})</option>
+  </>
+) : (
+  <>
+    <option value="today">Today's Calls ({historyCounts.today})</option>
+    <option value="older">Older Calls ({historyCounts.older})</option>
+  </>
+)}
+
                 </select>
               </div>
 

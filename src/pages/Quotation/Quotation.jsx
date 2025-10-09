@@ -395,15 +395,24 @@ const handleSaveQuotation = async () => {
 
     let finalQuotationNo = quotationData.quotationNo
     if (isRevising && selectedQuotation) {
-      if (!finalQuotationNo.match(/-\d{2}$/)) {
-        finalQuotationNo = `${finalQuotationNo}-01`
-      } else {
-        const parts = finalQuotationNo.split("-")
-        const lastPart = parts[parts.length - 1]
-        const revisionNumber = Number.parseInt(lastPart, 10)
+      // Split the quotation number to check for revision
+      const parts = finalQuotationNo.split("-")
+      
+      // Check if last part is a number (revision number)
+      const lastPart = parts[parts.length - 1]
+      const isRevisionNumber = /^\d+$/.test(lastPart) && parts.length >= 4
+      
+      if (isRevisionNumber && parts.length === 5) {
+        // Already has revision number (e.g., CRR-25-26-2001-2)
+        // Increment the revision number
+        const revisionNumber = parseInt(lastPart, 10)
         const newRevision = (revisionNumber + 1).toString().padStart(2, "0")
         parts[parts.length - 1] = newRevision
         finalQuotationNo = parts.join("-")
+      } else if (parts.length === 4) {
+        // No revision number yet (e.g., CRR-25-26-2001)
+        // Add first revision
+        finalQuotationNo = `${finalQuotationNo}-01`
       }
     }
 
@@ -476,7 +485,7 @@ const handleSaveQuotation = async () => {
       Items: quotationData.items,
       Divine_Empire_10th_Anniversary_Special_Offer: specialOffersString,
       Grand_Total: parseFloat(finalGrandTotal),
-      Pdf_Url: uploadedPdfUrl // Store the Supabase bucket URL
+      Pdf_Url: uploadedPdfUrl
     }
 
     const { data, error } = await supabase

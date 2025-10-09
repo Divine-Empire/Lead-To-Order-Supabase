@@ -234,7 +234,7 @@ const QuotationForm = ({
               leadNoDataMap[leadNo] = {
                 sheet: "ENQUIRY",
                 companyName: row.company_name || "",
-                address: row.shipping_address || "",
+                address: row.location || "",
                 state: row.enquiry_for_state || "",
                 contactName: row.sales_person_name || "",
                 contactNo: row.phone_number || "",

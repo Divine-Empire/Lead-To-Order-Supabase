@@ -172,6 +172,7 @@ const handleSubmit = async (e) => {
   try {
     // Prepare the data object for Supabase insertion
     const insertData = {
+      "Timestamp": new Date().toISOString().split('T')[0], // Add this line
       "LD-Lead-No": formData.leadNo,
       "What_Did_The_Customer_say?": document.getElementById("customerFeedback").value,
       "SC_Name":scName,
