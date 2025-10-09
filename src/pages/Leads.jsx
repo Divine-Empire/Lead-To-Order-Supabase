@@ -1,17 +1,17 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useContext } from "react"
-import { AuthContext } from "../App"
-import supabase from "../utils/supabase" // Import your supabase client
+import { useState, useEffect, useContext } from "react";
+import { AuthContext } from "../App";
+import supabase from "../utils/supabase"; // Import your supabase client
 
 function Leads() {
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     receiverName: "",
     source: "",
     companyName: "",
     phoneNumber: "",
-      scName: "",
+    scName: "",
     salespersonName: "",
     location: "",
     email: "",
@@ -25,83 +25,118 @@ function Leads() {
     nob: "",
     gst: "",
     notes: "",
-  })
-  const [receiverNames, setReceiverNames] = useState([])
+  });
+  const [receiverNames, setReceiverNames] = useState([]);
   const [showScNameDropdown, setShowScNameDropdown] = useState(false);
-  const [leadSources, setLeadSources] = useState([])
-  const [searchScName, setSearchScName] = useState("")
-  const [scNames, setScNames] = useState([])
-  const [companyOptions, setCompanyOptions] = useState([])
-  const [companyDetailsMap, setCompanyDetailsMap] = useState({})
-  const [nextLeadNumber, setNextLeadNumber] = useState("")
-  const [creditDaysOptions, setCreditDaysOptions] = useState([])
-  const [creditLimitOptions, setCreditLimitOptions] = useState([])
-  const { showNotification } = useContext(AuthContext)
-  const [designationOptions, setDesignationOptions] = useState([])
-  const [nobOptions, setNobOptions] = useState([])
-  const [stateOptions, setStateOptions] = useState([])
+  const [leadSources, setLeadSources] = useState([]);
+  const [searchScName, setSearchScName] = useState("");
+  const [scNames, setScNames] = useState([]);
+  const [companyOptions, setCompanyOptions] = useState([]);
+  const [companyDetailsMap, setCompanyDetailsMap] = useState({});
+  const [nextLeadNumber, setNextLeadNumber] = useState("");
+  const [creditDaysOptions, setCreditDaysOptions] = useState([]);
+  const [creditLimitOptions, setCreditLimitOptions] = useState([]);
+  const { showNotification } = useContext(AuthContext);
+  const [designationOptions, setDesignationOptions] = useState([]);
+  const [nobOptions, setNobOptions] = useState([]);
+  const [stateOptions, setStateOptions] = useState([]);
 
   // Function to format date as dd/mm/yyyy
   const formatDate = (date) => {
-    const day = String(date.getDate()).padStart(2, "0")
-    const month = String(date.getMonth() + 1).padStart(2, "0")
-    const year = date.getFullYear()
-    return `${day}/${month}/${year}`
-  }
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
 
   // Fetch dropdown data when component mounts
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
         // Fetch dropdown values from Google Sheets (keeping this as is)
-        await fetchDropdownData()
+        await fetchDropdownData();
         // Fetch company data for dropdown and auto-fill
-        await fetchCompanyData()
+        await fetchCompanyData();
         // Generate next lead number from Supabase
-        await generateNextLeadNumber()
+        await generateNextLeadNumber();
       } catch (error) {
-        console.error("Error during initial data fetch:", error)
+        console.error("Error during initial data fetch:", error);
       }
-    }
+    };
 
-    fetchInitialData()
-  }, [])
+    fetchInitialData();
+  }, []);
 
- const fetchDropdownData = async () => {
+  const fetchDropdownData = async () => {
     try {
-      const { data, error } = await supabase.from("dropdown").select("*")
+      const { data, error } = await supabase.from("dropdown").select("*");
 
       if (error) {
-        throw error
+        throw error;
       }
 
       if (data && data.length > 0) {
         // Extract unique values for each dropdown using correct column names
-        const receivers = [...new Set(data.map((row) => row.lead_receiver_name).filter(Boolean))]
-        const sources = [...new Set(data.map((row) => row.lead_source).filter(Boolean))]
-        const scNames = [...new Set(data.map((row) => row.sales_co_ordinator_name).filter(Boolean))] // NEW: SC Names
-        const states = [...new Set(data.map((row) => row.state).filter(Boolean))]
-        const creditDays = [...new Set(data.map((row) => row.credit_days).filter(Boolean))]
-        const creditLimits = [...new Set(data.map((row) => row.credit_limit).filter(Boolean))]
-        const designations = [...new Set(data.map((row) => row.designation).filter(Boolean))]
-        const nobs = [...new Set(data.map((row) => row.nob).filter(Boolean))]
+        const receivers = [
+          ...new Set(data.map((row) => row.lead_receiver_name).filter(Boolean)),
+        ];
+        const sources = [
+          ...new Set(data.map((row) => row.lead_source).filter(Boolean)),
+        ];
+        const scNames = [
+          ...new Set(
+            data.map((row) => row.sales_co_ordinator_name).filter(Boolean)
+          ),
+        ]; // NEW: SC Names
+        const states = [
+          ...new Set(data.map((row) => row.state).filter(Boolean)),
+        ];
+        const creditDays = [
+          ...new Set(data.map((row) => row.credit_days).filter(Boolean)),
+        ];
+        const creditLimits = [
+          ...new Set(data.map((row) => row.credit_limit).filter(Boolean)),
+        ];
+        const designations = [
+          ...new Set(data.map((row) => row.designation).filter(Boolean)),
+        ];
+        const nobs = [...new Set(data.map((row) => row.nob).filter(Boolean))];
 
         // Filter out empty strings and null values, then sort
-        setReceiverNames(receivers.filter((item) => item && item.trim() !== "").sort())
-        setLeadSources(sources.filter((item) => item && item.trim() !== "").sort())
-        setScNames(scNames.filter((item) => item && item.trim() !== "").sort()) // NEW: Set SC Names
-        setStateOptions(states.filter((item) => item && item.trim() !== "").sort())
-        setCreditDaysOptions(creditDays.filter((item) => item && item.trim() !== "").sort())
-        setCreditLimitOptions(creditLimits.filter((item) => item && item.trim() !== "").sort())
-        setDesignationOptions(designations.filter((item) => item && item.trim() !== "").sort())
-        setNobOptions(nobs.filter((item) => item && item.trim() !== "").sort())
+        setReceiverNames(
+          receivers.filter((item) => item && item.trim() !== "").sort()
+        );
+        setLeadSources(
+          sources.filter((item) => item && item.trim() !== "").sort()
+        );
+        setScNames(scNames.filter((item) => item && item.trim() !== "").sort()); // NEW: Set SC Names
+        setStateOptions(
+          states.filter((item) => item && item.trim() !== "").sort()
+        );
+        setCreditDaysOptions(
+          creditDays.filter((item) => item && item.trim() !== "").sort()
+        );
+        setCreditLimitOptions(
+          creditLimits.filter((item) => item && item.trim() !== "").sort()
+        );
+        setDesignationOptions(
+          designations.filter((item) => item && item.trim() !== "").sort()
+        );
+        setNobOptions(nobs.filter((item) => item && item.trim() !== "").sort());
       }
     } catch (error) {
-      console.error("Error fetching dropdown values:", error)
+      console.error("Error fetching dropdown values:", error);
       // Fallback to default values
-      setReceiverNames(["John Smith", "Sarah Johnson", "Michael Brown"])
-      setLeadSources(["Indiamart", "Justdial", "Social Media", "Website", "Referral", "Other"])
-      setScNames(["SC Person 1", "SC Person 2", "SC Person 3"]) // NEW: Default SC Names
+      setReceiverNames(["John Smith", "Sarah Johnson", "Michael Brown"]);
+      setLeadSources([
+        "Indiamart",
+        "Justdial",
+        "Social Media",
+        "Website",
+        "Referral",
+        "Other",
+      ]);
+      setScNames(["SC Person 1", "SC Person 2", "SC Person 3"]); // NEW: Default SC Names
       setStateOptions([
         "Andhra Pradesh",
         "Assam",
@@ -119,67 +154,78 @@ function Leads() {
         "Telangana",
         "Uttar Pradesh",
         "West Bengal",
-      ])
-      setCreditDaysOptions(["7 days", "15 days", "30 days", "45 days", "60 days"])
-      setCreditLimitOptions(["₹50,000", "₹100,000", "₹500,000", "₹1,000,000"])
-      setDesignationOptions(["Manager", "Director", "CEO", "CFO", "Proprietor"])
-      setNobOptions(["Manufacturing", "Trading", "Service", "Retail"])
+      ]);
+      setCreditDaysOptions([
+        "7 days",
+        "15 days",
+        "30 days",
+        "45 days",
+        "60 days",
+      ]);
+      setCreditLimitOptions(["₹50,000", "₹100,000", "₹500,000", "₹1,000,000"]);
+      setDesignationOptions([
+        "Manager",
+        "Director",
+        "CEO",
+        "CFO",
+        "Proprietor",
+      ]);
+      setNobOptions(["Manufacturing", "Trading", "Service", "Retail"]);
     }
-  }
+  };
 
-    const filteredScNames = scNames.filter(name => 
+  const filteredScNames = scNames.filter((name) =>
     name.toLowerCase().includes(searchScName.toLowerCase())
   );
 
-
   const handleScNameChange = (name) => {
-  setFormData(prev => ({ ...prev, scName: name }));
-  setSearchScName(name);
-  setShowScNameDropdown(false);
-};
-
-
+    setFormData((prev) => ({ ...prev, scName: name }));
+    setSearchScName(name);
+    setShowScNameDropdown(false);
+  };
 
   // NEW: Fetch company data from Supabase dropdown table
   const fetchCompanyData = async () => {
     try {
       const { data, error } = await supabase
         .from("dropdown")
-        .select("lead_form_company_name, lead_form_person_name, lead_form_mobile_no, lead_form_email, lead_form_address")
-        .not("lead_form_company_name", "is", null)
+        .select(
+          "lead_form_company_name, lead_form_person_name, lead_form_mobile_no, lead_form_email, lead_form_address"
+        )
+        .not("lead_form_company_name", "is", null);
 
       if (error) {
-        throw error
+        throw error;
       }
 
       if (data && data.length > 0) {
-        const companies = []
-        const detailsMap = {}
+        const companies = [];
+        const detailsMap = {};
 
         data.forEach((row) => {
           if (row.company_name) {
-            companies.push(row.company_name)
+            companies.push(row.company_name);
 
             detailsMap[row.company_name] = {
               salesPerson: row.salesperson_name || "",
               phoneNumber: row.phone_number || "",
               email: row.email || "",
               location: row.location || "",
-            }
+            };
           }
-        })
+        });
 
         // Remove duplicates
-        const uniqueCompanies = [...new Set(companies)]
-        setCompanyOptions(uniqueCompanies)
-        setCompanyDetailsMap(detailsMap)
+        const uniqueCompanies = [...new Set(companies)];
+        setCompanyOptions(uniqueCompanies);
+        setCompanyDetailsMap(detailsMap);
       }
     } catch (error) {
-      console.error("Error fetching company data:", error)
-      setCompanyOptions([])
-      setCompanyDetailsMap({})
+      console.error("Error fetching company data:", error);
+      setCompanyOptions([]);
+      setCompanyDetailsMap({});
     }
-  }
+  };
 
   // NEW: Generate next lead number from Supabase
   const generateNextLeadNumber = async () => {
@@ -188,48 +234,48 @@ function Leads() {
         .from("leads_to_order")
         .select('"LD-Lead-No"')
         .order("id", { ascending: false })
-        .limit(1)
+        .limit(1);
 
       if (error) {
-        console.error("Error fetching last lead number:", error)
-        setNextLeadNumber("LD-001")
-        return
+        console.error("Error fetching last lead number:", error);
+        setNextLeadNumber("LD-001");
+        return;
       }
 
       if (!data || data.length === 0) {
-        setNextLeadNumber("LD-001")
-        return
+        setNextLeadNumber("LD-001");
+        return;
       }
 
-      const lastLeadNumber = data[0]["LD-Lead-No"]
+      const lastLeadNumber = data[0]["LD-Lead-No"];
       if (lastLeadNumber && lastLeadNumber.startsWith("LD-")) {
-        const match = lastLeadNumber.match(/LD-(\d+)/)
+        const match = lastLeadNumber.match(/LD-(\d+)/);
         if (match) {
-          const lastNumber = Number.parseInt(match[1], 10)
-          const nextNumber = lastNumber + 1
-          setNextLeadNumber(`LD-${String(nextNumber).padStart(3, "0")}`)
+          const lastNumber = Number.parseInt(match[1], 10);
+          const nextNumber = lastNumber + 1;
+          setNextLeadNumber(`LD-${String(nextNumber).padStart(3, "0")}`);
         } else {
-          setNextLeadNumber("LD-001")
+          setNextLeadNumber("LD-001");
         }
       } else {
-        setNextLeadNumber("LD-001")
+        setNextLeadNumber("LD-001");
       }
     } catch (error) {
-      console.error("Error generating lead number:", error)
-      setNextLeadNumber("LD-001")
+      console.error("Error generating lead number:", error);
+      setNextLeadNumber("LD-001");
     }
-  }
+  };
 
   const handleChange = (e) => {
-    const { id, value } = e.target
+    const { id, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
       [id]: value,
-    }))
+    }));
 
     // Auto-fill related fields if company is selected
     if (id === "companyName" && value) {
-      const companyDetails = companyDetailsMap[value] || {}
+      const companyDetails = companyDetailsMap[value] || {};
       setFormData((prevData) => ({
         ...prevData,
         companyName: value,
@@ -237,46 +283,49 @@ function Leads() {
         salespersonName: companyDetails.salesPerson || "",
         location: companyDetails.location || "",
         email: companyDetails.email || "",
-      }))
+      }));
     }
-  }
+  };
 
   const handleContactPersonChange = (index, field, value) => {
-    const updatedContactPersons = [...formData.contactPersons]
+    const updatedContactPersons = [...formData.contactPersons];
     updatedContactPersons[index] = {
       ...updatedContactPersons[index],
       [field]: value,
-    }
+    };
 
     setFormData({
       ...formData,
       contactPersons: updatedContactPersons,
-    })
-  }
+    });
+  };
 
   const addContactPerson = () => {
     if (formData.contactPersons.length < 3) {
       setFormData({
         ...formData,
-        contactPersons: [...formData.contactPersons, { name: "", designation: "", number: "" }],
-      })
+        contactPersons: [
+          ...formData.contactPersons,
+          { name: "", designation: "", number: "" },
+        ],
+      });
     }
-  }
+  };
 
   const removeContactPerson = (index) => {
-    const updatedContactPersons = [...formData.contactPersons]
-    updatedContactPersons.splice(index, 1)
+    const updatedContactPersons = [...formData.contactPersons];
+    updatedContactPersons.splice(index, 1);
 
     setFormData({
       ...formData,
       contactPersons: updatedContactPersons,
-    })
-  }
+    });
+  };
 
   // NEW: Submit to Supabase
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setIsSubmitting(true)
+    e.preventDefault();
+    setIsSubmitting(true);
 
     try {
       // Prepare data for Supabase with EXACT column names from schema
@@ -288,7 +337,7 @@ function Leads() {
         Company_Name: formData.companyName,
         Phone_Number: formData.phoneNumber,
         Salesperson_Name: formData.salespersonName,
-        SC_Name:formData.scName,
+        SC_Name: formData.scName,
         Location: formData.location,
         Email_Address: formData.email,
         State: formData.state,
@@ -311,15 +360,17 @@ function Leads() {
         Credit_Days: formData.creditDays,
         Credit_Limit: formData.creditLimit,
         Additional_Notes: formData.notes,
-      }
+      };
 
-      const { data, error } = await supabase.from("leads_to_order").insert([leadData])
+      const { data, error } = await supabase
+        .from("leads_to_order")
+        .insert([leadData]);
 
       if (error) {
-        throw error
+        throw error;
       }
 
-      showNotification("Lead created successfully", "success")
+      showNotification("Lead created successfully", "success");
 
       // Reset form
       setFormData({
@@ -340,17 +391,17 @@ function Leads() {
         nob: "",
         gst: "",
         notes: "",
-      })
+      });
 
       // Generate next lead number for the next submission
-      await generateNextLeadNumber()
+      await generateNextLeadNumber();
     } catch (error) {
-      console.error("Error submitting lead:", error)
-      showNotification("Error creating lead: " + error.message, "error")
+      console.error("Error submitting lead:", error);
+      showNotification("Error creating lead: " + error.message, "error");
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <div className="container mx-auto py-6 sm:py-10 px-4 sm:px-6 lg:px-8">
@@ -359,23 +410,32 @@ function Leads() {
           <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             Lead Management
           </h1>
-          <p className="text-slate-600 mt-1">Enter the details of the new lead</p>
+          <p className="text-slate-600 mt-1">
+            Enter the details of the new lead
+          </p>
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-md">
         <div className="p-4 sm:p-6 border-b">
           <h2 className="text-lg sm:text-xl font-bold">New Lead</h2>
-          <p className="text-sm text-slate-500">Fill in the lead information below</p>
+          <p className="text-sm text-slate-500">
+            Fill in the lead information below
+          </p>
           {nextLeadNumber && (
-            <p className="text-sm font-medium text-blue-600 mt-1">Next Lead Number: {nextLeadNumber}</p>
+            <p className="text-sm font-medium text-blue-600 mt-1">
+              Next Lead Number: {nextLeadNumber}
+            </p>
           )}
         </div>
         <form onSubmit={handleSubmit}>
           <div className="p-4 sm:p-6 space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               <div className="space-y-2">
-                <label htmlFor="receiverName" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="receiverName"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Lead Receiver Name <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -394,15 +454,28 @@ function Leads() {
                     ))}
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <svg
+                      className="w-4 h-4 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="source" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="source"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Lead Source <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -421,49 +494,65 @@ function Leads() {
                     ))}
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <svg
+                      className="w-4 h-4 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </div>
                 </div>
               </div>
 
-            <div className="space-y-2 relative">
-  <label htmlFor="scName" className="block text-sm font-medium text-gray-700">
-    SC Name
-  </label>
-  <div className="relative">
-    <input
-      type="text"
-      id="scName"
-      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-      value={searchScName}
-      onChange={(e) => {
-        setSearchScName(e.target.value);
-        setShowScNameDropdown(true);
-      }}
-      onFocus={() => setShowScNameDropdown(true)}
-      placeholder="Type to search SC names"
-      required
-    />
-    {showScNameDropdown && filteredScNames.length > 0 && (
-      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-        {filteredScNames.map((name, index) => (
-          <div
-            key={index}
-            className="px-4 py-2 cursor-pointer hover:bg-gray-100"
-            onClick={() => handleScNameChange(name)}
-          >
-            {name}
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-</div>
+              <div className="space-y-2 relative">
+                <label
+                  htmlFor="scName"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  SC Name
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    id="scName"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    value={searchScName}
+                    onChange={(e) => {
+                      setSearchScName(e.target.value);
+                      setShowScNameDropdown(true);
+                    }}
+                    onFocus={() => setShowScNameDropdown(true)}
+                    placeholder="Type to search SC names"
+                    required
+                  />
+                  {showScNameDropdown && filteredScNames.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      {filteredScNames.map((name, index) => (
+                        <div
+                          key={index}
+                          className="px-4 py-2 cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleScNameChange(name)}
+                        >
+                          {name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
 
               <div className="space-y-2">
-                <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="companyName"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Company Name <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -485,7 +574,10 @@ function Leads() {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="phoneNumber"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Phone Number
                 </label>
                 <input
@@ -498,7 +590,10 @@ function Leads() {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="salespersonName" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="salespersonName"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Person Name
                 </label>
                 <input
@@ -511,7 +606,10 @@ function Leads() {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="location" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="location"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Location
                 </label>
                 <input
@@ -524,8 +622,12 @@ function Leads() {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Email Address <span className="text-xs text-gray-500">(Optional)</span>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Email Address{" "}
+                  <span className="text-xs text-gray-500">(Optional)</span>
                 </label>
                 <input
                   id="email"
@@ -538,7 +640,10 @@ function Leads() {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="state" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="state"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   State
                 </label>
                 <div className="relative">
@@ -556,8 +661,18 @@ function Leads() {
                     ))}
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <svg
+                      className="w-4 h-4 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </div>
                 </div>
@@ -565,7 +680,10 @@ function Leads() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="address" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="address"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Address
               </label>
               <textarea
@@ -580,14 +698,21 @@ function Leads() {
 
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                <h3 className="text-base sm:text-lg font-medium text-gray-900">Contact Person Details</h3>
+                <h3 className="text-base sm:text-lg font-medium text-gray-900">
+                  Contact Person Details
+                </h3>
                 {formData.contactPersons.length < 3 && (
                   <button
                     type="button"
                     onClick={addContactPerson}
                     className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                   >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg
+                      className="w-4 h-4 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -602,16 +727,26 @@ function Leads() {
 
               <div className="space-y-4">
                 {formData.contactPersons.map((person, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4 sm:p-6 bg-gray-50">
+                  <div
+                    key={index}
+                    className="border border-gray-200 rounded-lg p-4 sm:p-6 bg-gray-50"
+                  >
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
-                      <h4 className="text-sm font-medium text-gray-900">Contact Person {index + 1}</h4>
+                      <h4 className="text-sm font-medium text-gray-900">
+                        Contact Person {index + 1}
+                      </h4>
                       {index > 0 && (
                         <button
                           type="button"
                           onClick={() => removeContactPerson(index)}
                           className="inline-flex items-center px-3 py-1 text-red-600 hover:text-red-800 text-sm font-medium transition-colors"
                         >
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg
+                            className="w-4 h-4 mr-1"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
                             <path
                               strokeLinecap="round"
                               strokeLinejoin="round"
@@ -625,20 +760,36 @@ function Leads() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <label className="block text-sm font-medium text-gray-700">Name</label>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Name
+                        </label>
                         <input
                           value={person.name}
-                          onChange={(e) => handleContactPersonChange(index, "name", e.target.value)}
+                          onChange={(e) =>
+                            handleContactPersonChange(
+                              index,
+                              "name",
+                              e.target.value
+                            )
+                          }
                           className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                           placeholder="Contact name"
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="block text-sm font-medium text-gray-700">Designation</label>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Designation
+                        </label>
                         <div className="relative">
                           <select
                             value={person.designation}
-                            onChange={(e) => handleContactPersonChange(index, "designation", e.target.value)}
+                            onChange={(e) =>
+                              handleContactPersonChange(
+                                index,
+                                "designation",
+                                e.target.value
+                              )
+                            }
                             className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white appearance-none"
                           >
                             <option value="">Select designation</option>
@@ -655,16 +806,29 @@ function Leads() {
                               stroke="currentColor"
                               viewBox="0 0 24 24"
                             >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
                             </svg>
                           </div>
                         </div>
                       </div>
                       <div className="space-y-2 sm:col-span-2 lg:col-span-1">
-                        <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Phone Number
+                        </label>
                         <input
                           value={person.number}
-                          onChange={(e) => handleContactPersonChange(index, "number", e.target.value)}
+                          onChange={(e) =>
+                            handleContactPersonChange(
+                              index,
+                              "number",
+                              e.target.value
+                            )
+                          }
                           className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                           placeholder="Contact number"
                         />
@@ -677,7 +841,10 @@ function Leads() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               <div className="space-y-2">
-                <label htmlFor="nob" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="nob"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Nature of Business (NOB)
                 </label>
                 <div className="relative">
@@ -695,15 +862,28 @@ function Leads() {
                     ))}
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <svg
+                      className="w-4 h-4 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="gst" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="gst"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   GST Number
                 </label>
                 <input
@@ -716,8 +896,12 @@ function Leads() {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="customerRegistrationForm" className="block text-sm font-medium text-gray-700">
-                  Customer Registration Form <span className="text-red-500">*</span>
+                <label
+                  htmlFor="customerRegistrationForm"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Customer Registration Form{" "}
+                  <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <select
@@ -732,15 +916,28 @@ function Leads() {
                     <option value="No">No</option>
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <svg
+                      className="w-4 h-4 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="creditAccess" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="creditAccess"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Credit Access
                 </label>
                 <div className="relative">
@@ -755,15 +952,28 @@ function Leads() {
                     <option value="No">No</option>
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <svg
+                      className="w-4 h-4 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="creditDays" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="creditDays"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Credit Days
                 </label>
                 <div className="relative">
@@ -781,15 +991,28 @@ function Leads() {
                     ))}
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <svg
+                      className="w-4 h-4 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="creditLimit" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="creditLimit"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Credit Limit
                 </label>
                 <div className="relative">
@@ -807,8 +1030,18 @@ function Leads() {
                     ))}
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <svg
+                      className="w-4 h-4 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </div>
                 </div>
@@ -816,7 +1049,10 @@ function Leads() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="notes"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Additional Notes
               </label>
               <textarea
@@ -852,7 +1088,7 @@ function Leads() {
                   nob: "",
                   gst: "",
                   notes: "",
-                })
+                });
               }}
             >
               Reset Form
@@ -894,7 +1130,7 @@ function Leads() {
         </form>
       </div>
     </div>
-  )
+  );
 }
 
-export default Leads
+export default Leads;

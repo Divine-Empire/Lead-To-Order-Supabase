@@ -1,9 +1,11 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { useState } from "react";
 
 export const useQuotationData = (initialSpecialDiscount = 0) => {
-  const [specialDiscount, setSpecialDiscount] = useState(initialSpecialDiscount)
+  const [specialDiscount, setSpecialDiscount] = useState(
+    initialSpecialDiscount
+  );
   const [hiddenFields, setHiddenFields] = useState({
     validity: false,
     paymentTerms: false,
@@ -11,7 +13,7 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
     freight: false,
     insurance: false,
     taxes: false,
-  })
+  });
 
   const [quotationData, setQuotationData] = useState({
     quotationNo: "NBD-...",
@@ -57,9 +59,12 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
     sgstAmount: 0,
     igstAmount: 0,
     total: 0,
-    validity: "The above quoted prices are valid up to 10 days from date of offer.",
-    paymentTerms: "100% advance payment in the mode of NEFT, RTGS & DD.Payment only accepted in company's account - DIVINE EMPIRE INDIA PVT LTD.",
-    delivery: "Material will be dispatched after receipt of advance payment and upon confirmation of complete purchase order (PO) from the buyer.",
+    validity:
+      "The above quoted prices are valid up to 10 days from date of offer.",
+    paymentTerms:
+      "100% advance payment in the mode of NEFT, RTGS & DD.Payment only accepted in company's account - DIVINE EMPIRE INDIA PVT LTD.",
+    delivery:
+      "Material will be dispatched after receipt of advance payment and upon confirmation of complete purchase order (PO) from the buyer.",
     freight: "Extra mentioned in the quotation.",
     insurance: "Transit insurance for all shipment is at Buyer's scope.",
     taxes: "Extra mentioned in the quotation.",
@@ -73,237 +78,243 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
     notes: [""],
     preparedBy: "",
     specialOffers: [""],
-  })
+  });
+
+  const roundToTwo = (value) => Number(Number(value || 0).toFixed(2));
+
+  const recalculateTotals = (items, shouldUseIGST, discountValue = specialDiscount) => {
+    const subtotal = roundToTwo(
+      items.reduce((sum, item) => sum + Number(item.amount || 0), 0)
+    );
+
+    let cgstAmount = 0;
+    let sgstAmount = 0;
+    let igstAmount = 0;
+
+    items.forEach((item) => {
+      const amount = Number(item.amount || 0);
+      const itemGST = Number(item.gst || 0);
+
+      if (amount <= 0 || itemGST <= 0) {
+        return;
+      }
+
+      if (shouldUseIGST) {
+        igstAmount += (amount * itemGST) / 100;
+      } else {
+        const halfGST = itemGST / 2;
+        const cgstContribution = (amount * halfGST) / 100;
+        cgstAmount += cgstContribution;
+        sgstAmount += cgstContribution;
+      }
+    });
+
+    cgstAmount = roundToTwo(cgstAmount);
+    sgstAmount = roundToTwo(sgstAmount);
+    igstAmount = roundToTwo(igstAmount);
+
+    const taxableAmount = subtotal;
+    const cgstRate = !shouldUseIGST && taxableAmount > 0 ? roundToTwo((cgstAmount / taxableAmount) * 100) : 0;
+    const sgstRate = !shouldUseIGST && taxableAmount > 0 ? roundToTwo((sgstAmount / taxableAmount) * 100) : 0;
+    const igstRate = shouldUseIGST && taxableAmount > 0 ? roundToTwo((igstAmount / taxableAmount) * 100) : 0;
+
+    const totalBeforeSpecialDiscount = subtotal + cgstAmount + sgstAmount + igstAmount;
+    const total = Math.max(0, roundToTwo(totalBeforeSpecialDiscount - Number(discountValue || 0)));
+
+    return {
+      subtotal,
+      cgstAmount,
+      sgstAmount,
+      igstAmount,
+      cgstRate,
+      sgstRate,
+      igstRate,
+      total,
+    };
+  };
 
   const checkStateAndCalculateGST = (consignorState, consigneeState) => {
     const statesMatch =
-      consignorState && consigneeState && consignorState.toLowerCase().trim() === consigneeState.toLowerCase().trim()
-    return !statesMatch
-  }
+      consignorState &&
+      consigneeState &&
+      consignorState.toLowerCase().trim() ===
+        consigneeState.toLowerCase().trim();
+    return !statesMatch;
+  };
 
   const handleInputChange = (field, value) => {
     setQuotationData((prev) => {
       const newData = {
         ...prev,
         [field]: value,
-      }
+      };
 
       // NEW: Handle items array update
       if (field === "items") {
-        newData.items = value
+        newData.items = value;
 
         // Recalculate totals when items change
-        const totalFlatDiscount = value.reduce((sum, item) => sum + Number(item.flatDiscount), 0)
-        const subtotal = value.reduce((sum, item) => sum + item.amount, 0)
-        const taxableAmount = subtotal
+        const totalFlatDiscount = value.reduce(
+          (sum, item) => sum + Number(item.flatDiscount),
+          0
+        );
 
-        const shouldUseIGST = checkStateAndCalculateGST(prev.consignorState, prev.consigneeState)
+        const shouldUseIGST = checkStateAndCalculateGST(
+          prev.consignorState,
+          prev.consigneeState
+        );
 
-        let cgstAmount = 0
-        let sgstAmount = 0
-        let igstAmount = 0
-
-        if (shouldUseIGST) {
-          igstAmount = Number((taxableAmount * (prev.igstRate / 100)).toFixed(2))
-        } else {
-          cgstAmount = Number((taxableAmount * (prev.cgstRate / 100)).toFixed(2))
-          sgstAmount = Number((taxableAmount * (prev.sgstRate / 100)).toFixed(2))
-        }
-
-        const totalBeforeSpecialDiscount = taxableAmount + cgstAmount + sgstAmount
-        const total = Math.max(0, totalBeforeSpecialDiscount - specialDiscount)
+        const totals = recalculateTotals(value, shouldUseIGST);
 
         Object.assign(newData, {
           totalFlatDiscount,
-          subtotal,
           isIGST: shouldUseIGST,
-          cgstAmount,
-          sgstAmount,
-          igstAmount,
-          total,
-        })
+          ...totals,
+        });
 
-        return newData
+        return newData;
       }
 
       if (field === "consignorState" || field === "consigneeState") {
         const shouldUseIGST = checkStateAndCalculateGST(
           field === "consignorState" ? value : prev.consignorState,
-          field === "consigneeState" ? value : prev.consigneeState,
-        )
+          field === "consigneeState" ? value : prev.consigneeState
+        );
 
-        newData.isIGST = shouldUseIGST
+        newData.isIGST = shouldUseIGST;
 
-        const totalFlatDiscount = prev.items.reduce((sum, item) => sum + Number(item.flatDiscount), 0)
-        const subtotal = prev.items.reduce((sum, item) => sum + item.amount, 0)
-        const taxableAmount = subtotal
-
-        let cgstAmount = 0
-        let sgstAmount = 0
-        let igstAmount = 0
-
-        if (shouldUseIGST) {
-          igstAmount = Number((taxableAmount * (prev.igstRate / 100)).toFixed(2))
-        } else {
-          cgstAmount = Number((taxableAmount * (prev.cgstRate / 100)).toFixed(2))
-          sgstAmount = Number((taxableAmount * (prev.sgstRate / 100)).toFixed(2))
-        }
-
-        const totalBeforeSpecialDiscount = taxableAmount + cgstAmount + sgstAmount
-        const total = Math.max(0, totalBeforeSpecialDiscount - specialDiscount)
+        const totalFlatDiscount = prev.items.reduce(
+          (sum, item) => sum + Number(item.flatDiscount),
+          0
+        );
+        const totals = recalculateTotals(prev.items, shouldUseIGST);
 
         Object.assign(newData, {
           totalFlatDiscount,
-          subtotal,
-          cgstAmount,
-          sgstAmount,
-          igstAmount,
-          total,
-        })
+          ...totals,
+        });
       }
 
-      return newData
-    })
-  }
+      return newData;
+    });
+  };
 
   // Handle item changes
   const handleItemChange = (id, field, value) => {
     setQuotationData((prev) => {
       const newItems = prev.items.map((item) => {
         if (item.id === id) {
-          const updatedItem = { ...item, [field]: value }
+          const updatedItem = { ...item, [field]: value };
 
-          if (field === "qty" || field === "rate" || field === "discount" || field === "flatDiscount") {
-            const baseAmount = Number(updatedItem.qty) * Number(updatedItem.rate)
-            const discountedAmount = baseAmount * (1 - Number(updatedItem.discount) / 100)
-            updatedItem.amount = Math.max(0, discountedAmount - Number(updatedItem.flatDiscount))
+          if (
+            field === "qty" ||
+            field === "rate" ||
+            field === "discount" ||
+            field === "flatDiscount"
+          ) {
+            const baseAmount =
+              Number(updatedItem.qty) * Number(updatedItem.rate);
+            const discountedAmount =
+              baseAmount * (1 - Number(updatedItem.discount) / 100);
+            updatedItem.amount = Math.max(
+              0,
+              discountedAmount - Number(updatedItem.flatDiscount)
+            );
           }
 
-          return updatedItem
+          return updatedItem;
         }
-        return item
-      })
+        return item;
+      });
 
-      const totalFlatDiscount = newItems.reduce((sum, item) => sum + Number(item.flatDiscount), 0)
-      const subtotal = Number(newItems.reduce((sum, item) => sum + item.amount, 0))
-      const taxableAmount = subtotal
+      const totalFlatDiscount = newItems.reduce(
+        (sum, item) => sum + Number(item.flatDiscount),
+        0
+      );
 
-      const shouldUseIGST = checkStateAndCalculateGST(prev.consignorState, prev.consigneeState)
+      const shouldUseIGST = checkStateAndCalculateGST(
+        prev.consignorState,
+        prev.consigneeState
+      );
 
-      let cgstAmount = 0
-      let sgstAmount = 0
-      let igstAmount = 0
-
-      if (shouldUseIGST) {
-        igstAmount = Number((taxableAmount * (prev.igstRate / 100)).toFixed(2))
-      } else {
-        cgstAmount = Number((taxableAmount * (prev.cgstRate / 100)).toFixed(2))
-        sgstAmount = Number((taxableAmount * (prev.sgstRate / 100)).toFixed(2))
-      }
-
-      const totalBeforeSpecialDiscount = taxableAmount + cgstAmount + sgstAmount
-      const total = Math.max(0, totalBeforeSpecialDiscount - specialDiscount)
+      const totals = recalculateTotals(newItems, shouldUseIGST);
 
       return {
         ...prev,
         items: newItems,
         totalFlatDiscount,
-        subtotal,
         isIGST: shouldUseIGST,
-        cgstAmount,
-        sgstAmount,
-        igstAmount,
-        total,
-      }
-    })
-  }
+        ...totals,
+      };
+    });
+  };
 
   const handleFlatDiscountChange = (value) => {
     setQuotationData((prev) => {
-      const numValue = Number(value)
-      const subtotal = prev.items.reduce((sum, item) => sum + item.amount, 0)
-      const taxableAmount = subtotal
-
-      let cgstAmount = 0
-      let sgstAmount = 0
-      let igstAmount = 0
-
-      if (prev.isIGST) {
-        igstAmount = Number((taxableAmount * (prev.igstRate / 100)).toFixed(2))
-      } else {
-        cgstAmount = Number((taxableAmount * (prev.cgstRate / 100)).toFixed(2))
-        sgstAmount = Number((taxableAmount * (prev.sgstRate / 100)).toFixed(2))
-      }
-
-      const totalBeforeSpecialDiscount = taxableAmount + cgstAmount + sgstAmount
-      const total = Math.max(0, totalBeforeSpecialDiscount - specialDiscount)
+      const numValue = Number(value);
+      const totals = recalculateTotals(prev.items, prev.isIGST);
 
       return {
         ...prev,
         totalFlatDiscount: numValue,
-        subtotal: subtotal,
-        cgstAmount,
-        sgstAmount,
-        igstAmount,
-        total,
-      }
-    })
-  }
+        ...totals,
+      };
+    });
+  };
 
   const handleSpecialDiscountChange = (value) => {
-    const discount = Number(value) || 0
-    setSpecialDiscount(discount)
+    const discount = Number(value) || 0;
+    setSpecialDiscount(discount);
 
     setQuotationData((prev) => {
-      const taxableAmount = prev.subtotal
-      const totalBeforeSpecialDiscount = taxableAmount + prev.cgstAmount + prev.sgstAmount
-      const newTotal = Math.max(0, totalBeforeSpecialDiscount - discount)
+      const totals = recalculateTotals(prev.items, prev.isIGST, discount);
 
       return {
         ...prev,
-        total: newTotal,
-      }
-    })
-  }
+        ...totals,
+      };
+    });
+  };
 
   const toggleFieldVisibility = (field) => {
     setHiddenFields((prev) => ({
       ...prev,
       [field]: !prev[field],
-    }))
-  }
+    }));
+  };
 
   const handleNoteChange = (index, value) => {
     setQuotationData((prev) => {
-      const newNotes = [...prev.notes]
-      newNotes[index] = value
+      const newNotes = [...prev.notes];
+      newNotes[index] = value;
       return {
         ...prev,
         notes: newNotes,
-      }
-    })
-  }
+      };
+    });
+  };
 
   const addNote = () => {
     setQuotationData((prev) => ({
       ...prev,
       notes: [...prev.notes, ""],
-    }))
-  }
+    }));
+  };
 
   const removeNote = (index) => {
     setQuotationData((prev) => {
-      const newNotes = [...prev.notes]
-      newNotes.splice(index, 1)
+      const newNotes = [...prev.notes];
+      newNotes.splice(index, 1);
       return {
         ...prev,
         notes: newNotes,
-      }
-    })
-  }
+      };
+    });
+  };
 
   const handleAddItem = () => {
-    const newId = Math.max(0, ...quotationData.items.map((item) => item.id)) + 1
+    const newId =
+      Math.max(0, ...quotationData.items.map((item) => item.id)) + 1;
     setQuotationData((prev) => ({
       ...prev,
       items: [
@@ -321,42 +332,42 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
           amount: 0,
         },
       ],
-    }))
-  }
+    }));
+  };
 
   const addSpecialOffer = () => {
     setQuotationData((prev) => ({
       ...prev,
       specialOffers: [...(prev.specialOffers || [""]), ""],
-    }))
-  }
+    }));
+  };
 
   const removeSpecialOffer = (index) => {
     setQuotationData((prev) => {
-      const newSpecialOffers = [...(prev.specialOffers || [])]
-      newSpecialOffers.splice(index, 1)
+      const newSpecialOffers = [...(prev.specialOffers || [])];
+      newSpecialOffers.splice(index, 1);
       return {
         ...prev,
         specialOffers: newSpecialOffers.length > 0 ? newSpecialOffers : [""],
-      }
-    })
-  }
+      };
+    });
+  };
 
   const handleSpecialOfferChange = (index, value) => {
     setQuotationData((prev) => {
-      const newSpecialOffers = [...(prev.specialOffers || [])]
+      const newSpecialOffers = [...(prev.specialOffers || [])];
 
       while (newSpecialOffers.length <= index) {
-        newSpecialOffers.push("")
+        newSpecialOffers.push("");
       }
 
-      newSpecialOffers[index] = value
+      newSpecialOffers[index] = value;
       return {
         ...prev,
         specialOffers: newSpecialOffers,
-      }
-    })
-  }
+      };
+    });
+  };
 
   return {
     quotationData,
@@ -376,5 +387,5 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
     addSpecialOffer,
     removeSpecialOffer,
     handleSpecialOfferChange,
-  }
-}
+  };
+};
