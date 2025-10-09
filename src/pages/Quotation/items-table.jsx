@@ -190,6 +190,7 @@ const ItemsTable = ({
                       disabled={isLoading}
                     >
                       <option value="0">0%</option>
+                      <option value="0">5%</option>
                       <option value="18">18%</option>
                     </select>
                   </td>
