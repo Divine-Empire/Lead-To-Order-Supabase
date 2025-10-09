@@ -106,12 +106,12 @@ const [hiddenFields, setHiddenFields] = useState({
   
     
     // Terms
-    validity: "The above quoted prices are valid up to 5 days from date of offer.",
+    validity: "The above quoted prices are valid up to 10 days from date of offer.",
     paymentTerms: "100% advance payment in the mode of NEFT, RTGS & DD. Payment only accepted in company's account – DIVINE EMPIRE INDIA PVT LTD.",
-    delivery: "Material is ready in our stock",
-    freight: "Extra as per actual.",
-    insurance: "Transit insurance for all shipment is at Buyer's risk.",
-    taxes: "Extra as per actual.",
+    delivery: "Material will be dispatched after receipt of advance payment and upon confirmation of complete purchase order (PO) from the buyer.",
+    freight: "Extra mentioned in the quotation.",
+    insurance: "Transit insurance for all shipment is at Buyer's scope.",
+    taxes: "Extra mentioned in the quotation.",
     
     // Bank details
     accountNo: "",
@@ -1509,12 +1509,12 @@ const itemPromises = quotationData.items.map(async (item) => {
       cgstAmount: 0,
       sgstAmount: 0,
       total: 0,
-      validity: "The above quoted prices are valid up to 5 days from date of offer.",
+      validity: "The above quoted prices are valid up to 10 days from date of offer.",
       paymentTerms: "100% advance payment in the mode of NEFT, RTGS & DD. Payment only accepted in company's account – DIVINE EMPIRE INDIA PVT LTD.",
-      delivery: "Material is ready in our stock",
-      freight: "Extra as per actual.",
-      insurance: "Transit insurance for all shipment is at Buyer's risk.",
-      taxes: "Extra as per actual.",
+      delivery: "Material will be dispatched after receipt of advance payment and upon confirmation of complete purchase order (PO) from the buyer.",
+      freight: "Extra mentioned in the quotation.",
+      insurance: "Transit insurance for all shipment is at Buyer's scope.",
+      taxes: "Extra mentioned in the quotation.",
       accountNo: "",
       bankName: "",
       bankAddress: "",

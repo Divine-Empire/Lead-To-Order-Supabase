@@ -52,6 +52,7 @@ function FollowUp() {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [searchTimeout, setSearchTimeout] = useState(null)
   
+  const [historyCounts, setHistoryCounts] = useState({ today: 0, older: 0 });
 
   const [visibleColumns, setVisibleColumns] = useState({
     timestamp: true,
@@ -275,27 +276,43 @@ const checkDateFilterHistory = (followUp, filterType) => {
   }
 
   // ✅ Count history calls (Today / Older)
-const calculateHistoryCounts = () => {
-  let today = 0, older = 0;
-  const current = new Date();
-  current.setHours(0, 0, 0, 0);
+const calculateHistoryCounts = useCallback(async () => {
+  try {
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-  historyFollowUps.forEach((f) => {
-    if (!f.timestamp) return;
-    try {
-      const [day, month, year] = f.timestamp.split("/");
-      const d = new Date(year, month - 1, day);
-      d.setHours(0, 0, 0, 0);
+    // Query for today's count
+    let todayQuery = supabase
+      .from('leads_tracker')
+      .select('*', { count: 'exact', head: true })
+      .eq('Timestamp', todayStr);
 
-      if (d.getTime() === current.getTime()) today++;
-      else if (d < current) older++;
-    } catch (err) {
-      console.error("Error counting history calls:", err);
+    // Query for older count
+    let olderQuery = supabase
+      .from('leads_tracker')
+      .select('*', { count: 'exact', head: true })
+      .lt('Timestamp', todayStr);
+
+    // Apply user filter if not admin
+    if (!isAdmin() && currentUser && currentUser.username) {
+      todayQuery = todayQuery.eq('SC_Name', currentUser.username);
+      olderQuery = olderQuery.eq('SC_Name', currentUser.username);
     }
-  });
 
-  return { today, older };
-};
+    const [todayResult, olderResult] = await Promise.all([
+      todayQuery,
+      olderQuery
+    ]);
+
+    return {
+      today: todayResult.count || 0,
+      older: olderResult.count || 0
+    };
+  } catch (error) {
+    console.error("Error calculating history counts:", error);
+    return { today: 0, older: 0 };
+  }
+}, [currentUser, isAdmin]);
 
 
   // Fixed scroll detection function
@@ -386,80 +403,91 @@ const fetchFollowUpData = useCallback(async (page = 1, isLoadMore = false, searc
       
       console.log(`HasMorePending: ${hasMore}, Current: ${currentDataLength}, Total: ${totalCount}`);
 
-    } else {
-      // History tab data fetching
-      let historyQuery = supabase
-        .from('leads_tracker')
-        .select('*', { count: 'exact' });
+   } else {
+  // History tab data fetching
+  let historyQuery = supabase
+    .from('leads_tracker')
+    .select('*', { count: 'exact' });
 
-      // Apply search filter to the query BEFORE pagination
-      if (searchTerm) {
-        historyQuery = historyQuery.or(`"LD-Lead-No".ilike.%${searchTerm}%,"What_Did_The_Customer say?".ilike.%${searchTerm}%,Leads_Tracking_Status.ilike.%${searchTerm}%,Enquiry_Received_Status.ilike.%${searchTerm}%,Enquiry_for_State.ilike.%${searchTerm}%,Project_Name.ilike.%${searchTerm}%,Enquiry_Type.ilike.%${searchTerm}%,Next_Action.ilike.%${searchTerm}%,SC_Name.ilike.%${searchTerm}%`);
-      }
+  // Apply search filter to the query BEFORE pagination
+  if (searchTerm) {
+    historyQuery = historyQuery.or(`"LD-Lead-No".ilike.%${searchTerm}%,"What_Did_The_Customer say?".ilike.%${searchTerm}%,Leads_Tracking_Status.ilike.%${searchTerm}%,Enquiry_Received_Status.ilike.%${searchTerm}%,Enquiry_for_State.ilike.%${searchTerm}%,Project_Name.ilike.%${searchTerm}%,Enquiry_Type.ilike.%${searchTerm}%,Next_Action.ilike.%${searchTerm}%,SC_Name.ilike.%${searchTerm}%`);
+  }
 
-      // Apply user filter if not admin
-      if (!isAdmin() && currentUser && currentUser.username) {
-        historyQuery = historyQuery.eq('SC_Name', currentUser.username);
-      }
+  // Apply user filter if not admin
+  if (!isAdmin() && currentUser && currentUser.username) {
+    historyQuery = historyQuery.eq('SC_Name', currentUser.username);
+  }
 
-      // Apply pagination with range
-      historyQuery = historyQuery.range(from, to);
+  // Apply date filter at database level
+  if (dateFilter === "today") {
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    historyQuery = historyQuery.eq('Timestamp', todayStr);
+  } else if (dateFilter === "older") {
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    historyQuery = historyQuery.lt('Timestamp', todayStr);
+  }
 
-      const { data, error, count } = await historyQuery;
+  // Apply pagination with range
+  historyQuery = historyQuery.range(from, to);
 
-      if (error) throw error;
+  const { data, error, count } = await historyQuery;
 
-      console.log(`Fetched ${data?.length || 0} history records for page ${page}`);
+  if (error) throw error;
 
-      const filteredHistory = (data || []).map(row => ({
-  timestamp: row["Timestamp"] ? formatDateToDDMMYYYY(row["Timestamp"]) : "",
-  leadNo: row["LD-Lead-No"] || "",
-  companyName: row["Company_Name"] || "",
-  customerSay: row["What_Did_The_Customer_say?"] || "",
-  status: row["Leads_Tracking_Status"] || "",
-  enquiryStatus: row["Enquiry_Received_Status"] || "", // This line was missing the correct mapping
-  enquiryReceivedStatus: row["Enquiry_Received_Status"] || "",
-  enquiryReceivedDate: row["Enquiry_Received_Date"] ? formatDateToDDMMYYYY(row["Enquiry_Received_Date"]) : "",
-  enquiryState: row["Enquiry_for_State"] || "",
-  projectName: row["Project_Name"] || "",
-  salesType: row["Enquiry_Type"] || "",
-  requiredProductDate: "",
-  projectApproxValue: row["Project_Approximate_Value"] || "",
-  itemName1: row["Item_Name1"] || "",
-  quantity1: row["Quantity1"] || "",
-  itemName2: row["Item_Name2"] || "",
-  quantity2: row["Quantity2"] || "",
-  itemName3: row["Item_Name3"] || "",
-  quantity3: row["Quantity3"] || "",
-  itemName4: row["Item_Name4"] || "",
-  quantity4: row["Quantity4"] || "",
-  itemName5: row["Item_Name5"] || "",
-  quantity5: row["Quantity5"] || "",
-  nextAction: row["Next_Action"] || "",
-  nextCallDate: row["Next_Call_Date"] ? formatDateToDDMMYYYY(row["Next_Call_Date"]) : "",
-  nextCallTime: row["Next_Call_Time"] ? formatNextCallTime(row["Next_Call_Time"]) : "",
-  historyDateFilter: "",
-  assignedTo: row.SC_Name || row.assigned_user || "",
-  itemQty: row.Item_Qty || ""
-}));
+  console.log(`Fetched ${data?.length || 0} history records for page ${page}`);
 
-      if (isLoadMore) {
-        setHistoryFollowUps(prev => [...prev, ...filteredHistory]);
-      } else {
-        setHistoryFollowUps(filteredHistory);
-      }
+  const filteredHistory = (data || []).map(row => ({
+    timestamp: row["Timestamp"] ? formatDateToDDMMYYYY(row["Timestamp"]) : "",
+    leadNo: row["LD-Lead-No"] || "",
+    companyName: row["Company_Name"] || "",
+    customerSay: row["What_Did_The_Customer_say?"] || "",
+    status: row["Leads_Tracking_Status"] || "",
+    enquiryStatus: row["Enquiry_Received_Status"] || "",
+    enquiryReceivedStatus: row["Enquiry_Received_Status"] || "",
+    enquiryReceivedDate: row["Enquiry_Received_Date"] ? formatDateToDDMMYYYY(row["Enquiry_Received_Date"]) : "",
+    enquiryState: row["Enquiry_for_State"] || "",
+    projectName: row["Project_Name"] || "",
+    salesType: row["Enquiry_Type"] || "",
+    requiredProductDate: "",
+    projectApproxValue: row["Project_Approximate_Value"] || "",
+    itemName1: row["Item_Name1"] || "",
+    quantity1: row["Quantity1"] || "",
+    itemName2: row["Item_Name2"] || "",
+    quantity2: row["Quantity2"] || "",
+    itemName3: row["Item_Name3"] || "",
+    quantity3: row["Quantity3"] || "",
+    itemName4: row["Item_Name4"] || "",
+    quantity4: row["Quantity4"] || "",
+    itemName5: row["Item_Name5"] || "",
+    quantity5: row["Quantity5"] || "",
+    nextAction: row["Next_Action"] || "",
+    nextCallDate: row["Next_Call_Date"] ? formatDateToDDMMYYYY(row["Next_Call_Date"]) : "",
+    nextCallTime: row["Next_Call_Time"] ? formatNextCallTime(row["Next_Call_Time"]) : "",
+    historyDateFilter: "",
+    assignedTo: row.SC_Name || row.assigned_user || "",
+    itemQty: row.Item_Qty || ""
+  }));
 
-      // Check if there's more data based on count and current data length
-      const totalCount = count || 0;
-      const currentDataLength = isLoadMore ? 
-        (historyFollowUps.length + filteredHistory.length) : 
-        filteredHistory.length;
-      
-      const hasMore = currentDataLength < totalCount;
-      setHasMoreHistory(hasMore);
-      
-      console.log(`HasMoreHistory: ${hasMore}, Current: ${currentDataLength}, Total: ${totalCount}`);
-    }
+  if (isLoadMore) {
+    setHistoryFollowUps(prev => [...prev, ...filteredHistory]);
+  } else {
+    setHistoryFollowUps(filteredHistory);
+  }
+
+  // Check if there's more data based on count and current data length
+  const totalCount = count || 0;
+  const currentDataLength = isLoadMore ? 
+    (historyFollowUps.length + filteredHistory.length) : 
+    filteredHistory.length;
+  
+  const hasMore = currentDataLength < totalCount;
+  setHasMoreHistory(hasMore);
+  
+  console.log(`HasMoreHistory: ${hasMore}, Current: ${currentDataLength}, Total: ${totalCount}`);
+}
 
   } catch (error) {
     console.error("Error fetching follow-up data:", error);
@@ -469,7 +497,7 @@ const fetchFollowUpData = useCallback(async (page = 1, isLoadMore = false, searc
     setIsLoading(false);
     setIsLoadingMore(false);
   }
-}, [currentUser, isAdmin, activeTab]);
+}, [currentUser, isAdmin, activeTab, dateFilter]);
 
 
 // Remove or comment out these filter functions since filtering now happens at database level:
@@ -501,6 +529,23 @@ const loadMoreData = useCallback(() => {
     setHistoryPage(prev => prev + 1);
   }
 }, [activeTab, isLoadingMore, hasMorePending, hasMoreHistory, pendingPage, historyPage, searchTerm, fetchFollowUpData]);
+
+useEffect(() => {
+  if (activeTab === "history") {
+    calculateHistoryCounts().then(counts => {
+      setHistoryCounts(counts);
+    });
+  }
+}, [activeTab, calculateHistoryCounts, dateFilter, searchTerm]); // Add searchTerm here
+
+useEffect(() => {
+  console.log(`Tab or dateFilter changed to: ${activeTab}, ${dateFilter}`);
+  setPendingPage(1);
+  setHistoryPage(1);
+  setHasMorePending(true);
+  setHasMoreHistory(true);
+  fetchFollowUpData(1, false, searchTerm);
+}, [activeTab, dateFilter, currentUser, fetchFollowUpData]);
 
   // Fixed scroll event listener for infinite scroll
   useEffect(() => {
@@ -600,49 +645,68 @@ const loadMoreData = useCallback(() => {
     }
   }, [activeTab])
 
+  // const filteredHistoryFollowUps = historyFollowUps.filter((followUp) => {
+  //   const searchLower = searchTerm.toLowerCase()
+  //   const matchesSearch =
+  //     searchTerm === "" ||
+  //     (followUp.leadNo && followUp.leadNo.toString().toLowerCase().includes(searchLower)) ||
+  //     (followUp.customerSay && followUp.customerSay.toLowerCase().includes(searchLower)) ||
+  //     (followUp.status && followUp.status.toLowerCase().includes(searchLower)) ||
+  //     (followUp.enquiryReceivedStatus && followUp.enquiryReceivedStatus.toLowerCase().includes(searchLower)) ||
+  //     (followUp.enquiryReceivedDate && followUp.enquiryReceivedDate.toLowerCase().includes(searchLower)) ||
+  //     (followUp.enquiryState && followUp.enquiryState.toLowerCase().includes(searchLower)) ||
+  //     (followUp.projectName && followUp.projectName.toLowerCase().includes(searchLower)) ||
+  //     (followUp.salesType && followUp.salesType.toLowerCase().includes(searchLower)) ||
+  //     (followUp.requiredProductDate && followUp.requiredProductDate.toLowerCase().includes(searchLower)) ||
+  //     (followUp.projectApproxValue && followUp.projectApproxValue.toString().toLowerCase().includes(searchLower)) ||
+  //     (followUp.itemName1 && followUp.itemName1.toLowerCase().includes(searchLower)) ||
+  //     (followUp.itemName2 && followUp.itemName2.toLowerCase().includes(searchLower)) ||
+  //     (followUp.itemName3 && followUp.itemName3.toLowerCase().includes(searchLower)) ||
+  //     (followUp.itemName4 && followUp.itemName4.toLowerCase().includes(searchLower)) ||
+  //     (followUp.itemName5 && followUp.itemName5.toLowerCase().includes(searchLower)) ||
+  //     (followUp.nextAction && followUp.nextAction.toLowerCase().includes(searchLower)) ||
+  //     (followUp.nextCallDate && followUp.nextCallDate.toLowerCase().includes(searchLower)) ||
+  //     (followUp.nextCallTime && followUp.nextCallTime.toLowerCase().includes(searchLower))
+
+  //   const matchesFilterType = (() => {
+  //     if (filterType === "first") {
+  //       return (
+  //         followUp.enquiryReceivedStatus === "" ||
+  //         followUp.enquiryReceivedStatus === null ||
+  //         followUp.enquiryReceivedStatus === "New"
+  //       )
+  //     } else if (filterType === "multi") {
+  //       return followUp.enquiryReceivedStatus === "Expected" || followUp.enquiryReceivedStatus === "expected"
+  //     } else {
+  //       return true
+  //     }
+  //   })()
+
+  //   // const matchesDateFilter = checkDateFilter(followUp, dateFilter)
+  //   const matchesDateFilter = checkDateFilterHistory(followUp, dateFilter)
+
+
+  //   return matchesSearch && matchesFilterType && matchesDateFilter
+  // })
+
   const filteredHistoryFollowUps = historyFollowUps.filter((followUp) => {
-    const searchLower = searchTerm.toLowerCase()
-    const matchesSearch =
-      searchTerm === "" ||
-      (followUp.leadNo && followUp.leadNo.toString().toLowerCase().includes(searchLower)) ||
-      (followUp.customerSay && followUp.customerSay.toLowerCase().includes(searchLower)) ||
-      (followUp.status && followUp.status.toLowerCase().includes(searchLower)) ||
-      (followUp.enquiryReceivedStatus && followUp.enquiryReceivedStatus.toLowerCase().includes(searchLower)) ||
-      (followUp.enquiryReceivedDate && followUp.enquiryReceivedDate.toLowerCase().includes(searchLower)) ||
-      (followUp.enquiryState && followUp.enquiryState.toLowerCase().includes(searchLower)) ||
-      (followUp.projectName && followUp.projectName.toLowerCase().includes(searchLower)) ||
-      (followUp.salesType && followUp.salesType.toLowerCase().includes(searchLower)) ||
-      (followUp.requiredProductDate && followUp.requiredProductDate.toLowerCase().includes(searchLower)) ||
-      (followUp.projectApproxValue && followUp.projectApproxValue.toString().toLowerCase().includes(searchLower)) ||
-      (followUp.itemName1 && followUp.itemName1.toLowerCase().includes(searchLower)) ||
-      (followUp.itemName2 && followUp.itemName2.toLowerCase().includes(searchLower)) ||
-      (followUp.itemName3 && followUp.itemName3.toLowerCase().includes(searchLower)) ||
-      (followUp.itemName4 && followUp.itemName4.toLowerCase().includes(searchLower)) ||
-      (followUp.itemName5 && followUp.itemName5.toLowerCase().includes(searchLower)) ||
-      (followUp.nextAction && followUp.nextAction.toLowerCase().includes(searchLower)) ||
-      (followUp.nextCallDate && followUp.nextCallDate.toLowerCase().includes(searchLower)) ||
-      (followUp.nextCallTime && followUp.nextCallTime.toLowerCase().includes(searchLower))
+  // Only keep filterType filter on client side since search and date are handled at DB level
+  const matchesFilterType = (() => {
+    if (filterType === "first") {
+      return (
+        followUp.enquiryReceivedStatus === "" ||
+        followUp.enquiryReceivedStatus === null ||
+        followUp.enquiryReceivedStatus === "New"
+      )
+    } else if (filterType === "multi") {
+      return followUp.enquiryReceivedStatus === "Expected" || followUp.enquiryReceivedStatus === "expected"
+    } else {
+      return true
+    }
+  })()
 
-    const matchesFilterType = (() => {
-      if (filterType === "first") {
-        return (
-          followUp.enquiryReceivedStatus === "" ||
-          followUp.enquiryReceivedStatus === null ||
-          followUp.enquiryReceivedStatus === "New"
-        )
-      } else if (filterType === "multi") {
-        return followUp.enquiryReceivedStatus === "Expected" || followUp.enquiryReceivedStatus === "expected"
-      } else {
-        return true
-      }
-    })()
-
-    // const matchesDateFilter = checkDateFilter(followUp, dateFilter)
-    const matchesDateFilter = checkDateFilterHistory(followUp, dateFilter)
-
-
-    return matchesSearch && matchesFilterType && matchesDateFilter
-  })
+  return matchesFilterType
+})
 
   const handleColumnToggle = (columnKey) => {
     setVisibleColumns((prev) => ({
@@ -687,7 +751,7 @@ const loadMoreData = useCallback(() => {
   ]
 
   const dateFilterCounts = calculateDateFilterCounts()
-  const historyCounts = calculateHistoryCounts();
+  // const historyCounts = calculateHistoryCounts();
 
 
   useEffect(() => {

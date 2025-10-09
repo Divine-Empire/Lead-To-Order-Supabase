@@ -599,7 +599,7 @@
 //                 <tbody>
 //                   <tr>
 //                     <td style={{ padding: '4px 0', fontWeight: 'bold', verticalAlign: 'top', width: '100px' }}>Validity</td>
-//                     <td style={{ padding: '4px 0' }}>{quotationData.validity || "The above quoted prices are valid up to 5 days from date of offer."}</td>
+//                     <td style={{ padding: '4px 0' }}>{quotationData.validity || "The above quoted prices are valid up to 10 days from date of offer."}</td>
 //                   </tr>
 //                   <tr>
 //                     <td style={{ padding: '4px 0', fontWeight: 'bold', verticalAlign: 'top' }}>Payment Terms</td>
@@ -607,19 +607,19 @@
 //                   </tr>
 //                   <tr>
 //                     <td style={{ padding: '4px 0', fontWeight: 'bold', verticalAlign: 'top' }}>Delivery</td>
-//                     <td style={{ padding: '4px 0' }}>{quotationData.delivery || "Material is ready in our stock"}</td>
+//                     <td style={{ padding: '4px 0' }}>{quotationData.delivery || "Material will be dispatched after receipt of advance payment and upon confirmation of complete purchase order (PO) from the buyer."}</td>
 //                   </tr>
 //                   <tr>
 //                     <td style={{ padding: '4px 0', fontWeight: 'bold', verticalAlign: 'top' }}>Freight</td>
-//                     <td style={{ padding: '4px 0' }}>{quotationData.freight || "Extra as per actual."}</td>
+//                     <td style={{ padding: '4px 0' }}>{quotationData.freight || "Extra mentioned in the quotation."}</td>
 //                   </tr>
 //                   <tr>
 //                     <td style={{ padding: '4px 0', fontWeight: 'bold', verticalAlign: 'top' }}>Insurance</td>
-//                     <td style={{ padding: '4px 0' }}>{quotationData.insurance || "Transit insurance for all shipment is at Buyer's risk."}</td>
+//                     <td style={{ padding: '4px 0' }}>{quotationData.insurance || "Transit insurance for all shipment is at Buyer's scope."}</td>
 //                   </tr>
 //                   <tr>
 //                     <td style={{ padding: '4px 0', fontWeight: 'bold', verticalAlign: 'top' }}>Taxes</td>
-//                     <td style={{ padding: '4px 0' }}>{quotationData.taxes || "Extra as per actual."}</td>
+//                     <td style={{ padding: '4px 0' }}>{quotationData.taxes || "Extra mentioned in the quotation."}</td>
 //                   </tr>
 //                 </tbody>
 //               </table>
@@ -1431,7 +1431,7 @@ const QuotationPDFComponent = ({ quotationData, selectedReferences, specialDisco
                 <tbody>
                   <tr>
                     <td style={{ padding: '4px 0', fontWeight: 'bold', verticalAlign: 'top', width: '100px' }}>Validity</td>
-                    <td style={{ padding: '4px 0' }}>{quotationData.validity || "The above quoted prices are valid up to 5 days from date of offer."}</td>
+                    <td style={{ padding: '4px 0' }}>{quotationData.validity || "The above quoted prices are valid up to 10 days from date of offer."}</td>
                   </tr>
                   <tr>
                     <td style={{ padding: '4px 0', fontWeight: 'bold', verticalAlign: 'top' }}>Payment Terms</td>
@@ -1439,19 +1439,19 @@ const QuotationPDFComponent = ({ quotationData, selectedReferences, specialDisco
                   </tr>
                   <tr>
                     <td style={{ padding: '4px 0', fontWeight: 'bold', verticalAlign: 'top' }}>Delivery</td>
-                    <td style={{ padding: '4px 0' }}>{quotationData.delivery || "Material is ready in our stock"}</td>
+                    <td style={{ padding: '4px 0' }}>{quotationData.delivery || "Material will be dispatched after receipt of advance payment and upon confirmation of complete purchase order (PO) from the buyer."}</td>
                   </tr>
                   <tr>
                     <td style={{ padding: '4px 0', fontWeight: 'bold', verticalAlign: 'top' }}>Freight</td>
-                    <td style={{ padding: '4px 0' }}>{quotationData.freight || "Extra as per actual."}</td>
+                    <td style={{ padding: '4px 0' }}>{quotationData.freight || "Extra mentioned in the quotation."}</td>
                   </tr>
                   <tr>
                     <td style={{ padding: '4px 0', fontWeight: 'bold', verticalAlign: 'top' }}>Insurance</td>
-                    <td style={{ padding: '4px 0' }}>{quotationData.insurance || "Transit insurance for all shipment is at Buyer's risk."}</td>
+                    <td style={{ padding: '4px 0' }}>{quotationData.insurance || "Transit insurance for all shipment is at Buyer's scope."}</td>
                   </tr>
                   <tr>
                     <td style={{ padding: '4px 0', fontWeight: 'bold', verticalAlign: 'top' }}>Taxes</td>
-                    <td style={{ padding: '4px 0' }}>{quotationData.taxes || "Extra as per actual."}</td>
+                    <td style={{ padding: '4px 0' }}>{quotationData.taxes || "Extra mentioned in the quotation."}</td>
                   </tr>
                 </tbody>
               </table>
@@ -1502,7 +1502,8 @@ const QuotationPDFComponent = ({ quotationData, selectedReferences, specialDisco
           breakInside: 'avoid'
         }}>
           <div style={{ width: '50%' }}>
-            <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 'bold' }}>Bank Details</h4>
+            <h4 style={{ margin: '0 0 1px 0', fontSize: '14px', fontWeight: 'bold' }}>Bank Details</h4>
+            <h6 style={{margin: '0 0 8px 0'}}>DIVINE EMPIRE INDIA PVT LTD.</h6>
             <div style={{ fontSize: '11px', lineHeight: '1.4' }}>
               <p style={{ margin: '3px 0' }}>Account No.: {quotationData.accountNo || "N/A"}</p>
               <p style={{ margin: '3px 0' }}>Bank Name: {quotationData.bankName || "N/A"}</p>
