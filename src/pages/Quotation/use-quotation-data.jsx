@@ -82,44 +82,82 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
 
   const roundToTwo = (value) => Number(Number(value || 0).toFixed(2));
 
-  const recalculateTotals = (items, shouldUseIGST, discountValue = specialDiscount) => {
+  const extractGSTParts = (gstValue) => {
+    if (!gstValue) return [];
+
+    const text = String(gstValue).trim();
+    const matches = [...text.matchAll(/(\d+(?:\.\d+)?)/g)];
+    return matches
+      .map((match) => Number.parseFloat(match[1]))
+      .filter((num) => Number.isFinite(num));
+  };
+
+  const getRatesForCalculation = (gstValue) => {
+    const parts = extractGSTParts(gstValue);
+    if (parts.length === 0) return [];
+
+    if (parts.every((value) => value === parts[0])) {
+      return [parts.reduce((sum, value) => sum + value, 0)];
+    }
+
+    return parts;
+  };
+
+  const recalculateTotals = (
+    items,
+    shouldUseIGST,
+    discountValue = specialDiscount
+  ) => {
     const subtotal = roundToTwo(
       items.reduce((sum, item) => sum + Number(item.amount || 0), 0)
     );
 
-    let cgstAmount = 0;
-    let sgstAmount = 0;
-    let igstAmount = 0;
+    const cgstBreakdown = {};
+    const sgstBreakdown = {};
+    const igstBreakdown = {};
 
     items.forEach((item) => {
       const amount = Number(item.amount || 0);
-      const itemGST = Number(item.gst || 0);
+      if (amount <= 0) return;
 
-      if (amount <= 0 || itemGST <= 0) {
-        return;
-      }
+      const ratesToApply = getRatesForCalculation(item.gst);
+      if (ratesToApply.length === 0) return;
 
-      if (shouldUseIGST) {
-        igstAmount += (amount * itemGST) / 100;
-      } else {
-        const halfGST = itemGST / 2;
-        const cgstContribution = (amount * halfGST) / 100;
-        cgstAmount += cgstContribution;
-        sgstAmount += cgstContribution;
-      }
+      ratesToApply.forEach((rate) => {
+        if (rate <= 0) return;
+
+        if (shouldUseIGST) {
+          igstBreakdown[rate] =
+            (igstBreakdown[rate] || 0) + roundToTwo((amount * rate) / 100);
+        } else {
+          const halfRate = rate / 2;
+          const halfValue = roundToTwo((amount * halfRate) / 100);
+          cgstBreakdown[halfRate] = (cgstBreakdown[halfRate] || 0) + halfValue;
+          sgstBreakdown[halfRate] = (sgstBreakdown[halfRate] || 0) + halfValue;
+        }
+      });
     });
 
-    cgstAmount = roundToTwo(cgstAmount);
-    sgstAmount = roundToTwo(sgstAmount);
-    igstAmount = roundToTwo(igstAmount);
+    const sumValues = (obj) =>
+      Object.values(obj).reduce((acc, value) => acc + Number(value || 0), 0);
+    const sumKeys = (obj) =>
+      Object.keys(obj).reduce((acc, key) => acc + Number.parseFloat(key || 0), 0);
 
-    const taxableAmount = subtotal;
-    const cgstRate = !shouldUseIGST && taxableAmount > 0 ? roundToTwo((cgstAmount / taxableAmount) * 100) : 0;
-    const sgstRate = !shouldUseIGST && taxableAmount > 0 ? roundToTwo((sgstAmount / taxableAmount) * 100) : 0;
-    const igstRate = shouldUseIGST && taxableAmount > 0 ? roundToTwo((igstAmount / taxableAmount) * 100) : 0;
+    const cgstAmount = roundToTwo(sumValues(cgstBreakdown));
+    const sgstAmount = roundToTwo(sumValues(sgstBreakdown));
+    const igstAmount = roundToTwo(sumValues(igstBreakdown));
 
-    const totalBeforeSpecialDiscount = subtotal + cgstAmount + sgstAmount + igstAmount;
-    const total = Math.max(0, roundToTwo(totalBeforeSpecialDiscount - Number(discountValue || 0)));
+    const cgstRate = !shouldUseIGST ? roundToTwo(sumKeys(cgstBreakdown)) : 0;
+    const sgstRate = !shouldUseIGST ? roundToTwo(sumKeys(sgstBreakdown)) : 0;
+    const igstRate = shouldUseIGST ? roundToTwo(sumKeys(igstBreakdown)) : 0;
+
+    const totalBeforeSpecialDiscount =
+      subtotal + cgstAmount + sgstAmount + igstAmount;
+
+    const total = Math.max(
+      0,
+      roundToTwo(totalBeforeSpecialDiscount - Number(discountValue || 0))
+    );
 
     return {
       subtotal,
@@ -129,6 +167,9 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
       cgstRate,
       sgstRate,
       igstRate,
+      cgstBreakdown,
+      sgstBreakdown,
+      igstBreakdown,
       total,
     };
   };
@@ -369,6 +410,17 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
     });
   };
 
+  const getGSTDisplayText = (gstValue) => {
+    const parts = extractGSTParts(gstValue);
+    if (parts.length === 0) return "0%";
+
+    if (parts.every((value) => value === parts[0])) {
+      return `${parts.reduce((sum, value) => sum + value, 0)}%`;
+    }
+
+    return parts.map((value) => `${value}%`).join(" + ");
+  };
+
   return {
     quotationData,
     setQuotationData,
@@ -387,5 +439,6 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
     addSpecialOffer,
     removeSpecialOffer,
     handleSpecialOfferChange,
+    getGSTDisplayText,
   };
 };

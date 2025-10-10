@@ -37,13 +37,13 @@ const ItemsTable = ({
   const taxableAmount = quotationData.subtotal;
 
   return (
-    <div className="bg-white border rounded-lg p-4 shadow-sm">
+    <div className="p-4 bg-white rounded-lg border shadow-sm">
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-medium">Items</h3>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex flex-wrap gap-2">
             <button
-              className="px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-700 hover:bg-gray-50"
+              className="px-2 py-1 text-xs text-gray-700 rounded-md border border-gray-300 hover:bg-gray-50"
               onClick={() =>
                 setHiddenColumns((prev) => ({
                   ...prev,
@@ -55,7 +55,7 @@ const ItemsTable = ({
             </button>
 
             <button
-              className="px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-700 hover:bg-gray-50"
+              className="px-2 py-1 text-xs text-gray-700 rounded-md border border-gray-300 hover:bg-gray-50"
               onClick={() =>
                 setHiddenColumns((prev) => ({
                   ...prev,
@@ -66,7 +66,7 @@ const ItemsTable = ({
               {hideDisc ? "Show" : "Hide"} Disc%
             </button>
             <button
-              className="px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-700 hover:bg-gray-50"
+              className="px-2 py-1 text-xs text-gray-700 rounded-md border border-gray-300 hover:bg-gray-50"
               onClick={() =>
                 setHiddenColumns((prev) => ({
                   ...prev,
@@ -77,7 +77,7 @@ const ItemsTable = ({
               {hideFlatDisc ? "Show" : "Hide"} Flat Disc
             </button>
             <button
-              className="px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-700 hover:bg-gray-50"
+              className="px-2 py-1 text-xs text-gray-700 rounded-md border border-gray-300 hover:bg-gray-50"
               onClick={() =>
                 setHiddenColumns((prev) => ({
                   ...prev,
@@ -88,7 +88,7 @@ const ItemsTable = ({
               {hideTotalFlatDisc ? "Show" : "Hide"} Total Flat Disc
             </button>
             <button
-              className="px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-700 hover:bg-gray-50"
+              className="px-2 py-1 text-xs text-gray-700 rounded-md border border-gray-300 hover:bg-gray-50"
               onClick={() =>
                 setHiddenColumns((prev) => ({
                   ...prev,
@@ -99,64 +99,64 @@ const ItemsTable = ({
               {hideSpecialDiscount ? "Show" : "Hide"} Special Disc
             </button>
             <button
-              className="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50"
+              className="px-3 py-1 text-sm text-gray-700 rounded-md border border-gray-300 hover:bg-gray-50"
               onClick={handleAddItem}
               disabled={isLoading}
             >
-              <PlusIcon className="h-4 w-4 inline mr-1" /> Add Item
+              <PlusIcon className="inline mr-1 w-4 h-4" /> Add Item
             </button>
           </div>
         </div>
 
         <div className="overflow-x-auto relative">
           {isLoading && (
-            <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-10">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            <div className="flex absolute inset-0 z-10 justify-center items-center bg-white bg-opacity-70">
+              <div className="w-12 h-12 rounded-full border-t-2 border-b-2 border-blue-500 animate-spin"></div>
             </div>
           )}
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
                   S No.
                 </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
                   Code
                 </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
                   Product Name
                 </th>
                 {!hideDescription && (
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
                     Description
                   </th>
                 )}
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
                   GST %
                 </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
                   Qty.
                 </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
                   Units
                 </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
                   Rate
                 </th>
                 {!hideDisc && (
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
                     Disc %
                   </th>
                 )}
                 {!hideFlatDisc && (
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
                     Flat Disc
                   </th>
                 )}
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
                   Amount
                 </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
                   Action
                 </th>
               </tr>
@@ -185,7 +185,7 @@ const ItemsTable = ({
                           }
                         }}
                         list={`code-list-${item.id}`}
-                        className="w-24 p-1 border border-gray-300 rounded-md"
+                        className="p-1 w-24 rounded-md border border-gray-300"
                         disabled={isLoading}
                       />
                       <datalist id={`code-list-${item.id}`}>
@@ -215,7 +215,7 @@ const ItemsTable = ({
                           }
                         }}
                         list={`name-list-${item.id}`}
-                        className="w-full p-1 border border-gray-300 rounded-md"
+                        className="p-1 w-full rounded-md border border-gray-300"
                         placeholder="Enter item name"
                         disabled={isLoading}
                         required
@@ -241,7 +241,7 @@ const ItemsTable = ({
                               e.target.value
                             )
                           }
-                          className="w-full p-1 border border-gray-300 rounded-md"
+                          className="p-1 w-full rounded-md border border-gray-300"
                           placeholder="Enter description"
                           disabled={isLoading}
                         />
@@ -251,15 +251,11 @@ const ItemsTable = ({
 
                   <td className="px-4 py-2">
                     <select
-                      value={item.gst}
+                      value={String(item.gst)}
                       onChange={(e) =>
-                        handleItemChange(
-                          item.id,
-                          "gst",
-                          Number.parseInt(e.target.value)
-                        )
+                        handleItemChange(item.id, "gst", e.target.value)
                       }
-                      className="w-20 p-1 border border-gray-300 rounded-md"
+                      className="p-1 w-20 rounded-md border border-gray-300"
                       disabled={isLoading}
                     >
                       <option value="0">0%</option>
@@ -278,7 +274,7 @@ const ItemsTable = ({
                           Number.parseFloat(e.target.value) || 0
                         )
                       }
-                      className="w-16 p-1 border border-gray-300 rounded-md"
+                      className="p-1 w-16 rounded-md border border-gray-300"
                       placeholder="0"
                       step="0.01" // Add this to allow decimal values
                       min="0" // Add this to prevent negative values
@@ -292,7 +288,7 @@ const ItemsTable = ({
                       onChange={(e) =>
                         handleItemChange(item.id, "units", e.target.value)
                       }
-                      className="w-20 p-1 border border-gray-300 rounded-md"
+                      className="p-1 w-20 rounded-md border border-gray-300"
                       disabled={isLoading}
                     >
                       <option value="Nos">Nos</option>
@@ -320,7 +316,7 @@ const ItemsTable = ({
                           Number.parseFloat(e.target.value) || 0
                         )
                       }
-                      className="w-24 p-1 border border-gray-300 rounded-md"
+                      className="p-1 w-24 rounded-md border border-gray-300"
                       placeholder="0.00"
                       disabled={isLoading}
                       required
@@ -338,7 +334,7 @@ const ItemsTable = ({
                             Number.parseFloat(e.target.value) || 0
                           )
                         }
-                        className="w-20 p-1 border border-gray-300 rounded-md"
+                        className="p-1 w-20 rounded-md border border-gray-300"
                         placeholder="0%"
                         min="0"
                         max="100"
@@ -358,7 +354,7 @@ const ItemsTable = ({
                             Number.parseFloat(e.target.value) || 0
                           )
                         }
-                        className="w-24 p-1 border border-gray-300 rounded-md"
+                        className="p-1 w-24 rounded-md border border-gray-300"
                         placeholder="0.00"
                         min="0"
                         disabled={isLoading}
@@ -369,16 +365,18 @@ const ItemsTable = ({
                     <input
                       type="number"
                       value={item.amount}
-                      className="w-24 p-1 border border-gray-300 rounded-md bg-gray-50"
+                      className="p-1 w-24 bg-gray-50 rounded-md border border-gray-300"
                       readOnly
                     />
                   </td>
                   <td className="px-4 py-2">
                     <button
-                      className="text-red-500 hover:text-red-700 p-1 rounded-md"
+                      className="p-1 text-red-500 rounded-md hover:text-red-700"
                       onClick={() => {
                         setQuotationData((prev) => {
-                          const newItems = prev.items.filter((i) => i.id !== item.id);
+                          const newItems = prev.items.filter(
+                            (i) => i.id !== item.id
+                          );
                           if (newItems.length === 0) {
                             return prev;
                           }
@@ -388,7 +386,8 @@ const ItemsTable = ({
                             0
                           );
                           const totalFlatDiscount = newItems.reduce(
-                            (sum, current) => sum + Number(current.flatDiscount || 0),
+                            (sum, current) =>
+                              sum + Number(current.flatDiscount || 0),
                             0
                           );
 
@@ -398,10 +397,18 @@ const ItemsTable = ({
 
                           newItems.forEach((current) => {
                             const amount = Number(current.amount || 0);
-                            const itemGST = Number(current.gst || 0);
+                            let itemGST = Number(current.gst || 0);
 
                             if (amount <= 0 || itemGST <= 0) {
                               return;
+                            }
+
+                            // Apply the same logic as in recalculateTotals
+                            // If the GST text includes "IGST", apply half the rate
+                            if (
+                              String(current.gst).toUpperCase().includes("IGST")
+                            ) {
+                              itemGST = itemGST / 2;
                             }
 
                             if (prev.isIGST) {
@@ -420,24 +427,48 @@ const ItemsTable = ({
                           igstAmount = Number(igstAmount.toFixed(2));
 
                           const totalBeforeSpecialDiscount =
-                            roundedSubtotal + cgstAmount + sgstAmount + igstAmount;
-                          const specialDiscountValue = Number(specialDiscount) || 0;
+                            roundedSubtotal +
+                            cgstAmount +
+                            sgstAmount +
+                            igstAmount;
+                          const specialDiscountValue =
+                            Number(specialDiscount) || 0;
                           const total = Math.max(
                             0,
-                            Number((totalBeforeSpecialDiscount - specialDiscountValue).toFixed(2))
+                            Number(
+                              (
+                                totalBeforeSpecialDiscount -
+                                specialDiscountValue
+                              ).toFixed(2)
+                            )
                           );
 
                           const cgstRate =
                             !prev.isIGST && roundedSubtotal > 0
-                              ? Number(((cgstAmount / roundedSubtotal) * 100).toFixed(2))
+                              ? Number(
+                                  (
+                                    (cgstAmount / roundedSubtotal) *
+                                    100
+                                  ).toFixed(2)
+                                )
                               : 0;
                           const sgstRate =
                             !prev.isIGST && roundedSubtotal > 0
-                              ? Number(((sgstAmount / roundedSubtotal) * 100).toFixed(2))
+                              ? Number(
+                                  (
+                                    (sgstAmount / roundedSubtotal) *
+                                    100
+                                  ).toFixed(2)
+                                )
                               : 0;
                           const igstRate =
                             prev.isIGST && roundedSubtotal > 0
-                              ? Number(((igstAmount / roundedSubtotal) * 100).toFixed(2))
+                              ? Number(
+                                  (
+                                    (igstAmount / roundedSubtotal) *
+                                    100
+                                  ).toFixed(2)
+                                )
                               : 0;
 
                           return {
@@ -457,7 +488,7 @@ const ItemsTable = ({
                       }}
                       disabled={quotationData.items.length <= 1 || isLoading}
                     >
-                      <TrashIcon className="h-4 w-4" />
+                      <TrashIcon className="w-4 h-4" />
                     </button>
                   </td>
                 </tr>
@@ -467,11 +498,11 @@ const ItemsTable = ({
               <tr>
                 <td
                   colSpan={calculateColSpan()}
-                  className="px-4 py-2 text-right font-medium"
+                  className="px-4 py-2 font-medium text-right"
                 >
                   Subtotal:
                 </td>
-                <td className="border p-2">
+                <td className="p-2 border">
                   ₹
                   {typeof quotationData.subtotal === "number"
                     ? quotationData.subtotal.toFixed(2)
@@ -483,7 +514,7 @@ const ItemsTable = ({
                 <tr>
                   <td
                     colSpan={calculateColSpan()}
-                    className="px-4 py-2 text-right font-medium"
+                    className="px-4 py-2 font-medium text-right"
                   >
                     Total Flat Discount:
                   </td>
@@ -499,7 +530,7 @@ const ItemsTable = ({
               <tr className="border">
                 <td
                   colSpan={calculateColSpan()}
-                  className="px-4 py-2 text-right font-medium"
+                  className="px-4 py-2 font-medium text-right"
                 >
                   Taxable Amount:
                 </td>
@@ -507,42 +538,82 @@ const ItemsTable = ({
                 <td></td>
               </tr>
               {quotationData.isIGST ? (
-                <tr className="border">
-                  <td
-                    colSpan={calculateColSpan()}
-                    className="px-4 py-2 text-right font-medium"
-                  >
-                    IGST ({quotationData.igstRate}%):
-                  </td>
-                  <td className="px-4 py-2">
-                    ₹{(quotationData.igstAmount || 0).toFixed(2)}
-                  </td>
-                  <td></td>
-                </tr>
-              ) : (
                 <>
+                  {Object.entries(quotationData.igstBreakdown || {}).map(
+                    ([rate, value]) => (
+                      <tr className="border" key={`igst-${rate}`}>
+                        <td
+                          colSpan={calculateColSpan()}
+                          className="px-4 py-2 font-medium text-right"
+                        >
+                          IGST ({Number(rate)}%):
+                        </td>
+                        <td className="px-4 py-2">₹{Number(value).toFixed(2)}</td>
+                        <td></td>
+                      </tr>
+                    )
+                  )}
                   <tr className="border">
                     <td
                       colSpan={calculateColSpan()}
-                      className="px-4 py-2 text-right font-medium"
+                      className="px-4 py-2 font-medium text-right"
                     >
-                      CGST ({quotationData.cgstRate}%):
+                      IGST Total:
                     </td>
                     <td className="px-4 py-2">
-                      ₹{quotationData.cgstAmount.toFixed(2)}
+                      ₹{(quotationData.igstAmount || 0).toFixed(2)}
                     </td>
                     <td></td>
                   </tr>
+                </>
+              ) : (
+                <>
+                  {Object.entries(quotationData.cgstBreakdown || {}).map(
+                    ([rate, value]) => (
+                      <tr className="border" key={`cgst-${rate}`}>
+                        <td
+                          colSpan={calculateColSpan()}
+                          className="px-4 py-2 font-medium text-right"
+                        >
+                          CGST ({Number(rate)}%):
+                        </td>
+                        <td className="px-4 py-2">₹{Number(value).toFixed(2)}</td>
+                        <td></td>
+                      </tr>
+                    )
+                  )}
                   <tr className="border">
                     <td
                       colSpan={calculateColSpan()}
-                      className="px-4 py-2 text-right font-medium"
+                      className="px-4 py-2 font-medium text-right"
                     >
-                      SGST ({quotationData.sgstRate}%):
+                      CGST Total:
                     </td>
-                    <td className="px-4 py-2">
-                      ₹{quotationData.sgstAmount.toFixed(2)}
+                    <td className="px-4 py-2">₹{(quotationData.cgstAmount || 0).toFixed(2)}</td>
+                    <td></td>
+                  </tr>
+                  {Object.entries(quotationData.sgstBreakdown || {}).map(
+                    ([rate, value]) => (
+                      <tr className="border" key={`sgst-${rate}`}>
+                        <td
+                          colSpan={calculateColSpan()}
+                          className="px-4 py-2 font-medium text-right"
+                        >
+                          SGST ({Number(rate)}%):
+                        </td>
+                        <td className="px-4 py-2">₹{Number(value).toFixed(2)}</td>
+                        <td></td>
+                      </tr>
+                    )
+                  )}
+                  <tr className="border">
+                    <td
+                      colSpan={calculateColSpan()}
+                      className="px-4 py-2 font-medium text-right"
+                    >
+                      SGST Total:
                     </td>
+                    <td className="px-4 py-2">₹{(quotationData.sgstAmount || 0).toFixed(2)}</td>
                     <td></td>
                   </tr>
                 </>
@@ -551,7 +622,7 @@ const ItemsTable = ({
                 <tr>
                   <td
                     colSpan={calculateColSpan()}
-                    className="px-4 py-2 text-right font-medium"
+                    className="px-4 py-2 font-medium text-right"
                   >
                     Special Discount:
                   </td>
@@ -564,7 +635,7 @@ const ItemsTable = ({
                         setSpecialDiscount(value);
                         handleSpecialDiscountChange(value);
                       }}
-                      className="w-24 p-1 border border-gray-300 rounded-md"
+                      className="p-1 w-24 rounded-md border border-gray-300"
                       min="0"
                       placeholder="0.00"
                       disabled={isLoading}
@@ -578,7 +649,7 @@ const ItemsTable = ({
                 <tr>
                   <td
                     colSpan={calculateColSpan()}
-                    className="px-4 py-2 text-right font-medium"
+                    className="px-4 py-2 font-medium text-right"
                   >
                     Total Discount:
                   </td>
@@ -613,28 +684,20 @@ const ItemsTable = ({
                 <td className="px-4 py-2">
                   ₹
                   {(() => {
-                    const taxableAmt = Math.max(
+                    const subtotalAfterFlatDiscount = Math.max(
                       0,
                       quotationData.subtotal - quotationData.totalFlatDiscount
                     );
-                    let grandTotal = 0;
 
-                    if (quotationData.isIGST) {
-                      const igstAmt =
-                        taxableAmt * (quotationData.igstRate / 100);
-                      grandTotal =
-                        taxableAmt + igstAmt - (Number(specialDiscount) || 0);
-                    } else {
-                      const cgstAmt =
-                        taxableAmt * (quotationData.cgstRate / 100);
-                      const sgstAmt =
-                        taxableAmt * (quotationData.sgstRate / 100);
-                      grandTotal =
-                        taxableAmt +
-                        cgstAmt +
-                        sgstAmt -
-                        (Number(specialDiscount) || 0);
-                    }
+                    // Use pre-calculated tax amounts directly, not re-calculated from rates
+                    const totalTaxAmount =
+                      quotationData.cgstAmount +
+                      quotationData.sgstAmount +
+                      quotationData.igstAmount;
+                    const grandTotal =
+                      subtotalAfterFlatDiscount +
+                      totalTaxAmount -
+                      (Number(specialDiscount) || 0);
 
                     return Math.max(0, grandTotal).toFixed(2);
                   })()}
