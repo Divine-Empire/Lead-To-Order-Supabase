@@ -6,6 +6,47 @@ import {
   DownloadIcon,
 } from "../../components/Icons";
 
+// Function to convert number to words for Indian Rupees
+const numberToWords = (num) => {
+  const ones = [
+    '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'
+  ];
+  const teens = [
+    'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
+    'Seventeen', 'Eighteen', 'Nineteen'
+  ];
+  const tens = [
+    '', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'
+  ];
+
+  const convertHundreds = (n) => {
+    if (n === 0) return '';
+    if (n < 10) return ones[n];
+    if (n < 20) return teens[n - 10];
+    if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + ones[n % 10] : '');
+    if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' ' + convertHundreds(n % 100) : '');
+    if (n < 100000) return convertHundreds(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 !== 0 ? ' ' + convertHundreds(n % 1000) : '');
+    if (n < 10000000) return convertHundreds(Math.floor(n / 100000)) + ' Lakh' + (n % 100000 !== 0 ? ' ' + convertHundreds(n % 100000) : '');
+    return convertHundreds(Math.floor(n / 10000000)) + ' Crore' + (n % 10000000 !== 0 ? ' ' + convertHundreds(n % 10000000) : '');
+  };
+
+  if (num === 0) return 'Zero';
+
+  const rupees = Math.floor(num);
+  const paise = Math.round((num - rupees) * 100);
+
+  let result = '';
+  if (rupees > 0) {
+    result += convertHundreds(rupees) + ' Rupees';
+  }
+  if (paise > 0) {
+    if (rupees > 0) result += ' and ';
+    result += convertHundreds(paise) + ' Paise';
+  }
+
+  return result + ' Only';
+};
+
 const QuotationPreview = ({
   quotationData,
   quotationLink,
@@ -261,16 +302,8 @@ const QuotationPreview = ({
             <div>
               <p className="font-bold">Amount Chargeable (in words)</p>
               <p className="capitalize">
-                Rupees{" "}
                 {Number(quotationData.total) > 0
-                  ? new Intl.NumberFormat("en-IN", {
-                      style: "currency",
-                      currency: "INR",
-                      minimumFractionDigits: 2,
-                    })
-                      .format(quotationData.total)
-                      .replace("₹", "")
-                      .trim() + " Only"
+                  ? numberToWords(quotationData.total)
                   : "Zero Only"}
               </p>
             </div>

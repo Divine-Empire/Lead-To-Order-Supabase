@@ -31,13 +31,24 @@ const ItemsTable = ({
     return baseSpan.toString();
   };
 
-  // Calculate taxable amount properly (subtotal - totalFlatDiscount)
-  // const taxableAmount = Math.max(0, quotationData.subtotal - quotationData.totalFlatDiscount)
+  // Calculate taxable amount - this is subtotal (which already has flat discount applied to items)
+  const taxableAmount = Math.max(0, quotationData.subtotal || 0);
 
-  const taxableAmount = quotationData.subtotal;
+  // CSS to remove up-down buttons from number inputs
+  const spinnerCSS = `
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+  `;
 
   return (
     <div className="p-4 bg-white rounded-lg border shadow-sm">
+      <style>{spinnerCSS}</style>
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-medium">Items</h3>
@@ -108,13 +119,19 @@ const ItemsTable = ({
           </div>
         </div>
 
-        <div className="overflow-x-auto relative">
+        <div
+          className="overflow-x-auto relative"
+          onWheel={(e) => e.preventDefault()}
+        >
           {isLoading && (
             <div className="flex absolute inset-0 z-10 justify-center items-center bg-white bg-opacity-70">
               <div className="w-12 h-12 rounded-full border-t-2 border-b-2 border-blue-500 animate-spin"></div>
             </div>
           )}
-          <table className="min-w-full divide-y divide-gray-200">
+          <table
+            className="min-w-full divide-y divide-gray-200"
+            onWheel={(e) => e.preventDefault()}
+          >
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
@@ -265,8 +282,10 @@ const ItemsTable = ({
                   </td>
                   <td className="px-4 py-2">
                     <input
-                      type="number"
-                      value={item.qty}
+                      type="text"
+                      inputMode="decimal"
+                      pattern="[0-9]*"
+                      value={item.qty || ""}
                       onChange={(e) =>
                         handleItemChange(
                           item.id,
@@ -275,9 +294,9 @@ const ItemsTable = ({
                         )
                       }
                       className="p-1 w-16 rounded-md border border-gray-300"
-                      placeholder="0"
-                      step="0.01" // Add this to allow decimal values
-                      min="0" // Add this to prevent negative values
+                      placeholder=""
+                      onWheel={(e) => e.preventDefault()}
+                      min="0"
                       required
                       disabled={isLoading}
                     />
@@ -307,8 +326,10 @@ const ItemsTable = ({
                   </td>
                   <td className="px-4 py-2">
                     <input
-                      type="number"
-                      value={item.rate}
+                      type="text"
+                      inputMode="decimal"
+                      pattern="[0-9]*\.?[0-9]*"
+                      value={item.rate || ""}
                       onChange={(e) =>
                         handleItemChange(
                           item.id,
@@ -317,7 +338,8 @@ const ItemsTable = ({
                         )
                       }
                       className="p-1 w-24 rounded-md border border-gray-300"
-                      placeholder="0.00"
+                      placeholder=""
+                      onWheel={(e) => e.preventDefault()}
                       disabled={isLoading}
                       required
                     />
@@ -325,8 +347,10 @@ const ItemsTable = ({
                   {!hideDisc && (
                     <td className="px-4 py-2">
                       <input
-                        type="number"
-                        value={item.discount}
+                        type="text"
+                        inputMode="decimal"
+                        pattern="[0-9]*"
+                        value={item.discount || ""}
                         onChange={(e) =>
                           handleItemChange(
                             item.id,
@@ -335,7 +359,8 @@ const ItemsTable = ({
                           )
                         }
                         className="p-1 w-20 rounded-md border border-gray-300"
-                        placeholder="0%"
+                        placeholder=""
+                        onWheel={(e) => e.preventDefault()}
                         min="0"
                         max="100"
                         disabled={isLoading}
@@ -345,8 +370,10 @@ const ItemsTable = ({
                   {!hideFlatDisc && (
                     <td className="px-4 py-2">
                       <input
-                        type="number"
-                        value={item.flatDiscount}
+                        type="text"
+                        inputMode="decimal"
+                        pattern="[0-9]*"
+                        value={item.flatDiscount || ""}
                         onChange={(e) =>
                           handleItemChange(
                             item.id,
@@ -354,8 +381,10 @@ const ItemsTable = ({
                             Number.parseFloat(e.target.value) || 0
                           )
                         }
-                        className="p-1 w-24 rounded-md border border-gray-300"
-                        placeholder="0.00"
+                        className="p-1 w-16 rounded-md border border-gray-300"
+                        placeholder=""
+                        onWheel={(e) => e.preventDefault()}
+                        step="0.01"
                         min="0"
                         disabled={isLoading}
                       />
@@ -363,8 +392,8 @@ const ItemsTable = ({
                   )}
                   <td className="px-4 py-2">
                     <input
-                      type="number"
-                      value={item.amount}
+                      type="text"
+                      value={item.amount || ""}
                       className="p-1 w-24 bg-gray-50 rounded-md border border-gray-300"
                       readOnly
                     />
@@ -403,8 +432,6 @@ const ItemsTable = ({
                               return;
                             }
 
-                            // Apply the same logic as in recalculateTotals
-                            // If the GST text includes "IGST", apply half the rate
                             if (
                               String(current.gst).toUpperCase().includes("IGST")
                             ) {
@@ -426,19 +453,14 @@ const ItemsTable = ({
                           sgstAmount = Number(sgstAmount.toFixed(2));
                           igstAmount = Number(igstAmount.toFixed(2));
 
-                          const totalBeforeSpecialDiscount =
-                            roundedSubtotal +
-                            cgstAmount +
-                            sgstAmount +
-                            igstAmount;
-                          const specialDiscountValue =
-                            Number(specialDiscount) || 0;
                           const total = Math.max(
                             0,
                             Number(
                               (
-                                totalBeforeSpecialDiscount -
-                                specialDiscountValue
+                                roundedSubtotal +
+                                cgstAmount +
+                                sgstAmount +
+                                igstAmount
                               ).toFixed(2)
                             )
                           );
@@ -548,7 +570,9 @@ const ItemsTable = ({
                         >
                           IGST ({Number(rate)}%):
                         </td>
-                        <td className="px-4 py-2">₹{Number(value).toFixed(2)}</td>
+                        <td className="px-4 py-2">
+                          ₹{Number(value).toFixed(2)}
+                        </td>
                         <td></td>
                       </tr>
                     )
@@ -577,7 +601,9 @@ const ItemsTable = ({
                         >
                           CGST ({Number(rate)}%):
                         </td>
-                        <td className="px-4 py-2">₹{Number(value).toFixed(2)}</td>
+                        <td className="px-4 py-2">
+                          ₹{Number(value).toFixed(2)}
+                        </td>
                         <td></td>
                       </tr>
                     )
@@ -589,7 +615,9 @@ const ItemsTable = ({
                     >
                       CGST Total:
                     </td>
-                    <td className="px-4 py-2">₹{(quotationData.cgstAmount || 0).toFixed(2)}</td>
+                    <td className="px-4 py-2">
+                      ₹{(quotationData.cgstAmount || 0).toFixed(2)}
+                    </td>
                     <td></td>
                   </tr>
                   {Object.entries(quotationData.sgstBreakdown || {}).map(
@@ -601,7 +629,9 @@ const ItemsTable = ({
                         >
                           SGST ({Number(rate)}%):
                         </td>
-                        <td className="px-4 py-2">₹{Number(value).toFixed(2)}</td>
+                        <td className="px-4 py-2">
+                          ₹{Number(value).toFixed(2)}
+                        </td>
                         <td></td>
                       </tr>
                     )
@@ -613,7 +643,9 @@ const ItemsTable = ({
                     >
                       SGST Total:
                     </td>
-                    <td className="px-4 py-2">₹{(quotationData.sgstAmount || 0).toFixed(2)}</td>
+                    <td className="px-4 py-2">
+                      ₹{(quotationData.sgstAmount || 0).toFixed(2)}
+                    </td>
                     <td></td>
                   </tr>
                 </>
@@ -628,23 +660,24 @@ const ItemsTable = ({
                   </td>
                   <td className="px-4 py-2">
                     <input
-                      type="number"
-                      value={specialDiscount}
+                      type="text"
+                      inputMode="decimal"
+                      pattern="[0-9]*\.?[0-9]*"
+                      value={specialDiscount || ""}
                       onChange={(e) => {
                         const value = e.target.value;
                         setSpecialDiscount(value);
                         handleSpecialDiscountChange(value);
                       }}
                       className="p-1 w-24 rounded-md border border-gray-300"
+                      onWheel={(e) => e.preventDefault()}
                       min="0"
-                      placeholder="0.00"
+                      placeholder=""
                       disabled={isLoading}
                     />
                   </td>
-                  <td></td>
                 </tr>
               )}
-
               {!hideSpecialDiscount && (
                 <tr>
                   <td
@@ -684,18 +717,16 @@ const ItemsTable = ({
                 <td className="px-4 py-2">
                   ₹
                   {(() => {
-                    const subtotalAfterFlatDiscount = Math.max(
-                      0,
-                      quotationData.subtotal - quotationData.totalFlatDiscount
-                    );
-
-                    // Use pre-calculated tax amounts directly, not re-calculated from rates
+                    // Subtotal already has flat discounts applied (it's sum of item amounts)
+                    // Taxes are already calculated on the correct taxable amount
                     const totalTaxAmount =
                       quotationData.cgstAmount +
                       quotationData.sgstAmount +
                       quotationData.igstAmount;
+                    
+                    // Grand Total = Subtotal + Taxes - Special Discount
                     const grandTotal =
-                      subtotalAfterFlatDiscount +
+                      quotationData.subtotal +
                       totalTaxAmount -
                       (Number(specialDiscount) || 0);
 
