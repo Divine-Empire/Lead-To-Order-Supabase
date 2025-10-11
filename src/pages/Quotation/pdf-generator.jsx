@@ -1310,32 +1310,32 @@ const QuotationPDFComponent = ({ quotationData, selectedReferences, specialDisco
               </thead>
               <tbody>
                 {quotationData.isIGST ? (
-                  <tr>
-                    <td style={{ border: '1px solid #ddd', padding: '6px' }}>IGST</td>
-                    <td style={{ border: '1px solid #ddd', padding: '6px' }}>{quotationData.igstRate || 18}%</td>
-                    <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(quotationData.igstAmount || 0)}</td>
-                  </tr>
-                ) : (
-                  <>
-                    <tr>
-                      <td style={{ border: '1px solid #ddd', padding: '6px' }}>CGST</td>
-                      <td style={{ border: '1px solid #ddd', padding: '6px' }}>{cgstRate}%</td>
-                      <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(cgstAmount)}</td>
-                    </tr>
-                    <tr>
-                      <td style={{ border: '1px solid #ddd', padding: '6px' }}>SGST</td>
-                      <td style={{ border: '1px solid #ddd', padding: '6px' }}>{sgstRate}%</td>
-                      <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(sgstAmount)}</td>
-                    </tr>
-                  </>
-                )}
-                <tr style={{ backgroundColor: '#f8f9fa', fontWeight: 'bold' }}>
-                  <td style={{ border: '1px solid #ddd', padding: '6px' }}>Total Tax</td>
-                  <td style={{ border: '1px solid #ddd', padding: '6px' }}>
-                    {quotationData.isIGST ? quotationData.igstRate || 18 : cgstRate + sgstRate}%
-                  </td>
-                  <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(totalTax)}</td>
-                </tr>
+  <tr>
+    <td style={{ border: '1px solid #ddd', padding: '6px' }}>IGST</td>
+    <td style={{ border: '1px solid #ddd', padding: '6px' }}>{quotationData.igstRate || 18}%</td>
+    <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(quotationData.igstAmount || 0)}</td>
+  </tr>
+) : (
+  <>
+    <tr>
+      <td style={{ border: '1px solid #ddd', padding: '6px' }}>CGST</td>
+      <td style={{ border: '1px solid #ddd', padding: '6px' }}>{quotationData.cgstRate || 9}%</td>
+      <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(cgstAmount)}</td>
+    </tr>
+    <tr>
+      <td style={{ border: '1px solid #ddd', padding: '6px' }}>SGST</td>
+      <td style={{ border: '1px solid #ddd', padding: '6px' }}>{quotationData.sgstRate || 9}%</td>
+      <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(sgstAmount)}</td>
+    </tr>
+  </>
+)}
+<tr style={{ backgroundColor: '#f8f9fa', fontWeight: 'bold' }}>
+  <td style={{ border: '1px solid #ddd', padding: '6px' }}>Total Tax</td>
+  <td style={{ border: '1px solid #ddd', padding: '6px' }}>
+    {quotationData.isIGST ? quotationData.igstRate || 18 : (quotationData.cgstRate || 9) + (quotationData.sgstRate || 9)}%
+  </td>
+  <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(totalTax)}</td>
+</tr>
                 {!hiddenColumns.hideSpecialDiscount && specialDiscount > 0 && (
                   <tr>
                     <td style={{ border: '1px solid #ddd', padding: '6px' }} colSpan="2">Special Discount</td>
