@@ -1292,87 +1292,110 @@ const QuotationPDFComponent = ({ quotationData, selectedReferences, specialDisco
         </div>
 
         {/* Tax Breakdown and Amount in Words - Side by side like preview */}
-        <div style={{ display: 'flex', marginBottom: '20px', gap: '16px' }}>
-          <div style={{ width: '50%' }}>
-            <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 'bold' }}>Tax Breakdown</h4>
-            <table style={{ 
-              width: '100%', 
-              borderCollapse: 'collapse',
-              fontSize: '10px',
-              border: '1px solid #ccc'
-            }}>
-              <thead>
-                <tr style={{ backgroundColor: '#f8f9fa' }}>
-                  <th style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'left' }}>Tax Type</th>
-                  <th style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'left' }}>Rate</th>
-                  <th style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'left' }}>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {quotationData.isIGST ? (
-  <tr>
-    <td style={{ border: '1px solid #ddd', padding: '6px' }}>IGST</td>
-    <td style={{ border: '1px solid #ddd', padding: '6px' }}>{quotationData.igstRate || 18}%</td>
-    <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(quotationData.igstAmount || 0)}</td>
-  </tr>
-) : (
-  <>
-    <tr>
-      <td style={{ border: '1px solid #ddd', padding: '6px' }}>CGST</td>
-      <td style={{ border: '1px solid #ddd', padding: '6px' }}>{quotationData.cgstRate || 9}%</td>
-      <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(cgstAmount)}</td>
-    </tr>
-    <tr>
-      <td style={{ border: '1px solid #ddd', padding: '6px' }}>SGST</td>
-      <td style={{ border: '1px solid #ddd', padding: '6px' }}>{quotationData.sgstRate || 9}%</td>
-      <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(sgstAmount)}</td>
-    </tr>
-  </>
-)}
-<tr style={{ backgroundColor: '#f8f9fa', fontWeight: 'bold' }}>
-  <td style={{ border: '1px solid #ddd', padding: '6px' }}>Total Tax</td>
-  <td style={{ border: '1px solid #ddd', padding: '6px' }}>
-    {quotationData.isIGST ? quotationData.igstRate || 18 : (quotationData.cgstRate || 9) + (quotationData.sgstRate || 9)}%
-  </td>
-  <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(totalTax)}</td>
-</tr>
-                {!hiddenColumns.hideSpecialDiscount && specialDiscount > 0 && (
-                  <tr>
-                    <td style={{ border: '1px solid #ddd', padding: '6px' }} colSpan="2">Special Discount</td>
-                    <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>-₹{formatCurrency(specialDiscount)}</td>
-                  </tr>
-                )}
-                <tr style={{ backgroundColor: '#e6f3ff', fontWeight: 'bold' }}>
-                  <td style={{ border: '1px solid #ddd', padding: '6px' }} colSpan="2">Grand Total</td>
-                  <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(grandTotal)}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          
-          <div style={{ width: '50%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-            <div>
-              <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 'bold' }}>Amount Chargeable (in words)</h4>
-              <p style={{ fontSize: '11px', margin: '0', textTransform: 'capitalize' }}>
-                Rupees {Number(grandTotal) > 0
-                  ? new Intl.NumberFormat("en-IN", {
-                      style: "currency",
-                      currency: "INR",
-                      minimumFractionDigits: 2,
-                    })
-                      .format(grandTotal)
-                      .replace("₹", "")
-                      .trim() + " Only"
-                  : "Zero Only"}
-              </p>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <p style={{ fontSize: '18px', fontWeight: 'bold', margin: '0' }}>
-                Grand Total: ₹{formatCurrency(grandTotal)}
-              </p>
-            </div>
-          </div>
-        </div>
+        {/* Tax Breakdown and Amount in Words - Side by side like preview */}
+<div style={{ display: 'flex', marginBottom: '20px', gap: '16px' }}>
+  <div style={{ width: '50%' }}>
+    <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 'bold' }}>Tax Breakdown</h4>
+    <table style={{ 
+      width: '100%', 
+      borderCollapse: 'collapse',
+      fontSize: '10px',
+      border: '1px solid #ccc'
+    }}>
+      <thead>
+        <tr style={{ backgroundColor: '#f8f9fa' }}>
+          <th style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'left' }}>Tax Type</th>
+          <th style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'left' }}>Rate</th>
+          <th style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'left' }}>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {quotationData.isIGST ? (
+          <>
+            {Object.entries(quotationData.igstBreakdown || {}).map(([rate, value]) => (
+              <tr className="border" key={`igst-${rate}`}>
+                <td style={{ border: '1px solid #ddd', padding: '6px' }}>IGST</td>
+                <td style={{ border: '1px solid #ddd', padding: '6px' }}>{Number(rate)}%</td>
+                <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(Number(value))}</td>
+              </tr>
+            ))}
+            <tr style={{ backgroundColor: '#f8f9fa', fontWeight: 'bold' }}>
+              <td style={{ border: '1px solid #ddd', padding: '6px' }}>IGST Total</td>
+              <td style={{ border: '1px solid #ddd', padding: '6px' }}>
+                {quotationData.igstRate || 18}%
+              </td>
+              <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(igstAmount)}</td>
+            </tr>
+          </>
+        ) : (
+          <>
+            {Object.entries(quotationData.cgstBreakdown || {}).map(([rate, value]) => (
+              <tr className="border" key={`cgst-${rate}`}>
+                <td style={{ border: '1px solid #ddd', padding: '6px' }}>CGST</td>
+                <td style={{ border: '1px solid #ddd', padding: '6px' }}>{Number(rate)}%</td>
+                <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(Number(value))}</td>
+              </tr>
+            ))}
+            <tr style={{ backgroundColor: '#f8f9fa', fontWeight: 'bold' }}>
+              <td style={{ border: '1px solid #ddd', padding: '6px' }}>CGST Total</td>
+              <td style={{ border: '1px solid #ddd', padding: '6px' }}>
+                {quotationData.cgstRate || 9}%
+              </td>
+              <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(cgstAmount)}</td>
+            </tr>
+            {Object.entries(quotationData.sgstBreakdown || {}).map(([rate, value]) => (
+              <tr className="border" key={`sgst-${rate}`}>
+                <td style={{ border: '1px solid #ddd', padding: '6px' }}>SGST</td>
+                <td style={{ border: '1px solid #ddd', padding: '6px' }}>{Number(rate)}%</td>
+                <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(Number(value))}</td>
+              </tr>
+            ))}
+            <tr style={{ backgroundColor: '#f8f9fa', fontWeight: 'bold' }}>
+              <td style={{ border: '1px solid #ddd', padding: '6px' }}>SGST Total</td>
+              <td style={{ border: '1px solid #ddd', padding: '6px' }}>
+                {quotationData.sgstRate || 9}%
+              </td>
+              <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(sgstAmount)}</td>
+            </tr>
+          </>
+        )}
+        {!hiddenColumns.hideSpecialDiscount && specialDiscount > 0 && (
+          <tr>
+            <td style={{ border: '1px solid #ddd', padding: '6px' }} colSpan="2">Special Discount</td>
+            <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>-₹{formatCurrency(specialDiscount)}</td>
+          </tr>
+        )}
+        <tr style={{ backgroundColor: '#e6f3ff', fontWeight: 'bold' }}>
+          <td style={{ border: '1px solid #ddd', padding: '6px' }} colSpan="2">Grand Total</td>
+          <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>₹{formatCurrency(grandTotal)}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <div style={{ width: '50%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <div>
+      <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 'bold' }}>Amount Chargeable (in words)</h4>
+      <p style={{ fontSize: '11px', margin: '0', textTransform: 'capitalize' }}>
+        Rupees {Number(grandTotal) > 0
+          ? new Intl.NumberFormat("en-IN", {
+              style: "currency",
+              currency: "INR",
+              minimumFractionDigits: 2,
+            })
+              .format(grandTotal)
+              .replace("₹", "")
+              .trim() + " Only"
+          : "Zero Only"}
+      </p>
+    </div>
+    <div style={{ textAlign: 'right' }}>
+      <p style={{ fontSize: '18px', fontWeight: 'bold', margin: '0' }}>
+        Grand Total: ₹{formatCurrency(grandTotal)}
+      </p>
+    </div>
+  </div>
+</div>
 
         {/* ManiqQuip Logo and Terms Section */}
         <div style={{ 
