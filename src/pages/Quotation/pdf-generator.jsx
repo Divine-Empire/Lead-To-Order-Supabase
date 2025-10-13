@@ -1407,6 +1407,30 @@ const QuotationPDFComponent = ({
                 </td>
               </tr>
 
+              <tr>
+                <td
+                  colSpan={tableHeaders.length - 1}
+                  style={{
+                    border: "1px solid #ddd",
+                    padding: "8px 4px",
+                    textAlign: "right",
+                    fontSize: "10px",
+                  }}
+                >
+                  Total Qty
+                </td>
+                <td
+                  style={{
+                    border: "1px solid #ddd",
+                    padding: "8px 4px",
+                    textAlign: "right",
+                    fontSize: "10px",
+                  }}
+                >
+                  {quotationData.items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0)}
+                </td>
+              </tr>
+
               {!hiddenColumns.hideTotalFlatDisc && totalFlatDiscount > 0 && (
                 <tr>
                   <td

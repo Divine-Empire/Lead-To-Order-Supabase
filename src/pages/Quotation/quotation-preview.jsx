@@ -190,6 +190,22 @@ const QuotationPreview = ({
                   ₹{Number(quotationData.subtotal).toFixed(2)}
                 </td>
               </tr>
+              <tr className="border">
+                <td
+                  colSpan={(() => {
+                    let span = 9;
+                    if (!hiddenColumns?.hideDisc) span += 1;
+                    if (!hiddenColumns?.hideFlatDisc) span += 1;
+                    return span - 1;
+                  })()}
+                  className="p-2 text-right border"
+                >
+                  Total Qty
+                </td>
+                <td className="p-2 border">
+                  {quotationData.items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0)}
+                </td>
+              </tr>
               {!hiddenColumns?.hideTotalFlatDisc && (
                 <tr className="border">
                   <td

@@ -532,6 +532,18 @@ const ItemsTable = ({
                 </td>
                 <td></td>
               </tr>
+              <tr>
+                <td
+                  colSpan={calculateColSpan()}
+                  className="px-4 py-2 font-medium text-right"
+                >
+                  Total Qty:
+                </td>
+                <td className="px-4 py-2">
+                  {quotationData.items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0)}
+                </td>
+                <td></td>
+              </tr>
               {!hideTotalFlatDisc && (
                 <tr>
                   <td
@@ -723,7 +735,7 @@ const ItemsTable = ({
                       quotationData.cgstAmount +
                       quotationData.sgstAmount +
                       quotationData.igstAmount;
-                    
+
                     // Grand Total = Subtotal + Taxes - Special Discount
                     const grandTotal =
                       quotationData.subtotal +
