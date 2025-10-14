@@ -1347,34 +1347,39 @@ const QuotationPDFComponent = ({
                         border: "1px solid #ddd",
                         padding: "8px 4px",
                         textAlign:
-                          cellIndex === 0 ||
-                          cellIndex === 4 ||
-                          cellIndex === 5 ||
-                          cellIndex === 6
+                          tableHeaders[cellIndex] === "S No." ||
+                          tableHeaders[cellIndex] === "GST %" ||
+                          tableHeaders[cellIndex] === "Qty" ||
+                          tableHeaders[cellIndex] === "Units" ||
+                          tableHeaders[cellIndex] === "Disc %" ||
+                          tableHeaders[cellIndex] === "Flat Disc"
                             ? "center"
-                            : cellIndex === 2 || cellIndex === 3
+                            : tableHeaders[cellIndex] === "Product Name" ||
+                              tableHeaders[cellIndex] === "Description" ||
+                              tableHeaders[cellIndex] === "Code"
                             ? "left"
                             : "right",
                         fontSize: "10px",
                         verticalAlign: "top",
                         width:
-                          cellIndex === 2
+                          tableHeaders[cellIndex] === "Product Name"
                             ? "150px"
-                            : cellIndex === 3
+                            : tableHeaders[cellIndex] === "Description"
                             ? "300px"
                             : "auto",
                         whiteSpace:
-                          cellIndex === 2 || cellIndex === 3
+                          tableHeaders[cellIndex] === "Product Name" ||
+                          tableHeaders[cellIndex] === "Description"
                             ? "normal"
                             : "nowrap",
-                        wordBreak: "break-word",
+                        wordBreak:
+                          tableHeaders[cellIndex] === "Product Name" ||
+                          tableHeaders[cellIndex] === "Description"
+                            ? "break-word"
+                            : "normal",
                       }}
                     >
-                      {cellIndex === 2 ? (
-                        <span style={{ color: "#0066cc" }}>{cell}</span>
-                      ) : (
-                        cell
-                      )}
+                      {cell}
                     </td>
                   ))}
                 </tr>
