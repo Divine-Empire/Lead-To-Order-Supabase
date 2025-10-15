@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { DownloadIcon, SaveIcon, ShareIcon } from "../../components/Icons"
-import image1 from "../../assests/WhatsApp Image 2025-05-14 at 4.11.43 PM.jpeg"
-import imageform from "../../assests/banner.jpeg"
-import QuotationHeader from "./quotation-header"
-import QuotationForm from "./quotation-form"
-import QuotationPreview from "./quotation-preview"
-import { generatePDFFromData } from "./pdf-generator"
-import { useQuotationData } from "./use-quotation-data"
-import supabase from "../../utils/supabase"
+import { useState, useEffect } from "react";
+import { DownloadIcon, SaveIcon, ShareIcon } from "../../components/Icons";
+import image1 from "../../assests/WhatsApp Image 2025-05-14 at 4.11.43 PM.jpeg";
+import imageform from "../../assests/banner.jpeg";
+import QuotationHeader from "./quotation-header";
+import QuotationForm from "./quotation-form";
+import QuotationPreview from "./quotation-preview";
+import { generatePDFFromData } from "./pdf-generator";
+import { useQuotationData } from "./use-quotation-data";
+import supabase from "../../utils/supabase";
 
 // export const getNextQuotationNumber = async (companyPrefix = "NBD") => {
 //   try {
@@ -32,7 +32,7 @@ import supabase from "../../utils/supabase"
 
 //     const lastQuotationNo = data[0].Quotation_No
 //     const parts = lastQuotationNo.split('-')
-    
+
 //     if (parts.length >= 2) {
 //       const lastNumber = parseInt(parts[parts.length - 1]) || 0
 //       const newNumber = (lastNumber + 1).toString().padStart(3, '0')
@@ -47,141 +47,147 @@ import supabase from "../../utils/supabase"
 // }
 
 export const getCurrentFinancialYear = () => {
-  const currentDate = new Date()
-  const currentYear = currentDate.getFullYear()
-  const currentMonth = currentDate.getMonth() + 1 // January is 0
-  
-  let financialYearStart, financialYearEnd
-  
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1; // January is 0
+
+  let financialYearStart, financialYearEnd;
+
   if (currentMonth >= 4) {
     // April to March - current year to next year
-    financialYearStart = currentYear
-    financialYearEnd = currentYear + 1
+    financialYearStart = currentYear;
+    financialYearEnd = currentYear + 1;
   } else {
     // January to March - previous year to current year
-    financialYearStart = currentYear - 1
-    financialYearEnd = currentYear
+    financialYearStart = currentYear - 1;
+    financialYearEnd = currentYear;
   }
-  
+
   // Return last two digits of years
   return {
     start: financialYearStart.toString().slice(-2),
-    end: financialYearEnd.toString().slice(-2)
-  }
-}
+    end: financialYearEnd.toString().slice(-2),
+  };
+};
 
 // Update the getNextQuotationNumber function
 export const getNextQuotationNumber = async (prefix = "NBD") => {
   try {
-    const financialYear = getCurrentFinancialYear()
-    const yearPrefix = `${prefix}-${financialYear.start}-${financialYear.end}`
-    
+    const financialYear = getCurrentFinancialYear();
+    const yearPrefix = `${prefix}-${financialYear.start}-${financialYear.end}`;
+
     const { data, error } = await supabase
-      .from('Make_Quotation')
-      .select('Quotation_No')
-      .like('Quotation_No', `${yearPrefix}-%`)
-      .order('Quotation_No', { ascending: false })
-      .limit(1)
+      .from("Make_Quotation")
+      .select("Quotation_No")
+      .like("Quotation_No", `${yearPrefix}-%`)
+      .order("Quotation_No", { ascending: false })
+      .limit(1);
 
     if (error) {
-      console.error('Error fetching latest quotation:', error)
-      return `${yearPrefix}-2001` // Start from 2001
+      console.error("Error fetching latest quotation:", error);
+      return `${yearPrefix}-2001`; // Start from 2001
     }
 
-    let nextNumber = 2001 // Start from 2001
-    
+    let nextNumber = 2001; // Start from 2001
+
     if (data && data.length > 0) {
-      const latestQuotation = data[0].Quotation_No
-      console.log("Latest quotation found:", latestQuotation)
-      
+      const latestQuotation = data[0].Quotation_No;
+      console.log("Latest quotation found:", latestQuotation);
+
       // Handle different formats:
       // CRR-25-26-2001 (base quotation)
       // CRR-25-26-2001-01 (first revision)
       // CRR-25-26-2001-02 (second revision)
       // CRR-25-26-2002 (next base quotation)
-      
-      const parts = latestQuotation.split('-')
-      console.log("Parts:", parts)
-      
+
+      const parts = latestQuotation.split("-");
+      console.log("Parts:", parts);
+
       if (parts.length === 4) {
         // Format: CRR-25-26-2001 (base quotation without revision)
-        const lastNumber = parseInt(parts[3])
+        const lastNumber = parseInt(parts[3]);
         if (!isNaN(lastNumber)) {
-          nextNumber = lastNumber + 1
+          nextNumber = lastNumber + 1;
         }
       } else if (parts.length === 5) {
         // Format: CRR-25-26-2001-01 (quotation with revision)
         // For new base quotations, we want to increment the main number, not the revision
-        const mainNumber = parseInt(parts[3])
+        const mainNumber = parseInt(parts[3]);
         if (!isNaN(mainNumber)) {
-          nextNumber = mainNumber + 1
+          nextNumber = mainNumber + 1;
         }
       }
-      
-      console.log("Next number calculated:", nextNumber)
+
+      console.log("Next number calculated:", nextNumber);
     }
 
-    return `${yearPrefix}-${nextNumber.toString().padStart(4, '0')}`
+    return `${yearPrefix}-${nextNumber.toString().padStart(4, "0")}`;
   } catch (error) {
-    console.error('Error generating quotation number:', error)
-    const financialYear = getCurrentFinancialYear()
-    return `${prefix}-${financialYear.start}-${financialYear.end}-2001`
+    console.error("Error generating quotation number:", error);
+    const financialYear = getCurrentFinancialYear();
+    return `${prefix}-${financialYear.start}-${financialYear.end}-2001`;
   }
-}
+};
 
 // Function to get company prefix from leads_to_order or enquiry_to_order tables
 export const getCompanyPrefix = async (companyName) => {
   try {
     // First try leads_to_order table
     const { data: leadsData, error: leadsError } = await supabase
-      .from('leads_to_order')
-      .select('Company_Name')
-      .eq('Company_Name', companyName)
-      .limit(1)
+      .from("leads_to_order")
+      .select("Company_Name")
+      .eq("Company_Name", companyName)
+      .limit(1);
 
     if (!leadsError && leadsData && leadsData.length > 0) {
       // Generate prefix from company name (first 3 letters uppercase)
-      const prefix = companyName.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '')
-      return "NBD"
+      const prefix = companyName
+        .substring(0, 3)
+        .toUpperCase()
+        .replace(/[^A-Z]/g, "");
+      return "NBD";
     }
 
     // If not found, try enquiry_to_order table
     const { data: enquiryData, error: enquiryError } = await supabase
-      .from('enquiry_to_order')
-      .select('company_name')
-      .eq('company_name', companyName)
-      .limit(1)
+      .from("enquiry_to_order")
+      .select("company_name")
+      .eq("company_name", companyName)
+      .limit(1);
 
     if (!enquiryError && enquiryData && enquiryData.length > 0) {
       // Generate prefix from company name (first 3 letters uppercase)
-      const prefix = companyName.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '')
-      return "NBD"
+      const prefix = companyName
+        .substring(0, 3)
+        .toUpperCase()
+        .replace(/[^A-Z]/g, "");
+      return "NBD";
     }
 
-    console.log("No company found, using default NBD prefix")
-    return "NBD" // Default fallback
+    console.log("No company found, using default NBD prefix");
+    return "NBD"; // Default fallback
   } catch (error) {
-    console.error("Error getting company prefix:", error)
-    return "NBD" // Default fallback
+    console.error("Error getting company prefix:", error);
+    return "NBD"; // Default fallback
   }
-}
+};
 
 function Quotation() {
-  const [activeTab, setActiveTab] = useState("edit")
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [quotationLink, setQuotationLink] = useState("")
-  const [pdfUrl, setPdfUrl] = useState("")
-  const [isRevising, setIsRevising] = useState(false)
-  const [existingQuotations, setExistingQuotations] = useState([])
-  const [selectedQuotation, setSelectedQuotation] = useState("")
-  const [isLoadingQuotation, setIsLoadingQuotation] = useState(false)
-  const [specialDiscount, setSpecialDiscount] = useState(0)
-  const [selectedReferences, setSelectedReferences] = useState([])
+  const [activeTab, setActiveTab] = useState("edit");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [quotationLink, setQuotationLink] = useState("");
+  const [pdfUrl, setPdfUrl] = useState("");
+  const [isRevising, setIsRevising] = useState(false);
+  const [existingQuotations, setExistingQuotations] = useState([]);
+  const [selectedQuotation, setSelectedQuotation] = useState("");
+  const [isLoadingQuotation, setIsLoadingQuotation] = useState(false);
+  const [specialDiscount, setSpecialDiscount] = useState(0);
+  const [selectedReferences, setSelectedReferences] = useState([]);
 
   // Check if we're in view mode
-  const params = new URLSearchParams(window.location.search)
-  const isViewMode = params.has("view")
+  const params = new URLSearchParams(window.location.search);
+  const isViewMode = params.has("view");
 
   // Use the custom hook for quotation data
   const {
@@ -200,13 +206,13 @@ function Quotation() {
     addSpecialOffer,
     removeSpecialOffer,
     handleSpecialOfferChange,
-  } = useQuotationData(specialDiscount)
+  } = useQuotationData(specialDiscount);
 
   const handleSpecialDiscountChangeWrapper = (value) => {
-    const discount = Number(value) || 0
-    setSpecialDiscount(discount)
-    handleSpecialDiscountChange(discount)
-  }
+    const discount = Number(value) || 0;
+    setSpecialDiscount(discount);
+    handleSpecialDiscountChange(discount);
+  };
 
   // Fetch existing quotations when component mounts or when revising
   // useEffect(() => {
@@ -252,46 +258,46 @@ function Quotation() {
   useEffect(() => {
     const initializeQuotationNumber = async () => {
       try {
-        const nextQuotationNumber = await getNextQuotationNumber()
+        const nextQuotationNumber = await getNextQuotationNumber();
         setQuotationData((prev) => ({
           ...prev,
           quotationNo: nextQuotationNumber,
-        }))
+        }));
       } catch (error) {
-        console.error("Error initializing quotation number:", error)
+        console.error("Error initializing quotation number:", error);
       }
-    }
+    };
 
-    initializeQuotationNumber()
-  }, [setQuotationData])
+    initializeQuotationNumber();
+  }, [setQuotationData]);
 
   // Load quotation data from URL if in view mode
   useEffect(() => {
-    const viewId = params.get("view")
+    const viewId = params.get("view");
 
     if (viewId) {
-      const savedQuotation = localStorage.getItem(viewId)
+      const savedQuotation = localStorage.getItem(viewId);
 
       if (savedQuotation) {
         try {
-          const parsedData = JSON.parse(savedQuotation)
-          setQuotationData(parsedData)
-          setActiveTab("preview")
+          const parsedData = JSON.parse(savedQuotation);
+          setQuotationData(parsedData);
+          setActiveTab("preview");
         } catch (error) {
-          console.error("Error loading quotation data:", error)
+          console.error("Error loading quotation data:", error);
         }
       }
     }
-  }, [setQuotationData])
+  }, [setQuotationData]);
 
   const toggleRevising = () => {
-    const newIsRevising = !isRevising
-    setIsRevising(newIsRevising)
+    const newIsRevising = !isRevising;
+    setIsRevising(newIsRevising);
 
     if (newIsRevising) {
-      setSelectedQuotation("")
+      setSelectedQuotation("");
     }
-  }
+  };
 
   // const handleQuotationSelect = async (quotationNo) => {
   //   if (!quotationNo) return
@@ -408,50 +414,56 @@ function Quotation() {
   // }
 
   const handleGeneratePDF = () => {
-    setIsGenerating(true)
+    setIsGenerating(true);
 
     try {
-      const base64Data = generatePDFFromData(quotationData, selectedReferences, specialDiscount)
+      const base64Data = generatePDFFromData(
+        quotationData,
+        selectedReferences,
+        specialDiscount
+      );
 
-      const byteCharacters = atob(base64Data)
-      const byteNumbers = new Array(byteCharacters.length)
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i)
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
       }
-      const byteArray = new Uint8Array(byteNumbers)
-      const blob = new Blob([byteArray], { type: "application/pdf" })
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "application/pdf" });
 
-      const link = document.createElement("a")
-      link.href = URL.createObjectURL(blob)
-      link.download = `Quotation_${quotationData.quotationNo}.pdf`
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `Quotation_${quotationData.quotationNo}.pdf`;
 
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
-      URL.revokeObjectURL(link.href)
+      URL.revokeObjectURL(link.href);
 
-      setIsGenerating(false)
-      alert("PDF generated and downloaded successfully!")
+      setIsGenerating(false);
+      alert("PDF generated and downloaded successfully!");
     } catch (error) {
-      console.error("Error generating PDF:", error)
-      alert("Failed to generate PDF")
-      setIsGenerating(false)
+      console.error("Error generating PDF:", error);
+      alert("Failed to generate PDF");
+      setIsGenerating(false);
     }
-  }
+  };
 
   const handleGenerateLink = () => {
-    setIsGenerating(true)
+    setIsGenerating(true);
 
-    const quotationId = `quotation_${Date.now()}`
-    localStorage.setItem(quotationId, JSON.stringify(quotationData))
+    const quotationId = `quotation_${Date.now()}`;
+    localStorage.setItem(quotationId, JSON.stringify(quotationData));
 
-    const link = `${window.location.origin}${window.location.pathname}?view=${quotationId}`
+    const link = `${window.location.origin}${window.location.pathname}?view=${quotationId}`;
 
-    setQuotationLink(link)
-    setIsGenerating(false)
-    alert("Quotation link has been successfully generated and is ready to share.")
-  }
+    setQuotationLink(link);
+    setIsGenerating(false);
+    alert(
+      "Quotation link has been successfully generated and is ready to share."
+    );
+  };
 
   // const handleSaveQuotation = async () => {
   //   if (!quotationData.consigneeName) {
@@ -738,7 +750,11 @@ function Quotation() {
 
   return (
     <div className="container mx-auto py-6 px-4">
-      <QuotationHeader image={image1} isRevising={isRevising} toggleRevising={toggleRevising} />
+      <QuotationHeader
+        image={image1}
+        isRevising={isRevising}
+        toggleRevising={toggleRevising}
+      />
 
       <div className="bg-white rounded-lg shadow border">
         <div className="border-b">
@@ -756,7 +772,9 @@ function Quotation() {
             </button>
             <button
               className={`px-4 py-2 font-medium ${
-                activeTab === "preview" ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white" : "text-gray-600"
+                activeTab === "preview"
+                  ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
+                  : "text-gray-600"
               }`}
               onClick={() => setActiveTab("preview")}
             >
@@ -851,7 +869,7 @@ function Quotation() {
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default Quotation
+export default Quotation;

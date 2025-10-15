@@ -1432,7 +1432,10 @@ const QuotationPDFComponent = ({
                     fontSize: "10px",
                   }}
                 >
-                  {quotationData.items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0)}
+                  {quotationData.items.reduce(
+                    (sum, item) => sum + (Number(item.qty) || 0),
+                    0
+                  )}
                 </td>
               </tr>
 
@@ -2213,6 +2216,23 @@ export const generateHTMLFromData = (
 </html>`;
 };
 
+// Add this helper function before generatePDFFromData
+const preloadImages = async (imageSources) => {
+  const promises = imageSources.map((src) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = () => {
+        console.warn(`Failed to load image: ${src}`);
+        resolve(null); // Resolve with null instead of rejecting
+      };
+      img.src = src;
+    });
+  });
+  return Promise.all(promises);
+};
+
 // Safe loader for html2pdf that avoids Vite/Vercel dynamic import fetch issues
 const loadHtml2Pdf = async () => {
   if (typeof window === "undefined" || typeof document === "undefined") {
@@ -2264,6 +2284,12 @@ export const generatePDFFromData = async (
 
   try {
     console.log("Starting PDF generation...");
+    
+    // Preload all images before generating PDF
+    console.log("Preloading images...");
+    await preloadImages([logo, maniquipLogo1, qr]);
+    console.log("Images preloaded successfully");
+    
     const html2pdf = await loadHtml2Pdf();
 
     const htmlString = generateHTMLFromData(
@@ -2282,6 +2308,16 @@ export const generatePDFFromData = async (
         useCORS: true,
         allowTaint: true,
         logging: false,
+        imageTimeout: 15000, // Add timeout for images
+        onclone: (clonedDoc) => {
+          // Ensure images are present in cloned document
+          const images = clonedDoc.getElementsByTagName('img');
+          Array.from(images).forEach(img => {
+            if (!img.complete) {
+              console.warn('Image not loaded:', img.src);
+            }
+          });
+        }
       },
       jsPDF: {
         unit: "mm",
