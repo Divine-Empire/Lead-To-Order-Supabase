@@ -1063,9 +1063,24 @@ const QuotationPDFComponent = ({
     Number((subtotal + totalTax - (specialDiscount || 0)).toFixed(2))
   );
 
-  const dateStr = quotationData.date
-    ? new Date(quotationData.date).toLocaleDateString("en-GB")
-    : new Date().toLocaleDateString("en-GB");
+const dateStr = (() => {
+  if (!quotationData.date) {
+    return new Date().toLocaleDateString("en-GB");
+  }
+  
+  // Check if date is already in DD/MM/YYYY format (from QuotationDetails)
+  if (typeof quotationData.date === 'string' && quotationData.date.includes('/')) {
+    const [day, month, year] = quotationData.date.split('/');
+    return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+  }
+  
+  // Fallback for other date formats
+  try {
+    return new Date(quotationData.date).toLocaleDateString("en-GB");
+  } catch (error) {
+    return new Date().toLocaleDateString("en-GB");
+  }
+})();
 
   return (
     <div
