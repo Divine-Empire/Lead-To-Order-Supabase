@@ -1063,24 +1063,27 @@ const QuotationPDFComponent = ({
     Number((subtotal + totalTax - (specialDiscount || 0)).toFixed(2))
   );
 
-const dateStr = (() => {
-  if (!quotationData.date) {
-    return new Date().toLocaleDateString("en-GB");
-  }
-  
-  // Check if date is already in DD/MM/YYYY format (from QuotationDetails)
-  if (typeof quotationData.date === 'string' && quotationData.date.includes('/')) {
-    const [day, month, year] = quotationData.date.split('/');
-    return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
-  }
-  
-  // Fallback for other date formats
-  try {
-    return new Date(quotationData.date).toLocaleDateString("en-GB");
-  } catch (error) {
-    return new Date().toLocaleDateString("en-GB");
-  }
-})();
+  const dateStr = (() => {
+    if (!quotationData.date) {
+      return new Date().toLocaleDateString("en-GB");
+    }
+
+    // Check if date is already in DD/MM/YYYY format (from QuotationDetails)
+    if (
+      typeof quotationData.date === "string" &&
+      quotationData.date.includes("/")
+    ) {
+      const [day, month, year] = quotationData.date.split("/");
+      return `${day.padStart(2, "0")}/${month.padStart(2, "0")}/${year}`;
+    }
+
+    // Fallback for other date formats
+    try {
+      return new Date(quotationData.date).toLocaleDateString("en-GB");
+    } catch (error) {
+      return new Date().toLocaleDateString("en-GB");
+    }
+  })();
 
   return (
     <div
@@ -1153,7 +1156,7 @@ const dateStr = (() => {
           </h2>
         </div>
 
-        <div style={{ width: "140px", height: "100px" }}>
+        <div style={{ width: "140px", height: "60px" }}>
           <img
             src={maniquipLogo1}
             alt="ManiQuip Logo"
@@ -2299,12 +2302,12 @@ export const generatePDFFromData = async (
 
   try {
     console.log("Starting PDF generation...");
-    
+
     // Preload all images before generating PDF
     console.log("Preloading images...");
     await preloadImages([logo, maniquipLogo1, qr]);
     console.log("Images preloaded successfully");
-    
+
     const html2pdf = await loadHtml2Pdf();
 
     const htmlString = generateHTMLFromData(
@@ -2326,13 +2329,13 @@ export const generatePDFFromData = async (
         imageTimeout: 15000, // Add timeout for images
         onclone: (clonedDoc) => {
           // Ensure images are present in cloned document
-          const images = clonedDoc.getElementsByTagName('img');
-          Array.from(images).forEach(img => {
+          const images = clonedDoc.getElementsByTagName("img");
+          Array.from(images).forEach((img) => {
             if (!img.complete) {
-              console.warn('Image not loaded:', img.src);
+              console.warn("Image not loaded:", img.src);
             }
           });
-        }
+        },
       },
       jsPDF: {
         unit: "mm",
