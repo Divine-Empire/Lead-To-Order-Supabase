@@ -331,6 +331,11 @@ function Quotation() {
         });
 
         setSpecialDiscount(specialDiscountFromItems);
+
+        handleSpecialDiscountChangeWrapper(specialDiscountFromItems);
+        handleInputChange("consignorState", loadedData.Consigner_State || "");
+        handleInputChange("consigneeState", loadedData.State || "");
+        handleInputChange("items", items);
       }
     } catch (error) {
       console.error("Error fetching quotation data:", error);
