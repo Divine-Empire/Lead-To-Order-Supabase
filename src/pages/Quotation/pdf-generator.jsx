@@ -2174,8 +2174,8 @@ export const generateHTMLFromData = (
   <title>Quotation ${quotationData.quotationNo || "NBD-002"}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { 
-      font-family: Arial, sans-serif; 
+    body {
+      font-family: Arial, sans-serif;
       -webkit-print-color-adjust: exact;
       color-adjust: exact;
       print-color-adjust: exact;
@@ -2183,24 +2183,25 @@ export const generateHTMLFromData = (
     }
     @media print {
       body { margin: 0; }
-      @page { 
-        size: A4; 
+      @page {
+        size: A4;
         margin: 15mm 10mm 15mm 10mm;
       }
       .page-break {
-        page-break-before: always;
-        break-before: page;
+        page-break-before: always !important;
+        break-before: page !important;
       }
       .avoid-break {
-        page-break-inside: avoid;
-        break-inside: avoid;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
       }
       table {
         page-break-inside: auto;
       }
       tr {
-        page-break-inside: avoid;
-        break-inside: avoid;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        page-break-after: auto;
       }
       thead {
         display: table-header-group;
@@ -2209,22 +2210,37 @@ export const generateHTMLFromData = (
         display: table-row-group;
       }
       h1, h2, h3, h4 {
-        page-break-after: avoid;
-        break-after: avoid;
+        page-break-after: avoid !important;
+        break-after: avoid !important;
       }
       img {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      /* Prevent orphaned rows */
+      tbody tr:last-child {
+        page-break-after: avoid !important;
+      }
+    }
+    @media screen {
+      tr {
         page-break-inside: avoid;
         break-inside: avoid;
       }
     }
     .content-section {
-      page-break-inside: avoid;
-      break-inside: avoid;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
       margin-bottom: 10px;
     }
     .header-section {
-      page-break-after: avoid;
-      break-after: avoid;
+      page-break-after: avoid !important;
+      break-after: avoid !important;
+    }
+    /* Force keep table rows together */
+    table tr {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
     }
   </style>
 </head>
