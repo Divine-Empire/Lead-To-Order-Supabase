@@ -326,9 +326,7 @@ const ItemsTable = ({
                   </td>
                   <td className="px-4 py-2">
                     <input
-                      type="text"
-                      inputMode="decimal"
-                      pattern="[0-9]*\.?[0-9]*"
+                      type="number"
                       value={item.rate || ""}
                       onChange={(e) =>
                         handleItemChange(
@@ -338,8 +336,10 @@ const ItemsTable = ({
                         )
                       }
                       className="p-1 w-24 rounded-md border border-gray-300"
-                      placeholder=""
+                      placeholder="0.00"
                       onWheel={(e) => e.preventDefault()}
+                      step="0.01"
+                      min="0"
                       disabled={isLoading}
                       required
                     />
@@ -540,7 +540,10 @@ const ItemsTable = ({
                   Total Qty:
                 </td>
                 <td className="px-4 py-2">
-                  {quotationData.items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0)}
+                  {quotationData.items.reduce(
+                    (sum, item) => sum + (Number(item.qty) || 0),
+                    0
+                  )}
                 </td>
                 <td></td>
               </tr>
