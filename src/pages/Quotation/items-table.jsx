@@ -36,12 +36,12 @@ const ItemsTable = ({
 
   // CSS to remove up-down buttons from number inputs
   const spinnerCSS = `
-    input[type="number"]::-webkit-outer-spin-button,
-    input[type="number"]::-webkit-inner-spin-button {
+    .no-spinner::-webkit-outer-spin-button,
+    .no-spinner::-webkit-inner-spin-button {
       -webkit-appearance: none;
       margin: 0;
     }
-    input[type="number"] {
+    .no-spinner {
       -moz-appearance: textfield;
     }
   `;
@@ -282,9 +282,7 @@ const ItemsTable = ({
                   </td>
                   <td className="px-4 py-2">
                     <input
-                      type="text"
-                      inputMode="decimal"
-                      pattern="[0-9]*"
+                      type="number"
                       value={item.qty || ""}
                       onChange={(e) =>
                         handleItemChange(
@@ -293,9 +291,14 @@ const ItemsTable = ({
                           Number.parseFloat(e.target.value) || 0
                         )
                       }
-                      className="p-1 w-16 rounded-md border border-gray-300"
+                      className="p-1 w-16 rounded-md border border-gray-300 no-spinner"
                       placeholder=""
-                      onWheel={(e) => e.preventDefault()}
+                      onWheel={(e) => e.target.blur()}
+                      onKeyDown={(e) => {
+                        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                          e.preventDefault();
+                        }
+                      }}
                       min="0"
                       required
                       disabled={isLoading}
@@ -335,9 +338,14 @@ const ItemsTable = ({
                           Number.parseFloat(e.target.value) || 0
                         )
                       }
-                      className="p-1 w-24 rounded-md border border-gray-300"
+                      className="p-1 w-24 rounded-md border border-gray-300 no-spinner"
                       placeholder="0.00"
-                      onWheel={(e) => e.preventDefault()}
+                      onWheel={(e) => e.target.blur()}
+                      onKeyDown={(e) => {
+                        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                          e.preventDefault();
+                        }
+                      }}
                       step="0.01"
                       min="0"
                       disabled={isLoading}
@@ -347,9 +355,7 @@ const ItemsTable = ({
                   {!hideDisc && (
                     <td className="px-4 py-2">
                       <input
-                        type="text"
-                        inputMode="decimal"
-                        pattern="[0-9]*"
+                        type="number"
                         value={item.discount || ""}
                         onChange={(e) =>
                           handleItemChange(
@@ -358,9 +364,15 @@ const ItemsTable = ({
                             Number.parseFloat(e.target.value) || 0
                           )
                         }
-                        className="p-1 w-20 rounded-md border border-gray-300"
+                        className="p-1 w-20 rounded-md border border-gray-300 no-spinner"
                         placeholder=""
-                        onWheel={(e) => e.preventDefault()}
+                        onWheel={(e) => e.target.blur()}
+                        onKeyDown={(e) => {
+                          if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                            e.preventDefault();
+                          }
+                        }}
+                        step="0.01"
                         min="0"
                         max="100"
                         disabled={isLoading}
@@ -370,9 +382,7 @@ const ItemsTable = ({
                   {!hideFlatDisc && (
                     <td className="px-4 py-2">
                       <input
-                        type="text"
-                        inputMode="decimal"
-                        pattern="[0-9]*"
+                        type="number"
                         value={item.flatDiscount || ""}
                         onChange={(e) =>
                           handleItemChange(
@@ -381,9 +391,14 @@ const ItemsTable = ({
                             Number.parseFloat(e.target.value) || 0
                           )
                         }
-                        className="p-1 w-16 rounded-md border border-gray-300"
+                        className="p-1 w-16 rounded-md border border-gray-300 no-spinner"
                         placeholder=""
-                        onWheel={(e) => e.preventDefault()}
+                        onWheel={(e) => e.target.blur()}
+                        onKeyDown={(e) => {
+                          if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                            e.preventDefault();
+                          }
+                        }}
                         step="0.01"
                         min="0"
                         disabled={isLoading}
@@ -675,17 +690,21 @@ const ItemsTable = ({
                   </td>
                   <td className="px-4 py-2">
                     <input
-                      type="text"
-                      inputMode="decimal"
-                      pattern="[0-9]*\.?[0-9]*"
+                      type="number"
                       value={specialDiscount || ""}
                       onChange={(e) => {
                         const value = e.target.value;
                         setSpecialDiscount(value);
                         handleSpecialDiscountChange(value);
                       }}
-                      className="p-1 w-24 rounded-md border border-gray-300"
-                      onWheel={(e) => e.preventDefault()}
+                      className="p-1 w-24 rounded-md border border-gray-300 no-spinner"
+                      onWheel={(e) => e.target.blur()}
+                      onKeyDown={(e) => {
+                        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                          e.preventDefault();
+                        }
+                      }}
+                      step="0.01"
                       min="0"
                       placeholder=""
                       disabled={isLoading}

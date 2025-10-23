@@ -238,9 +238,13 @@ const QuotationPreview = ({
                 </td>
                 <td className="p-2 border">
                   ₹
-                  {Number(
-                    quotationData.subtotal - quotationData.totalFlatDiscount
-                  ).toFixed(2)}
+                  {(() => {
+                    // Calculate taxable amount correctly
+                    // Subtotal already includes item-level percentage and flat discounts
+                    // Special discount is applied separately in grand total calculation
+                    // So taxable amount should just be the subtotal (no additional deduction needed)
+                    return Number(quotationData.subtotal || 0).toFixed(2);
+                  })()}
                 </td>
               </tr>
             </tfoot>
