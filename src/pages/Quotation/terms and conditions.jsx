@@ -1,6 +1,11 @@
-"use client"
+"use client";
 
-const TermsAndConditions = ({ quotationData, handleInputChange, hiddenFields, toggleFieldVisibility }) => {
+const TermsAndConditions = ({
+  quotationData,
+  handleInputChange,
+  hiddenFields,
+  toggleFieldVisibility,
+}) => {
   return (
     <div className="bg-white border rounded-lg p-4 shadow-sm">
       <h3 className="text-lg font-medium mb-4">Terms & Conditions</h3>
@@ -28,16 +33,24 @@ const TermsAndConditions = ({ quotationData, handleInputChange, hiddenFields, to
             {!hiddenFields[field] && (
               <input
                 type="text"
-                value={quotationData[field]}
+                value={quotationData[field] || 
+                  (field === 'freight' ? 'Extra as per actual' : 
+                   field === 'taxes' ? 'Extra as mentioned in the quotation' :
+                   field === 'warranty' ? '6 months warranty applicable against Manufacturing defects' :
+                   '')}
                 onChange={(e) => handleInputChange(field, e.target.value)}
                 className="w-full p-2 border border-gray-300 rounded-md"
+                placeholder={field === 'freight' ? 'Enter freight details' : 
+                           field === 'taxes' ? 'Enter tax details' :
+                           field === 'warranty' ? 'Enter warranty details' :
+                           ''}
               />
             )}
           </div>
         ))}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default TermsAndConditions
+export default TermsAndConditions;

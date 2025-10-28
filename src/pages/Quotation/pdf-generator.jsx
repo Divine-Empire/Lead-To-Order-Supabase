@@ -1907,8 +1907,7 @@ const QuotationPDFComponent = ({
                       Freight
                     </td>
                     <td style={{ padding: "4px 0" }}>
-                      {quotationData.freight ||
-                        "Extra mentioned in the quotation."}
+                      {quotationData.freight || "Extra as per actual."}
                     </td>
                   </tr>
                   <tr>
@@ -1934,6 +1933,21 @@ const QuotationPDFComponent = ({
                         verticalAlign: "top",
                       }}
                     >
+                      Warranty
+                    </td>
+                    <td style={{ padding: "4px 0" }}>
+                      {quotationData.warranty ||
+                        "6 months warranty applicable against Manufacturing defects."}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      style={{
+                        padding: "4px 0",
+                        fontWeight: "bold",
+                        verticalAlign: "top",
+                      }}
+                    >
                       Taxes
                     </td>
                     <td style={{ padding: "4px 0" }}>
@@ -1941,6 +1955,7 @@ const QuotationPDFComponent = ({
                         "Extra mentioned in the quotation."}
                     </td>
                   </tr>
+
                 </tbody>
               </table>
 

@@ -13,6 +13,7 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
     freight: false,
     insurance: false,
     taxes: false,
+    warranty: false,
   });
 
   const [quotationData, setQuotationData] = useState({
@@ -67,7 +68,9 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
       "Material will be dispatched after receipt of advance payment and upon confirmation of complete purchase order (PO) from the buyer.",
     freight: "Extra mentioned in the quotation.",
     insurance: "Transit insurance for all shipment is at Buyer's scope.",
-    taxes: "Extra mentioned in the quotation.",
+    warranty: "6 months warranty applicable against Manufacturing defects.",
+    taxes: "Extra as mentioned in the quotation.",
+    freight: "Extra as per actual.",
     accountNo: "",
     bankName: "",
     bankAddress: "",
