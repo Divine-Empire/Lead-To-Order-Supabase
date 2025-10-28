@@ -12,6 +12,7 @@ const TermsAndConditions = ({ quotationData, handleInputChange, hiddenFields, to
           freight: "Freight",
           insurance: "Insurance",
           taxes: "Taxes",
+          warranty: " warranty",
         }).map(([field, label]) => (
           <div key={field} className="space-y-2">
             <div className="flex justify-between items-center">

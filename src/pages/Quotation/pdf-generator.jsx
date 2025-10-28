@@ -1013,7 +1013,7 @@ const QuotationPDFComponent = ({
 
   tableHeaders.push("Amount");
 
-  // Build items data
+  // Build items data - FIXED QUANTITY DISPLAY ISSUE
   const itemsData = quotationData.items
     ? quotationData.items.map((item, index) => {
         const row = [
@@ -1023,9 +1023,12 @@ const QuotationPDFComponent = ({
         ];
         if (!hiddenColumns.hideDescription)
           row.push(String(item.description || "N/A"));
+        
+        // FIXED: Ensure quantity is displayed correctly
+        const quantity = Number(item.qty) || 1;
         row.push(
           String(`${item.gst || 18}%`),
-          String(item.qty || 1),
+          String(quantity), // This ensures proper quantity display
           String(item.units || "Nos"),
           `₹${formatCurrency(item.rate || 0)}`
         );
@@ -1451,7 +1454,7 @@ const QuotationPDFComponent = ({
                   }}
                 >
                   {quotationData.items.reduce(
-                    (sum, item) => sum + (Number(item.qty) || 0),
+                    (sum, item) => sum + (Number(item.qty) || 0), // Ensure proper number conversion
                     0
                   )}
                 </td>
