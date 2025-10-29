@@ -28,6 +28,8 @@ const isViewMode = params.has('view');
 const [existingQuotations, setExistingQuotations] = useState([]);
 const [selectedQuotation, setSelectedQuotation] = useState("");
 const [isLoadingQuotation, setIsLoadingQuotation] = useState(false);
+const [uploadProgress, setUploadProgress] = useState(""); // ← Add this line
+
 // Add these state variables near the top of your component with other state declarations
 const [productCodes, setProductCodes] = useState([]);
 const [productNames, setProductNames] = useState([]);
@@ -47,6 +49,14 @@ const [hiddenFields, setHiddenFields] = useState({
   taxes: false
 });
 
+  // Add this PDF compression function
+const compressPDFBase64 = async (base64Data) => {
+  return new Promise((resolve) => {
+    // Simple compression by reducing image quality in PDF generation
+    // We'll handle compression in the generatePDF function itself
+    resolve(base64Data);
+  });
+};
   
   // State for dropdown data
   const [dropdownData, setDropdownData] = useState({})
@@ -203,6 +213,8 @@ const [hiddenFields, setHiddenFields] = useState({
     
     fetchProductData();
   }, []);
+
+  
 
   const handleInputChange = (field, value) => {
     setQuotationData(prev => ({
@@ -917,7 +929,18 @@ const getCurrentFinancialYear = () => {
   // Generate PDF
 const generatePDFFromData = () => {
   // Create a new jsPDF instance with landscape orientation for more width
-  const doc = new jsPDF('p', 'mm', 'a4');
+const doc = new jsPDF({
+  orientation: 'p',
+  unit: 'mm',
+  format: 'a4',
+  compress: true,
+  precision: 2
+});
+
+doc.setProperties({
+  title: `Quotation ${quotationData.quotationNo}`,
+  compress: true
+});
   
   // Page dimensions
   const pageWidth = 210; // A4 width in mm
@@ -1061,8 +1084,11 @@ const generatePDFFromData = () => {
     body: itemsData,
     margin: { top: currentY },
     styles: {
-      fontSize: 8,
-      cellPadding: 2,
+      fontSize: 7,
+      cellPadding: 1.5,
+      lineWidth: 0.2, 
+       minCellHeight: 6,   // ← Add this
+    // ← Add this
       overflow: 'linebreak',
       lineColor: [200, 200, 200],
       lineWidth: 0.3
@@ -1070,7 +1096,8 @@ const generatePDFFromData = () => {
     headStyles: {
       fillColor: [41, 128, 185],
       textColor: 255,
-      fontSize: 9,
+      fontSize: 8,
+       cellPadding: 2,     // ← Add this
       fontStyle: 'bold',
       cellPadding: 3
     },
@@ -1248,6 +1275,10 @@ const handleSaveQuotation = async () => {
   setIsSubmitting(true)
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 180000);
+    
+    setUploadProgress("Generating compressed PDF...");
     // Generate PDF
     const base64Data = generatePDFFromData()
     
@@ -1268,6 +1299,9 @@ if (isRevising && selectedQuotation) {
     finalQuotationNo = parts.join('-');
   }
 }
+ clearTimeout(timeoutId); // ← Add after PDF generation
+    
+    setUploadProgress("Uploading PDF...");
     
     const fileName = `Quotation_${finalQuotationNo}.pdf`
     
@@ -1525,12 +1559,18 @@ const itemPromises = quotationData.items.map(async (item) => {
       notes: [""],
       preparedBy: "",
     })
-  } catch (error) {
-    alert("Error: " + error.message)
+ } catch (error) {
+    // ← Replace existing catch block with:
+    if (error.name === 'AbortError') {
+      alert("Request timed out. PDF might be too large. Please try again.");
+    } else {
+      alert("Error: " + error.message);
+    }
   } finally {
-    setIsSubmitting(false)
+    setIsSubmitting(false);
+    setUploadProgress(""); // ← Add this line
   }
-}
+};
 
 
   // Helper function to increment quotation number
@@ -2403,6 +2443,12 @@ const itemPromises = quotationData.items.map(async (item) => {
                     </>
                   )}
                 </button>
+                {isSubmitting && uploadProgress && (
+                  <div className="text-sm text-blue-600 mt-2">
+                    {uploadProgress}
+                  </div>
+                )}
+
                 <div className="space-x-2">
                   <button
                     className="border border-gray-300 hover:bg-gray-50 px-4 py-2 rounded-md flex items-center inline-flex"
