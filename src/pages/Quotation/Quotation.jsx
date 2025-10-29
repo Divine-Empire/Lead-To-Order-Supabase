@@ -353,7 +353,8 @@ function Quotation() {
         quotationData,
         selectedReferences,
         specialDiscount,
-        hiddenColumns
+        hiddenColumns,
+        hiddenFields
       );
 
       // Extract base64 data from data URI
@@ -469,7 +470,8 @@ function Quotation() {
         quotationData,
         selectedReferences,
         specialDiscount,
-        hiddenColumns
+        hiddenColumns,
+        hiddenFields,
       );
 
       // Validate that we have a proper data URI
@@ -697,6 +699,7 @@ function Quotation() {
               setQuotationData={setQuotationData}
               hiddenColumns={hiddenColumns}
               setHiddenColumns={setHiddenColumns}
+              
             />
           ) : (
             <QuotationPreview
@@ -711,6 +714,8 @@ function Quotation() {
               isGenerating={isGenerating}
               isSubmitting={isSubmitting}
               hiddenColumns={hiddenColumns}
+              hiddenFields={hiddenFields} // ← यह add करें
+
             />
           )}
         </div>

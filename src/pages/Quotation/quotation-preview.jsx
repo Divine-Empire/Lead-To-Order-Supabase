@@ -59,6 +59,8 @@ const QuotationPreview = ({
   isGenerating,
   isSubmitting,
   hiddenColumns,
+  hiddenFields, // ← यह add करें
+
 }) => {
   return (
     <div className="space-y-6">
@@ -348,33 +350,45 @@ const QuotationPreview = ({
             <div>
               <h3 className="mb-2 font-bold">Terms & Conditions</h3>
               <table className="w-full">
-                <tbody>
-                  <tr>
-                    <td className="py-1 font-medium">Validity</td>
-                    <td className="py-1">{quotationData.validity}</td>
-                  </tr>
-                  <tr>
-                    <td className="py-1 font-medium">Payment Terms</td>
-                    <td className="py-1">{quotationData.paymentTerms}</td>
-                  </tr>
-                  <tr>
-                    <td className="py-1 font-medium">Delivery</td>
-                    <td className="py-1">{quotationData.delivery}</td>
-                  </tr>
-                  <tr>
-                    <td className="py-1 font-medium">Freight</td>
-                    <td className="py-1">{quotationData.freight}</td>
-                  </tr>
-                  <tr>
-                    <td className="py-1 font-medium">Insurance</td>
-                    <td className="py-1">{quotationData.insurance}</td>
-                  </tr>
-                  <tr>
-                    <td className="py-1 font-medium">Taxes</td>
-                    <td className="py-1">{quotationData.taxes}</td>
-                  </tr>
-                </tbody>
-              </table>
+  <tbody>
+    {!hiddenFields?.validity && (
+      <tr>
+        <td className="py-1 font-medium">Validity</td>
+        <td className="py-1">{quotationData.validity}</td>
+      </tr>
+    )}
+    {!hiddenFields?.paymentTerms && (
+      <tr>
+        <td className="py-1 font-medium">Payment Terms</td>
+        <td className="py-1">{quotationData.paymentTerms}</td>
+      </tr>
+    )}
+    {!hiddenFields?.delivery && (
+      <tr>
+        <td className="py-1 font-medium">Delivery</td>
+        <td className="py-1">{quotationData.delivery}</td>
+      </tr>
+    )}
+    {!hiddenFields?.freight && (
+      <tr>
+        <td className="py-1 font-medium">Freight</td>
+        <td className="py-1">{quotationData.freight}</td>
+      </tr>
+    )}
+    {!hiddenFields?.insurance && (
+      <tr>
+        <td className="py-1 font-medium">Insurance</td>
+        <td className="py-1">{quotationData.insurance}</td>
+      </tr>
+    )}
+    {!hiddenFields?.taxes && (
+      <tr>
+        <td className="py-1 font-medium">Taxes</td>
+        <td className="py-1">{quotationData.taxes}</td>
+      </tr>
+    )}
+  </tbody>
+</table>
 
               {quotationData.specialOffers &&
                 quotationData.specialOffers.filter((offer) => offer.trim())
