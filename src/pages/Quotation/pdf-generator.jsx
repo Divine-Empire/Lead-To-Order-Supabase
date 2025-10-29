@@ -343,6 +343,8 @@ const QuotationPDFComponent = ({
             >
               Consignor Details
             </h3>
+            <p>DIVINE EMPIRE INDIA( PVT. LTD. )
+</p>
             <div style={{ fontSize: "11px", lineHeight: "1.4" }}>
               <p style={{ margin: "2px 0" }}>
                 {selectedReferences && selectedReferences[0]
@@ -1025,21 +1027,7 @@ const QuotationPDFComponent = ({
       </tr>
     )}
 
-    {!hiddenFields?.insurance && (
-      <tr>
-        <td style={{
-          padding: "4px 0",
-          fontWeight: "bold",
-          verticalAlign: "top",
-        }}>
-          Insurance
-        </td>
-        <td style={{ padding: "4px 0" }}>
-          {quotationData.insurance ||
-            "Transit insurance for all shipment is at Buyer's scope."}
-        </td>
-      </tr>
-    )}
+   
 
     {!hiddenFields?.warranty && (
       <tr>
@@ -1072,10 +1060,26 @@ const QuotationPDFComponent = ({
         </td>
       </tr>
     )}
+
+     {!hiddenFields?.insurance && (
+      <tr>
+        <td style={{
+          padding: "4px 0",
+          fontWeight: "bold",
+          verticalAlign: "top",
+        }}>
+          Insurance
+        </td>
+        <td style={{ padding: "4px 0" }}>
+          {quotationData.insurance ||
+            "Transit insurance for all shipment is at Buyer's scope."}
+        </td>
+      </tr>
+    )}
   </tbody>
 </table>
 
-              {/* Special Offers */}
+            {/* Special Offers */}
               {quotationData.specialOffers &&
                 quotationData.specialOffers.filter((offer) => offer.trim())
                   .length > 0 && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // ← useEffect add करें
 
 const QuotationDetails = ({
   quotationData,
@@ -16,6 +16,14 @@ const QuotationDetails = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  // ← Add these useEffects after useState declarations
+useEffect(() => {
+  if (selectedQuotation && isRevising) {
+    setSearchTerm(selectedQuotation);
+  } else if (!isRevising) {
+    setSearchTerm(''); // Clear search when not revising
+  }
+}, [selectedQuotation, isRevising]);
   const handleStateChange = (e) => {
     const selectedState = e.target.value;
     handleInputChange("consignorState", selectedState);
@@ -82,6 +90,21 @@ const QuotationDetails = ({
     }
   };
 
+  // ← Add this new function after handleStateChange
+const handleQuotationSelection = (quotation) => {
+  setSearchTerm(quotation); // Show selected quotation in field
+  setIsDropdownOpen(false);
+  handleQuotationSelect(quotation); // This will load data and update quotationData.quotationNo
+};
+
+const clearSelection = () => {
+  setSearchTerm('');
+  setIsDropdownOpen(false);
+  // Optionally reset quotation data
+  handleInputChange('quotationNo', '');
+};
+
+
   return (
     <>
       <h3 className="text-lg font-medium mb-4">Quotation Details</h3>
@@ -101,6 +124,15 @@ const QuotationDetails = ({
                     onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
                     className="w-full p-2 border border-gray-300 rounded-md"
                   />
+                   {searchTerm && (
+                    <button
+                      type="button"
+                      onClick={clearSelection}
+                      className="absolute right-2 top-2 text-gray-500 hover:text-gray-700"
+                    >
+                      ✕
+                    </button>
+                  )}
                 </div>
                 
                 {isDropdownOpen && (
@@ -114,12 +146,11 @@ const QuotationDetails = ({
                         .map((quotation) => (
                           <div 
                             key={quotation}
-                            className="p-2 hover:bg-gray-100 cursor-pointer"
-                            onMouseDown={() => {
-                              handleQuotationSelect(quotation);
-                              setSearchTerm('');
-                              setIsDropdownOpen(false);
-                            }}
+                            className={`p-2 hover:bg-gray-100 cursor-pointer ${
+                              selectedQuotation === quotation ? 'bg-blue-100' : ''
+                            }`}                            
+                           onMouseDown={() => handleQuotationSelection(quotation)}
+
                           >
                             {quotation}
                           </div>
@@ -145,11 +176,11 @@ const QuotationDetails = ({
                     </option>
                   ))}
                 </select>
-                {isLoadingQuotation && (
-                  <div className="ml-2">
-                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                )}
+                              {isLoadingQuotation && (
+                <div className="absolute right-2 top-2">
+                  <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
               </div>
             ) : (
               <input
