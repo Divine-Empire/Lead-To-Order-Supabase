@@ -22,6 +22,8 @@ const ItemsTable = ({
   const hideTotalFlatDisc = hiddenColumns?.hideTotalFlatDisc || false;
   const hideSpecialDiscount = hiddenColumns?.hideSpecialDiscount || false;
   const hideDescription = hiddenColumns?.hideDescription || false;
+  const hideGrandTotal = hiddenColumns?.hideGrandTotal || false;
+
 
   const calculateColSpan = () => {
     let baseSpan = 9;
@@ -53,6 +55,17 @@ const ItemsTable = ({
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-medium">Items</h3>
           <div className="flex flex-wrap gap-2">
+            <button
+              className="px-2 py-1 text-xs text-gray-700 rounded-md border border-gray-300 hover:bg-gray-50"
+              onClick={() =>
+                setHiddenColumns((prev) => ({
+                  ...prev,
+                  hideGrandTotal: !prev.hideGrandTotal,
+                }))
+              }
+            >
+              {hideGrandTotal ? "Show" : "Hide"} Grand Total
+            </button>
             <button
               className="px-2 py-1 text-xs text-gray-700 rounded-md border border-gray-300 hover:bg-gray-50"
               onClick={() =>
@@ -741,34 +754,37 @@ const ItemsTable = ({
                 </tr>
               )}
 
-              <tr className="font-bold">
-                <td
-                  colSpan={calculateColSpan()}
-                  className="px-4 py-2 text-right"
-                >
-                  Grand Total:
-                </td>
-                <td className="px-4 py-2">
-                  ₹
-                  {(() => {
-                    // Subtotal already has flat discounts applied (it's sum of item amounts)
-                    // Taxes are already calculated on the correct taxable amount
-                    const totalTaxAmount =
-                      quotationData.cgstAmount +
-                      quotationData.sgstAmount +
-                      quotationData.igstAmount;
+{!hideGrandTotal && (
+  <tr className="font-bold">
+    <td
+      colSpan={calculateColSpan()}
+      className="px-4 py-2 text-right"
+    >
+      Grand Total:
+    </td>
+    <td className="px-4 py-2">
+      ₹
+      {(() => {
+        // Subtotal already has flat discounts applied (it's sum of item amounts)
+        // Taxes are already calculated on the correct taxable amount
+        const totalTaxAmount =
+          quotationData.cgstAmount +
+          quotationData.sgstAmount +
+          quotationData.igstAmount;
 
-                    // Grand Total = Subtotal + Taxes - Special Discount
-                    const grandTotal =
-                      quotationData.subtotal +
-                      totalTaxAmount -
-                      (Number(specialDiscount) || 0);
+        // Grand Total = Subtotal + Taxes - Special Discount
+        const grandTotal =
+          quotationData.subtotal +
+          totalTaxAmount -
+          (Number(specialDiscount) || 0);
 
-                    return Math.max(0, grandTotal).toFixed(2);
-                  })()}
-                </td>
-                <td></td>
-              </tr>
+        return Math.max(0, grandTotal).toFixed(2);
+      })()}
+    </td>
+    <td></td>
+  </tr>
+)}
+
             </tfoot>
           </table>
         </div>

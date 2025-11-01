@@ -121,7 +121,7 @@ export const getNextQuotationNumber = async (prefix = "NBD") => {
       console.log("Next number calculated:", nextNumber);
     }
 
-    return `${yearPrefix}-${nextNumber.toString().padStart(4, "0")}`;
+    return `${yearPrefix}-${nextNumber}`;
   } catch (error) {
     console.error("Error generating quotation number:", error);
     const financialYear = getCurrentFinancialYear();

@@ -642,29 +642,29 @@ const QuotationPDFComponent = ({
                 </tr>
               )}
 
-              <tr>
-                <td
-                  colSpan={tableHeaders.length - 1}
-                  style={{
-                    border: "1px solid #ddd",
-                    padding: "8px 4px",
-                    textAlign: "right",
-                    fontSize: "10px",
-                  }}
-                >
-                  Taxable Amount
-                </td>
-                <td
-                  style={{
-                    border: "1px solid #ddd",
-                    padding: "8px 4px",
-                    textAlign: "right",
-                    fontSize: "10px",
-                  }}
-                >
-                  ₹{formatCurrency(taxableAmount)}
-                </td>
-              </tr>
+              <tr style={{ backgroundColor: "#e6f3ff", fontWeight: "bold" }}>
+  <td
+    colSpan={tableHeaders.length - 1}
+    style={{
+      border: "1px solid #ddd",
+      padding: "8px 4px",
+      textAlign: "right",
+      fontSize: "10px",
+    }}
+  >
+    Grand Total
+  </td>
+  <td
+    style={{
+      border: "1px solid #ddd",
+      padding: "8px 4px",
+      textAlign: "right",
+      fontSize: "10px",
+    }}
+  >
+    ₹{formatCurrency(grandTotal)}
+  </td>
+</tr>
             </tbody>
           </table>
         </div>
@@ -880,24 +880,28 @@ const QuotationPDFComponent = ({
                     </td>
                   </tr>
                 )}
-                <tr style={{ backgroundColor: "#e6f3ff", fontWeight: "bold" }}>
-                  <td
-                    style={{ border: "1px solid #ddd", padding: "6px" }}
-                    colSpan="2"
-                  >
-                    Grand Total
-                  </td>
-                  <td
-                    style={{
-                      border: "1px solid #ddd",
-                      padding: "6px",
-                      textAlign: "right",
-                    }}
-                  >
-                    ₹{formatCurrency(grandTotal)}
-                  </td>
-                </tr>
-              </tbody>
+                {/* {!hiddenColumns.hideGrandTotal && (
+  <tr style={{ backgroundColor: "#e6f3ff", fontWeight: "bold" }}>
+    <td
+      style={{ border: "1px solid #ddd", padding: "6px" }}
+      colSpan="2"
+    >
+      Grand Total
+    </td>
+    <td
+      style={{
+        border: "1px solid #ddd",
+        padding: "6px",
+        textAlign: "right",
+      }}
+    >
+      ₹{formatCurrency(grandTotal)}
+    </td>
+  </tr>
+)}              */}
+
+
+ </tbody>
             </table>
           </div>
 
@@ -909,33 +913,38 @@ const QuotationPDFComponent = ({
               justifyContent: "space-between",
             }}
           >
-            <div>
-              <h4
-                style={{
-                  margin: "0 0 8px 0",
-                  fontSize: "14px",
-                  fontWeight: "bold",
-                }}
-              >
-                Amount Chargeable (in words)
-              </h4>
-              <p
-                style={{
-                  fontSize: "11px",
-                  margin: "0",
-                  textTransform: "capitalize",
-                }}
-              >
-                {Number(grandTotal) > 0
-                  ? numberToWords(grandTotal)
-                  : "Zero Only"}
-              </p>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <p style={{ fontSize: "18px", fontWeight: "bold", margin: "0" }}>
-                Grand Total: ₹{formatCurrency(grandTotal)}
-              </p>
-            </div>
+            {/* {!hiddenColumns.hideGrandTotal && (
+  <div>
+    <h4
+      style={{
+        margin: "0 0 8px 0",
+        fontSize: "14px",
+        fontWeight: "bold",
+      }}
+    >
+      Amount Chargeable (in words)
+    </h4>
+    <p
+      style={{
+        fontSize: "11px",
+        margin: "0",
+        textTransform: "capitalize",
+      }}
+    >
+      {Number(grandTotal) > 0
+        ? numberToWords(grandTotal)
+        : "Zero Only"}
+    </p>
+  </div>
+)}
+            {!hiddenColumns.hideGrandTotal && (
+        <div style={{ textAlign: "right" }}>
+        <p style={{ fontSize: "18px", fontWeight: "bold", margin: "0" }}>
+          Grand Total: ₹{formatCurrency(grandTotal)}
+         </p>
+         </div>
+          )} */}
+          
           </div>
         </div>
 

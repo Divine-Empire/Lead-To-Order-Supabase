@@ -200,8 +200,8 @@ const QuotationForm = ({
         const { data: leadsData, error: leadsError } = await supabase
           .from("leads_to_order")
           .select("*")
-          .not("Planned", "is", null)
-          .is("Actual", null);
+          .not("Planned1", "is", null)
+          .is("Actual1", null);
 
         if (!leadsError && leadsData) {
           leadsData.forEach((row) => {
