@@ -104,6 +104,11 @@ const QuotationPDFComponent = ({
  hiddenFields = {}, // ← यह add करें
 
 }) => {
+  // Prefer backend-assigned quotation number if present
+  const displayedQuotationNo =
+    (quotationData && (quotationData.Quotation_No || quotationData.finalQuotationNo)) ||
+    quotationData?.quotationNo ||
+    "NBD-002";
   const formatCurrency = (value) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -319,7 +324,7 @@ const QuotationPDFComponent = ({
             <p
               style={{ margin: "2px 0", fontSize: "12px", fontWeight: "bold" }}
             >
-              Quo No: {quotationData.quotationNo || "NBD-002"}
+              Quo No: {displayedQuotationNo}
             </p>
             <p style={{ margin: "2px 0", fontSize: "12px" }}>Date: {dateStr}</p>
           </div>
@@ -1307,6 +1312,10 @@ export const generateHTMLFromData = (
   hiddenFields = {} // ← add करें
 
 ) => {
+  // Helper to get preferred quotation number consistently across HTML content and metadata
+  const getPreferredQuotationNo = (qd) =>
+    (qd && (qd.Quotation_No || qd.finalQuotationNo)) || qd?.quotationNo || "NBD-002";
+
   const htmlString = ReactDOMServer.renderToStaticMarkup(
     React.createElement(QuotationPDFComponent, {
       quotationData,
@@ -1322,7 +1331,7 @@ export const generateHTMLFromData = (
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Quotation ${quotationData.quotationNo || "NBD-002"}</title>
+  <title>Quotation ${getPreferredQuotationNo(quotationData)}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -1486,9 +1495,15 @@ export const generatePDFFromData = async (
       hiddenFields // ← pass करें
     );
 
+    // Decide filename using preferred quotation number
+    const preferredNo =
+      (quotationData && (quotationData.Quotation_No || quotationData.finalQuotationNo)) ||
+      quotationData?.quotationNo ||
+      "NBD-002";
+
     const options = {
       margin: [5, 0, 0, 0],
-      filename: `Quotation_${quotationData.quotationNo || "NBD-002"}.pdf`,
+      filename: `Quotation_${preferredNo}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: {
         scale: 2,

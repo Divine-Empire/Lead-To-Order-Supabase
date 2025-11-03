@@ -349,8 +349,14 @@ function Quotation() {
     setIsGenerating(true);
 
     try {
+      // Prefer backend number if present, otherwise fall back
+      const preferredNo =
+        quotationData.Quotation_No ||
+        quotationData.finalQuotationNo ||
+        quotationData.quotationNo;
+
       const pdfDataUri = await generatePDFFromData(
-        quotationData,
+        { ...quotationData, Quotation_No: preferredNo },
         selectedReferences,
         specialDiscount,
         hiddenColumns,
@@ -370,7 +376,7 @@ function Quotation() {
 
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = `Quotation_${quotationData.quotationNo}.pdf`;
+      link.download = `Quotation_${preferredNo}.pdf`;
 
       document.body.appendChild(link);
       link.click();
@@ -442,32 +448,122 @@ function Quotation() {
 
       const finalGrandTotal = Math.max(0, grandTotal).toFixed(2);
 
-      let finalQuotationNo = quotationData.quotationNo;
-      if (isRevising && selectedQuotation) {
-        // Split the quotation number to check for revision
-        const parts = finalQuotationNo.split("-");
-
-        // Check if last part is a number (revision number)
-        const lastPart = parts[parts.length - 1];
-        const isRevisionNumber = /^\d+$/.test(lastPart) && parts.length >= 4;
-
-        if (isRevisionNumber && parts.length === 5) {
-          // Already has revision number (e.g., CRR-25-26-2001-2)
-          // Increment the revision number
-          const revisionNumber = parseInt(lastPart, 10);
-          const newRevision = (revisionNumber + 1).toString().padStart(2, "0");
-          parts[parts.length - 1] = newRevision;
-          finalQuotationNo = parts.join("-");
-        } else if (parts.length === 4) {
-          // No revision number yet (e.g., CRR-25-26-2001)
-          // Add first revision
-          finalQuotationNo = `${finalQuotationNo}-01`;
+      // Helper to create next revision value based on a base number
+      const nextRevision = (baseNo) => {
+        const parts = baseNo.split("-");
+        if (parts.length === 5) {
+          const last = parts[4];
+          const next = (parseInt(last, 10) + 1).toString().padStart(2, "0");
+          parts[4] = next;
+          return parts.join("-");
         }
+        if (parts.length === 4) return `${baseNo}-01`;
+        return `${baseNo}-01`;
+      };
+
+      // Convert special offers array to string for database storage
+      const specialOffersString = quotationData.specialOffers
+        ? quotationData.specialOffers.filter((offer) => offer.trim()).join("|")
+        : "";
+
+      // Try insert with retries on unique constraint (concurrent save)
+      let authoritativeQuotationNo = null;
+      let lastError = null;
+      // Initialize candidate number
+      let candidateNo = quotationData.quotationNo;
+      if (isRevising && selectedQuotation) {
+        // If already a revision, keep it, else start with -01
+        const partsInit = candidateNo.split("-");
+        if (partsInit.length === 4) {
+          candidateNo = `${candidateNo}-01`;
+        }
+      } else {
+        // For base quotation, get a fresh value up front
+        candidateNo = await getNextQuotationNumber();
+      }
+      
+      for (let attempt = 0; attempt < 5; attempt++) {
+        // On attempts > 0, adjust candidate number
+        if (attempt > 0) {
+          if (isRevising && selectedQuotation) {
+            // Increment the revision number from the last attempted candidate
+            candidateNo = nextRevision(candidateNo);
+          } else {
+            // For base quotation, fetch the latest just-in-time
+            candidateNo = await getNextQuotationNumber();
+          }
+        }
+
+        // Prepare data for Supabase
+        const quotationRecord = {
+          Quotation_No: candidateNo,
+          Quotation_Date: convertDateToISO(quotationData.date),
+          Prepared_By: quotationData.preparedBy,
+          Consigner_State: quotationData.consignorState,
+          Reference_Name: quotationData.consignorName,
+          Address: quotationData.consignorAddress,
+          Mobile: quotationData.consignorMobile,
+          Phone: quotationData.consignorPhone,
+          GSTIN: quotationData.consignorGSTIN,
+          State_Code: quotationData.consignorStateCode,
+          Company_Name: quotationData.consigneeName,
+          Consignee_Address: quotationData.consigneeAddress,
+          Ship_To: quotationData.shipTo || quotationData.consigneeAddress,
+          State: quotationData.consigneeState,
+          Contact_Name: quotationData.consigneeContactName,
+          Contact_No: quotationData.consigneeContactNo,
+          Consignee_GSTIN: quotationData.consigneeGSTIN,
+          Consignee_State_Code: quotationData.consigneeStateCode,
+          MSME_No: quotationData.msmeNumber,
+          Validity: quotationData.validity,
+          Payment_Terms: quotationData.paymentTerms,
+          Delivery: quotationData.delivery,
+          Freight: quotationData.freight,
+          Insurance: quotationData.insurance,
+          Taxes: quotationData.taxes,
+          Notes: quotationData.notes.filter((note) => note.trim()).join("|"),
+          Account_No: quotationData.accountNo,
+          Bank_Name: quotationData.bankName,
+          Bank_Address: quotationData.bankAddress,
+          IFSC_Code: quotationData.ifscCode,
+          Email: quotationData.email,
+          Website: quotationData.website,
+          Pan: quotationData.pan,
+          Items: quotationData.items,
+          Divine_Empire_10th_Anniversary_Special_Offer: specialOffersString,
+          Grand_Total: parseFloat(finalGrandTotal),
+        };
+
+        const { data, error } = await supabase
+          .from("Make_Quotation")
+          .insert([quotationRecord])
+          .select();
+
+        if (!error) {
+          authoritativeQuotationNo = data && data[0] && data[0].Quotation_No ? data[0].Quotation_No : candidateNo;
+          break;
+        }
+
+        lastError = error;
+        const isUniqueViolation =
+          (error.code && error.code === "23505") ||
+          (error.message && error.message.toLowerCase().includes("duplicate key value")) ||
+          (error.message && error.message.includes("quotation_no_unique"));
+        if (!isUniqueViolation) {
+          throw new Error("Error saving quotation: " + error.message);
+        }
+
+        // Small jittered delay before retry
+        await new Promise((res) => setTimeout(res, 100 + Math.random() * 200));
       }
 
-      // Generate PDF and upload to Supabase bucket - FIXED CODE
+      if (!authoritativeQuotationNo) {
+        throw new Error("Error saving quotation: " + (lastError?.message || "unique constraint conflict"));
+      }
+
+      // Now generate PDF using the authoritative number
       const pdfDataUri = await generatePDFFromData(
-        quotationData,
+        { ...quotationData, Quotation_No: authoritativeQuotationNo },
         selectedReferences,
         specialDiscount,
         hiddenColumns,
@@ -493,64 +589,15 @@ function Quotation() {
       }
       const pdfBlob = new Blob([bytes], { type: "application/pdf" });
 
-      // Upload PDF to Supabase bucket
-      const fileName = `Quotation_${finalQuotationNo}.pdf`;
+      // Upload PDF to Supabase bucket with authoritative number in filename
+      const fileName = `Quotation_${authoritativeQuotationNo}.pdf`;
       const uploadedPdfUrl = await uploadPDFToSupabase(pdfBlob, fileName);
 
-      // Convert special offers array to string for database storage
-      const specialOffersString = quotationData.specialOffers
-        ? quotationData.specialOffers.filter((offer) => offer.trim()).join("|")
-        : "";
-
-      // Prepare data for Supabase
-      const quotationRecord = {
-        Quotation_No: finalQuotationNo,
-        Quotation_Date: convertDateToISO(quotationData.date),
-        Prepared_By: quotationData.preparedBy,
-        Consigner_State: quotationData.consignorState,
-        Reference_Name: quotationData.consignorName,
-        Address: quotationData.consignorAddress,
-        Mobile: quotationData.consignorMobile,
-        Phone: quotationData.consignorPhone,
-        GSTIN: quotationData.consignorGSTIN,
-        State_Code: quotationData.consignorStateCode,
-        Company_Name: quotationData.consigneeName,
-        Consignee_Address: quotationData.consigneeAddress,
-        Ship_To: quotationData.shipTo || quotationData.consigneeAddress,
-        State: quotationData.consigneeState,
-        Contact_Name: quotationData.consigneeContactName,
-        Contact_No: quotationData.consigneeContactNo,
-        Consignee_GSTIN: quotationData.consigneeGSTIN,
-        Consignee_State_Code: quotationData.consigneeStateCode,
-        MSME_No: quotationData.msmeNumber,
-        Validity: quotationData.validity,
-        Payment_Terms: quotationData.paymentTerms,
-        Delivery: quotationData.delivery,
-        Freight: quotationData.freight,
-        Insurance: quotationData.insurance,
-        Taxes: quotationData.taxes,
-        Notes: quotationData.notes.filter((note) => note.trim()).join("|"),
-        Account_No: quotationData.accountNo,
-        Bank_Name: quotationData.bankName,
-        Bank_Address: quotationData.bankAddress,
-        IFSC_Code: quotationData.ifscCode,
-        Email: quotationData.email,
-        Website: quotationData.website,
-        Pan: quotationData.pan,
-        Items: quotationData.items,
-        Divine_Empire_10th_Anniversary_Special_Offer: specialOffersString,
-        Grand_Total: parseFloat(finalGrandTotal),
-        Pdf_Url: uploadedPdfUrl,
-      };
-
-      const { data, error } = await supabase
+      // Update the record with the Pdf_Url
+      await supabase
         .from("Make_Quotation")
-        .insert([quotationRecord])
-        .select();
-
-      if (error) {
-        throw new Error("Error saving quotation: " + error.message);
-      }
+        .update({ Pdf_Url: uploadedPdfUrl })
+        .eq("Quotation_No", authoritativeQuotationNo);
 
       // Set the PDF URL for reference
       setPdfUrl(uploadedPdfUrl);
