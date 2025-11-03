@@ -205,13 +205,19 @@ const ItemsTable = ({
                           handleItemChange(item.id, "code", e.target.value);
                           if (productData[e.target.value]) {
                             const productInfo = productData[e.target.value];
-                            handleItemChange(item.id, "name", productInfo.name);
-                            handleItemChange(
-                              item.id,
-                              "description",
-                              productInfo.description
-                            );
-                            handleItemChange(item.id, "rate", productInfo.rate);
+                            if (!item.name) {
+                              handleItemChange(item.id, "name", productInfo.name);
+                            }
+                            if (!item.description) {
+                              handleItemChange(
+                                item.id,
+                                "description",
+                                productInfo.description
+                              );
+                            }
+                            if (!item.rate || item.rate === 0) {
+                              handleItemChange(item.id, "rate", productInfo.rate);
+                            }
                           }
                         }}
                         list={`code-list-${item.id}`}
@@ -235,13 +241,19 @@ const ItemsTable = ({
                           handleItemChange(item.id, "name", e.target.value);
                           if (productData[e.target.value]) {
                             const productInfo = productData[e.target.value];
-                            handleItemChange(item.id, "code", productInfo.code);
-                            handleItemChange(
-                              item.id,
-                              "description",
-                              productInfo.description
-                            );
-                            handleItemChange(item.id, "rate", productInfo.rate);
+                            if (!item.code) {
+                              handleItemChange(item.id, "code", productInfo.code);
+                            }
+                            if (!item.description) {
+                              handleItemChange(
+                                item.id,
+                                "description",
+                                productInfo.description
+                              );
+                            }
+                            if (!item.rate || item.rate === 0) {
+                              handleItemChange(item.id, "rate", productInfo.rate);
+                            }
                           }
                         }}
                         list={`name-list-${item.id}`}

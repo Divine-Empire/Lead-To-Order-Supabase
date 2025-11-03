@@ -729,8 +729,8 @@ const getCurrentFinancialYear = () => {
     if (selectedReference && dropdownData.references && dropdownData.references[selectedReference]) {
       const referenceDetails = dropdownData.references[selectedReference]
       
-      // Auto-fill mobile number from reference details
-      if (referenceDetails.mobile) {
+      // Auto-fill mobile number from reference details only if empty
+      if (referenceDetails.mobile && !quotationData.consignorMobile) {
         handleInputChange("consignorMobile", referenceDetails.mobile)
       }
     } else {
@@ -742,18 +742,32 @@ const getCurrentFinancialYear = () => {
   // Handle company change and auto-fill consignee details
   const handleCompanyChange = (e) => {
     const selectedCompany = e.target.value
-    handleInputChange("consigneeName", selectedCompany)
+    if (!quotationData.consigneeName) {
+      handleInputChange("consigneeName", selectedCompany)
+    }
     
     if (selectedCompany && dropdownData.companies && dropdownData.companies[selectedCompany]) {
       const companyDetails = dropdownData.companies[selectedCompany]
       
-      // Auto-fill company details
-      handleInputChange("consigneeAddress", companyDetails.address)      // Column P - Address
-      handleInputChange("consigneeState", companyDetails.state)          // Column Q - State
-      handleInputChange("consigneeContactName", companyDetails.contactName) // Column N - Contact Name
-      handleInputChange("consigneeContactNo", companyDetails.contactNo)  // Column O - Contact No
-      handleInputChange("consigneeGSTIN", companyDetails.gstin)          // Column R - GSTIN
-      handleInputChange("consigneeStateCode", companyDetails.stateCode)  // Column S - State Code
+      // Auto-fill company details only if fields are empty
+      if (!quotationData.consigneeAddress && companyDetails.address) {
+        handleInputChange("consigneeAddress", companyDetails.address)
+      }
+      if (!quotationData.consigneeState && companyDetails.state) {
+        handleInputChange("consigneeState", companyDetails.state)
+      }
+      if (!quotationData.consigneeContactName && companyDetails.contactName) {
+        handleInputChange("consigneeContactName", companyDetails.contactName)
+      }
+      if (!quotationData.consigneeContactNo && companyDetails.contactNo) {
+        handleInputChange("consigneeContactNo", companyDetails.contactNo)
+      }
+      if (!quotationData.consigneeGSTIN && companyDetails.gstin) {
+        handleInputChange("consigneeGSTIN", companyDetails.gstin)
+      }
+      if (!quotationData.consigneeStateCode && companyDetails.stateCode) {
+        handleInputChange("consigneeStateCode", companyDetails.stateCode)
+      }
     } else {
       // Clear fields when no company is selected or data is not available
       handleInputChange("consigneeAddress", "")
@@ -773,7 +787,7 @@ const getCurrentFinancialYear = () => {
     if (selectedState && dropdownData.states && dropdownData.states[selectedState]) {
       const stateDetails = dropdownData.states[selectedState]
       
-      // Parse bank details (from column AB)
+      // Parse bank details (from column AB) only if fields are empty
       if (stateDetails.bankDetails) {
         const bankDetailsText = stateDetails.bankDetails
         
@@ -785,34 +799,34 @@ const getCurrentFinancialYear = () => {
         const emailMatch = bankDetailsText.match(/Email: ([^\n]+)/)
         const websiteMatch = bankDetailsText.match(/Website: ([^\n]+)/)
         
-        // Update bank details fields
-        if (accountNoMatch) handleInputChange("accountNo", accountNoMatch[1])
-        if (bankNameMatch) handleInputChange("bankName", bankNameMatch[1])
-        if (bankAddressMatch) handleInputChange("bankAddress", bankAddressMatch[1])
-        if (ifscMatch) handleInputChange("ifscCode", ifscMatch[1])
-        if (emailMatch) handleInputChange("email", emailMatch[1])
-        if (websiteMatch) handleInputChange("website", websiteMatch[1])
+        // Update bank details fields only if empty
+        if (accountNoMatch && !quotationData.accountNo) handleInputChange("accountNo", accountNoMatch[1])
+        if (bankNameMatch && !quotationData.bankName) handleInputChange("bankName", bankNameMatch[1])
+        if (bankAddressMatch && !quotationData.bankAddress) handleInputChange("bankAddress", bankAddressMatch[1])
+        if (ifscMatch && !quotationData.ifscCode) handleInputChange("ifscCode", ifscMatch[1])
+        if (emailMatch && !quotationData.email) handleInputChange("email", emailMatch[1])
+        if (websiteMatch && !quotationData.website) handleInputChange("website", websiteMatch[1])
       }
       
-      // Update other state details
-      if (stateDetails.consignerAddress) {
+      // Update other state details only if empty
+      if (stateDetails.consignerAddress && !quotationData.consignorAddress) {
         handleInputChange("consignorAddress", stateDetails.consignerAddress)
       }
       
-      if (stateDetails.stateCode) {
+      if (stateDetails.stateCode && !quotationData.consignorStateCode) {
         handleInputChange("consignorStateCode", stateDetails.stateCode)
       }
       
-      if (stateDetails.gstin) {
+      if (stateDetails.gstin && !quotationData.consignorGSTIN) {
         handleInputChange("consignorGSTIN", stateDetails.gstin)
       }
   
-      if (stateDetails.msmeNumber) {
+      if (stateDetails.msmeNumber && !quotationData.msmeNumber) {
         handleInputChange("msmeNumber", stateDetails.msmeNumber)
       }
   
       // Add this line to set the PAN from state details
-      if (stateDetails.pan) {
+      if (stateDetails.pan && !quotationData.pan) {
         handleInputChange("pan", stateDetails.pan)
       }
     } else {
