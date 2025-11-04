@@ -136,11 +136,11 @@ const QuotationPDFComponent = ({
     ? quotationData.items.map((item, index) => {
         const row = [
           String(index + 1),
-          String(item.code || "N/A"),
-          String(item.name || "N/A"),
+          String(item.code || " "),
+          String(item.name || " "),
         ];
         if (!hiddenColumns.hideDescription)
-          row.push(String(item.description || "N/A"));
+          row.push(String(item.description || " "));
         
         // FIXED: Ensure quantity is displayed correctly
         const quantity = Number(item.qty) || 1;
@@ -159,8 +159,8 @@ const QuotationPDFComponent = ({
       })
     : [
         (() => {
-          const defaultRow = ["1", "N/A", "N/A"];
-          if (!hiddenColumns.hideDescription) defaultRow.push("N/A");
+          const defaultRow = ["1", " ", " "];
+          if (!hiddenColumns.hideDescription) defaultRow.push(" ");
           defaultRow.push("18%", "1", "Nos", "₹0.00");
 
           if (!hiddenColumns.hideDisc) defaultRow.push("0%");
@@ -351,26 +351,26 @@ const QuotationPDFComponent = ({
             <p>DIVINE EMPIRE INDIA( PVT. LTD. )
 </p>
             <div style={{ fontSize: "11px", lineHeight: "1.4" }}>
+  <p style={{ margin: "2px 0" }}>
+    {selectedReferences && selectedReferences.length > 0
+      ? selectedReferences.join(", ")
+      : " "}
+  </p>
               <p style={{ margin: "2px 0" }}>
-                {selectedReferences && selectedReferences[0]
-                  ? selectedReferences[0]
-                  : "N/A"}
+                {quotationData.consignorAddress || " "}
               </p>
               <p style={{ margin: "2px 0" }}>
-                {quotationData.consignorAddress || "N/A"}
-              </p>
-              <p style={{ margin: "2px 0" }}>
-                Mobile: {quotationData.consignorMobile || "N/A"}
+                Mobile: {quotationData.consignorMobile || " "}
               </p>
               <p style={{ margin: "2px 0" }}>Phone: 0772-400515</p>
               <p style={{ margin: "2px 0" }}>
-                GSTIN: {quotationData.consignorGSTIN || "N/A"}
+                GSTIN: {quotationData.consignorGSTIN || " "}
               </p>
               <p style={{ margin: "2px 0" }}>
-                State Code: {quotationData.consignorStateCode || "N/A"}
+                State Code: {quotationData.consignorStateCode || " "}
               </p>
               <p style={{ margin: "2px 0" }}>
-                MSME Number: {quotationData.msmeNumber || "N/A"}
+                MSME Number: {quotationData.msmeNumber || " "}
               </p>
             </div>
           </div>
@@ -387,22 +387,22 @@ const QuotationPDFComponent = ({
             </h3>
             <div style={{ fontSize: "11px", lineHeight: "1.4" }}>
               <p style={{ margin: "2px 0" }}>
-                Company Name: {quotationData.consigneeName || "N/A"}
+                Company Name: {quotationData.consigneeName || " "}
               </p>
               <p style={{ margin: "2px 0" }}>
-                Contact Name: {quotationData.consigneeContactName || "N/A"}
+                Contact Name: {quotationData.consigneeContactName || " "}
               </p>
               <p style={{ margin: "2px 0" }}>
-                Contact No.: {quotationData.consigneeContactNo || "N/A"}
+                Contact No.: {quotationData.consigneeContactNo || " "}
               </p>
               <p style={{ margin: "2px 0" }}>
-                State: {quotationData.consigneeState || "N/A"}
+                State: {quotationData.consigneeState || " "}
               </p>
               <p style={{ margin: "2px 0" }}>
-                GSTIN: {quotationData.consigneeGSTIN || "N/A"}
+                GSTIN: {quotationData.consigneeGSTIN || " "}
               </p>
               <p style={{ margin: "2px 0" }}>
-                State Code: {quotationData.consigneeStateCode || "N/A"}
+                State Code: {quotationData.consigneeStateCode || " "}
               </p>
             </div>
           </div>
@@ -429,7 +429,7 @@ const QuotationPDFComponent = ({
               Bill To
             </h3>
             <p style={{ margin: "0", fontSize: "11px" }}>
-              {quotationData.consigneeAddress || "N/A"}
+              {quotationData.consigneeAddress || " "}
             </p>
           </div>
 
@@ -444,7 +444,7 @@ const QuotationPDFComponent = ({
               Ship To
             </h3>
             <p style={{ margin: "0", fontSize: "11px" }}>
-              {quotationData.shipTo || "N/A"}
+              {quotationData.shipTo || " "}
             </p>
           </div>
         </div>
@@ -482,46 +482,47 @@ const QuotationPDFComponent = ({
               {itemsData.map((row, rowIndex) => (
                 <tr key={rowIndex} style={{ borderBottom: "1px solid #ddd" }}>
                   {row.map((cell, cellIndex) => (
-                    <td
-                      key={cellIndex}
-                      style={{
-                        border: "1px solid #ddd",
-                        padding: "8px 4px",
-                        textAlign:
-                          tableHeaders[cellIndex] === "S No." ||
-                          tableHeaders[cellIndex] === "GST %" ||
-                          tableHeaders[cellIndex] === "Qty" ||
-                          tableHeaders[cellIndex] === "Units" ||
-                          tableHeaders[cellIndex] === "Disc %" ||
-                          tableHeaders[cellIndex] === "Flat Disc"
-                            ? "center"
-                            : tableHeaders[cellIndex] === "Product Name" ||
-                              tableHeaders[cellIndex] === "Description" ||
-                              tableHeaders[cellIndex] === "Code"
-                            ? "left"
-                            : "right",
-                        fontSize: "10px",
-                        verticalAlign: "top",
-                        width:
-                          tableHeaders[cellIndex] === "Product Name"
-                            ? "150px"
-                            : tableHeaders[cellIndex] === "Description"
-                            ? "300px"
-                            : "auto",
-                        whiteSpace:
-                          tableHeaders[cellIndex] === "Product Name" ||
-                          tableHeaders[cellIndex] === "Description"
-                            ? "normal"
-                            : "nowrap",
-                        wordBreak:
-                          tableHeaders[cellIndex] === "Product Name" ||
-                          tableHeaders[cellIndex] === "Description"
-                            ? "break-word"
-                            : "normal",
-                      }}
-                    >
-                      {cell}
-                    </td>
+                  <td
+  key={cellIndex}
+  style={{
+    border: "1px solid #ddd",
+    padding: "8px 4px",
+    textAlign:
+      tableHeaders[cellIndex] === "S No." ||
+      tableHeaders[cellIndex] === "GST %" ||
+      tableHeaders[cellIndex] === "Qty" ||
+      tableHeaders[cellIndex] === "Units" ||
+      tableHeaders[cellIndex] === "Disc %" ||
+      tableHeaders[cellIndex] === "Flat Disc"
+        ? "center"
+        : tableHeaders[cellIndex] === "Product Name" ||
+          tableHeaders[cellIndex] === "Description" ||
+          tableHeaders[cellIndex] === "Code"
+        ? "left"
+        : "right",
+    fontSize: "10px",
+    verticalAlign: "top",
+    width:
+      tableHeaders[cellIndex] === "Product Name"
+        ? "150px"
+        : tableHeaders[cellIndex] === "Description"
+        ? "300px"
+        : "auto",
+    whiteSpace:
+      tableHeaders[cellIndex] === "Description"
+        ? "pre-line"
+        : tableHeaders[cellIndex] === "Product Name"
+        ? "normal"
+        : "nowrap",
+    wordBreak:
+      tableHeaders[cellIndex] === "Product Name" ||
+      tableHeaders[cellIndex] === "Description"
+        ? "break-word"
+        : "normal",
+  }}
+>
+  {cell}
+</td>
                   ))}
                 </tr>
               ))}
@@ -1190,25 +1191,25 @@ const QuotationPDFComponent = ({
             </h6>
             <div style={{ fontSize: "11px", lineHeight: "1.4" }}>
               <p style={{ margin: "3px 0" }}>
-                Account No.: {quotationData.accountNo || "N/A"}
+                Account No.: {quotationData.accountNo || " "}
               </p>
               <p style={{ margin: "3px 0" }}>
-                Bank Name: {quotationData.bankName || "N/A"}
+                Bank Name: {quotationData.bankName || " "}
               </p>
               <p style={{ margin: "3px 0" }}>
-                Bank Address: {quotationData.bankAddress || "N/A"}
+                Bank Address: {quotationData.bankAddress || " "}
               </p>
               <p style={{ margin: "3px 0" }}>
-                IFSC CODE: {quotationData.ifscCode || "N/A"}
+                IFSC CODE: {quotationData.ifscCode || " "}
               </p>
               <p style={{ margin: "3px 0" }}>
-                Email: {quotationData.email || "N/A"}
+                Email: {quotationData.email || " "}
               </p>
               <p style={{ margin: "3px 0" }}>
-                Website: {quotationData.website || "N/A"}
+                Website: {quotationData.website || " "}
               </p>
               <p style={{ margin: "3px 0" }}>
-                Company PAN: {quotationData.pan || "N/A"}
+                Company PAN: {quotationData.pan || " "}
               </p>
             </div>
           </div>
@@ -1285,7 +1286,7 @@ const QuotationPDFComponent = ({
             described and that all particulars are true and correct.
           </p>
           <p style={{ fontSize: "11px", margin: "16px 0" }}>
-            Prepared By: {quotationData.preparedBy || "N/A"}
+            Prepared By: {quotationData.preparedBy || " "}
           </p>
           <p
             style={{
