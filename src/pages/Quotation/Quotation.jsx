@@ -467,20 +467,30 @@ function Quotation() {
         : "";
 
       // Try insert with retries on unique constraint (concurrent save)
-      let authoritativeQuotationNo = null;
+   let authoritativeQuotationNo = null;
       let lastError = null;
+      
+      // Extract prefix from current quotation number to maintain consistency
+      const extractPrefix = (quotationNo) => {
+        const parts = quotationNo.split("-");
+        if (parts.length >= 4) {
+          return parts.slice(0, 3).join("-"); // e.g., "CRR-25-26"
+        }
+        return quotationNo.split("-")[0]; // fallback to first part
+      };
+      
       // Initialize candidate number
       let candidateNo = quotationData.quotationNo;
+      const currentPrefix = extractPrefix(candidateNo);
+      
       if (isRevising && selectedQuotation) {
         // If already a revision, keep it, else start with -01
         const partsInit = candidateNo.split("-");
         if (partsInit.length === 4) {
           candidateNo = `${candidateNo}-01`;
         }
-      } else {
-        // For base quotation, get a fresh value up front
-        candidateNo = await getNextQuotationNumber();
       }
+      // No else block - use existing quotationNo as is
       
       for (let attempt = 0; attempt < 5; attempt++) {
         // On attempts > 0, adjust candidate number
@@ -489,8 +499,16 @@ function Quotation() {
             // Increment the revision number from the last attempted candidate
             candidateNo = nextRevision(candidateNo);
           } else {
-            // For base quotation, fetch the latest just-in-time
-            candidateNo = await getNextQuotationNumber();
+            // For base quotation, increment within same prefix
+            const parts = candidateNo.split("-");
+            if (parts.length === 4) {
+              const lastNumber = parseInt(parts[3], 10);
+              const newNumber = lastNumber + 1;
+              candidateNo = `${currentPrefix}-${newNumber}`;
+            } else {
+              // Fallback: fetch latest but keep prefix
+              candidateNo = await getNextQuotationNumber(currentPrefix.split("-")[0]);
+            }
           }
         }
 
