@@ -919,7 +919,7 @@ const QuotationPDFComponent = ({
               justifyContent: "space-between",
             }}
           >
-            {/* {!hiddenColumns.hideGrandTotal && (
+            {!hiddenColumns.hideGrandTotal && (
   <div>
     <h4
       style={{
@@ -949,7 +949,7 @@ const QuotationPDFComponent = ({
           Grand Total: ₹{formatCurrency(grandTotal)}
          </p>
          </div>
-          )} */}
+          )}
           
           </div>
         </div>
