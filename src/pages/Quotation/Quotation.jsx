@@ -151,21 +151,22 @@ function Quotation() {
   }, [isRevising]);
 
   // Initialize quotation number
-  useEffect(() => {
-    const initializeQuotationNumber = async () => {
-      try {
-        const nextQuotationNumber = await getNextQuotationNumber();
-        setQuotationData((prev) => ({
-          ...prev,
-          quotationNo: nextQuotationNumber,
-        }));
-      } catch (error) {
-        console.error("Error initializing quotation number:", error);
-      }
-    };
+// Initialize quotation number - RUN ONLY ONCE
+useEffect(() => {
+  const initializeQuotationNumber = async () => {
+    try {
+      const nextQuotationNumber = await getNextQuotationNumber();
+      setQuotationData((prev) => ({
+        ...prev,
+        quotationNo: nextQuotationNumber,
+      }));
+    } catch (error) {
+      console.error("Error initializing quotation number:", error);
+    }
+  };
 
-    initializeQuotationNumber();
-  }, [setQuotationData]);
+  initializeQuotationNumber();
+}, []); // ← Empty dependency array to run only once
 
   // Load quotation data from URL if in view mode
   useEffect(() => {

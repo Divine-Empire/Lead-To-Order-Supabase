@@ -9,12 +9,11 @@ import FollowUp from "./pages/FollowUp"
 import NewFollowUp from "./pages/NewFollowUp"
 import CallTracker from "./pages/CallTracker"
 import NewCallTracker from "./pages/NewCallTracker"
-// import Quotation from "./pages/Quotation"
 import Quotation from "./pages/Quotation/Quotation"
 import MainNav from "./components/MainNav"
 import Footer from "./components/Footer"
 import Notification from "./components/Notification"
-import supabase from "./utils/supabase" // Import supabase client
+import supabase from "./utils/supabase"
 
 // Create auth context
 export const AuthContext = createContext(null)
@@ -38,44 +37,73 @@ function App() {
       setIsAuthenticated(true)
       setCurrentUser(JSON.parse(storedUser))
       setUserType(storedUserType)
-      // Fetch data based on user type
+      // Fetch data based on user type from Supabase
       fetchUserData(JSON.parse(storedUser).username, storedUserType)
     }
   }, [])
 
-  // Function to fetch data based on user type
+  // Function to fetch data based on user type FROM SUPABASE
   const fetchUserData = async (username, userType) => {
     try {
-      // Example: Fetch data from Google Sheet
-      const dataUrl = "https://docs.google.com/spreadsheets/d/1TZVWkmASF7tG-QER17588sl4SvRgY7knFKFDtYFjB0Q/gviz/tq?tqx=out:json&sheet=Data"
-      const response = await fetch(dataUrl)
-      const text = await response.text()
-      
-      // Extract JSON from response
-      const jsonStart = text.indexOf('{')
-      const jsonEnd = text.lastIndexOf('}') + 1
-      const jsonData = text.substring(jsonStart, jsonEnd)
-      const data = JSON.parse(jsonData)
-      
-      if (!data || !data.table || !data.table.rows) {
-        showNotification("Failed to fetch data", "error")
-        return
-      }
-      
-      // Filter data based on user type
       if (userType === "admin") {
-        // Admin sees all data
-        setUserData(data.table.rows)
+        // Admin sees all data - fetch from appropriate Supabase tables
+        const { data: leadsData, error: leadsError } = await supabase
+          .from('leads_to_order')
+          .select('*')
+          .order('id', { ascending: false })
+          .limit(100);
+        
+        const { data: enquiryData, error: enquiryError } = await supabase
+          .from('enquiry_to_order')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        if (leadsError || enquiryError) {
+          console.error("Error fetching data from Supabase:", leadsError || enquiryError);
+          showNotification("Failed to fetch data from database", "error");
+          return;
+        }
+
+        // Combine data from different tables
+        const combinedData = {
+          leads: leadsData || [],
+          enquiries: enquiryData || []
+        };
+        
+        setUserData(combinedData);
       } else {
         // Regular user only sees their own data
-        const filteredData = data.table.rows.filter(row => 
-          row.c && row.c[0] && row.c[0].v === username
-        )
-        setUserData(filteredData)
+        const { data: userLeads, error: userLeadsError } = await supabase
+          .from('leads_to_order')
+          .select('*')
+          .eq('Salesperson_Name', username)
+          .order('id', { ascending: false })
+          .limit(100);
+
+        const { data: userEnquiries, error: userEnquiriesError } = await supabase
+          .from('enquiry_to_order')
+          .select('*')
+          .eq('sales_person_name', username)
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        if (userLeadsError || userEnquiriesError) {
+          console.error("Error fetching user data from Supabase:", userLeadsError || userEnquiriesError);
+          showNotification("Failed to fetch user data", "error");
+          return;
+        }
+
+        const userSpecificData = {
+          leads: userLeads || [],
+          enquiries: userEnquiries || []
+        };
+        
+        setUserData(userSpecificData);
       }
     } catch (error) {
-      console.error("Data fetching error:", error)
-      showNotification("An error occurred while fetching data", "error")
+      console.error("Data fetching error:", error);
+      showNotification("An error occurred while fetching data", "error");
     }
   }
 
@@ -90,9 +118,9 @@ function App() {
         .single()
       
       if (error) {
-        console.error("Login error:", error)
-        showNotification("Invalid credentials", "error")
-        return false
+        console.error("Login error:", error);
+        showNotification("Invalid credentials", "error");
+        return false;
       }
       
       if (data) {
@@ -102,66 +130,67 @@ function App() {
           loginTime: new Date().toISOString()
         }
         
-        setIsAuthenticated(true)
-        setCurrentUser(userInfo)
-        setUserType(data.usertype)
+        setIsAuthenticated(true);
+        setCurrentUser(userInfo);
+        setUserType(data.usertype);
         
-        localStorage.setItem("isAuthenticated", "true")
-        localStorage.setItem("currentUser", JSON.stringify(userInfo))
-        localStorage.setItem("userType", data.usertype)
+        localStorage.setItem("isAuthenticated", "true");
+        localStorage.setItem("currentUser", JSON.stringify(userInfo));
+        localStorage.setItem("userType", data.usertype);
         
-        // Fetch data based on user type
-        await fetchUserData(data.username, data.usertype)
+        // Fetch data based on user type FROM SUPABASE
+        await fetchUserData(data.username, data.usertype);
         
-        showNotification(`Welcome, ${username}! (${data.usertype})`, "success")
-        return true
+        showNotification(`Welcome, ${username}! (${data.usertype})`, "success");
+        return true;
       } else {
-        showNotification("Invalid credentials", "error")
-        return false
+        showNotification("Invalid credentials", "error");
+        return false;
       }
     } catch (error) {
-      console.error("Login error:", error)
-      showNotification("An error occurred during login", "error")
-      return false
+      console.error("Login error:", error);
+      showNotification("An error occurred during login", "error");
+      return false;
     }
   }
 
   const logout = () => {
-    setIsAuthenticated(false)
-    setCurrentUser(null)
-    setUserType(null)
-    setUserData(null)
-    localStorage.removeItem("isAuthenticated")
-    localStorage.removeItem("currentUser")
-    localStorage.removeItem("userType")
-    showNotification("Logged out successfully", "success")
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    setUserType(null);
+    setUserData(null);
+    localStorage.removeItem("isAuthenticated");
+    localStorage.removeItem("currentUser");
+    localStorage.removeItem("userType");
+    localStorage.removeItem('quotation_auto_save');
+    showNotification("Logged out successfully", "success");
   }
 
   const showNotification = (message, type = "info") => {
-    setNotification({ message, type })
+    setNotification({ message, type });
     setTimeout(() => {
-      setNotification(null)
-    }, 3000)
+      setNotification(null);
+    }, 3000);
   }
   
   // Check if user has admin privileges
   const isAdmin = () => {
-    return userType === "admin"
+    return userType === "admin";
   }
 
   // Protected route component
   const ProtectedRoute = ({ children, adminOnly = false }) => {
     if (!isAuthenticated) {
-      return <Navigate to="/login" />
+      return <Navigate to="/login" />;
     }
     
     // If admin-only route and user is not admin, redirect to dashboard
     if (adminOnly && !isAdmin()) {
-      showNotification("You don't have permission to access this page", "error")
-      return <Navigate to="/" />
+      showNotification("You don't have permission to access this page", "error");
+      return <Navigate to="/" />;
     }
     
-    return children
+    return children;
   }
 
   return (
@@ -233,7 +262,7 @@ function App() {
                   path="/quotation"
                   element={
                     <ProtectedRoute>
-                      <Quotation />
+                      <Quotation key="quotation" />
                     </ProtectedRoute>
                   }
                 />

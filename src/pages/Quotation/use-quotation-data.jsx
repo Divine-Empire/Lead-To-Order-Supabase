@@ -70,7 +70,6 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
     insurance: "Transit insurance for all shipment is at Buyer's scope.",
     warranty: "6 months warranty applicable against Manufacturing defects.",
     taxes: "Extra as mentioned in the quotation.",
-    freight: "Extra as per actual.",
     accountNo: "",
     bankName: "",
     bankAddress: "",
@@ -186,67 +185,69 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
     return !statesMatch;
   };
 
+  // FIXED: Improved handleInputChange to prevent data loss
   const handleInputChange = (field, value) => {
     setQuotationData((prev) => {
-      const newData = {
-        ...prev,
-        [field]: value,
-      };
+      // Create a deep copy of previous state to avoid mutations
+      const newData = JSON.parse(JSON.stringify(prev));
+      
+      // Update the specific field
+      newData[field] = value;
 
-      // NEW: Handle items array update
+      // Handle items array update
       if (field === "items") {
-        newData.items = value;
-
-        // Recalculate totals when items change
         const totalFlatDiscount = value.reduce(
-          (sum, item) => sum + Number(item.flatDiscount),
+          (sum, item) => sum + Number(item.flatDiscount || 0),
           0
         );
 
         const shouldUseIGST = checkStateAndCalculateGST(
-          prev.consignorState,
-          prev.consigneeState
+          newData.consignorState,
+          newData.consigneeState
         );
 
         const totals = recalculateTotals(value, shouldUseIGST);
 
-        Object.assign(newData, {
+        return {
+          ...newData,
           totalFlatDiscount,
           isIGST: shouldUseIGST,
           ...totals,
-        });
-
-        return newData;
+        };
       }
 
       if (field === "consignorState" || field === "consigneeState") {
         const shouldUseIGST = checkStateAndCalculateGST(
-          field === "consignorState" ? value : prev.consignorState,
-          field === "consigneeState" ? value : prev.consigneeState
+          field === "consignorState" ? value : newData.consignorState,
+          field === "consigneeState" ? value : newData.consigneeState
         );
 
-        newData.isIGST = shouldUseIGST;
-
-        const totalFlatDiscount = prev.items.reduce(
-          (sum, item) => sum + Number(item.flatDiscount),
+        const totalFlatDiscount = newData.items.reduce(
+          (sum, item) => sum + Number(item.flatDiscount || 0),
           0
         );
-        const totals = recalculateTotals(prev.items, shouldUseIGST);
+        
+        const totals = recalculateTotals(newData.items, shouldUseIGST);
 
-        Object.assign(newData, {
+        return {
+          ...newData,
+          isIGST: shouldUseIGST,
           totalFlatDiscount,
           ...totals,
-        });
+        };
       }
 
       return newData;
     });
   };
 
-  // Handle item changes
+  // FIXED: Improved handleItemChange to prevent data loss
   const handleItemChange = (id, field, value) => {
     setQuotationData((prev) => {
-      const newItems = prev.items.map((item) => {
+      // Create a deep copy of previous state
+      const prevCopy = JSON.parse(JSON.stringify(prev));
+      
+      const newItems = prevCopy.items.map((item) => {
         if (item.id === id) {
           const updatedItem = { ...item, [field]: value };
 
@@ -257,12 +258,12 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
             field === "flatDiscount"
           ) {
             const baseAmount =
-              Number(updatedItem.qty) * Number(updatedItem.rate);
+              Number(updatedItem.qty || 0) * Number(updatedItem.rate || 0);
             const discountedAmount =
-              baseAmount * (1 - Number(updatedItem.discount) / 100);
+              baseAmount * (1 - Number(updatedItem.discount || 0) / 100);
             updatedItem.amount = Math.max(
               0,
-              discountedAmount - Number(updatedItem.flatDiscount)
+              discountedAmount - Number(updatedItem.flatDiscount || 0)
             );
           }
 
@@ -272,19 +273,19 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
       });
 
       const totalFlatDiscount = newItems.reduce(
-        (sum, item) => sum + Number(item.flatDiscount),
+        (sum, item) => sum + Number(item.flatDiscount || 0),
         0
       );
 
       const shouldUseIGST = checkStateAndCalculateGST(
-        prev.consignorState,
-        prev.consigneeState
+        prevCopy.consignorState,
+        prevCopy.consigneeState
       );
 
       const totals = recalculateTotals(newItems, shouldUseIGST);
 
       return {
-        ...prev,
+        ...prevCopy,
         items: newItems,
         totalFlatDiscount,
         isIGST: shouldUseIGST,
