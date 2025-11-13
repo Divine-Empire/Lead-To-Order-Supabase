@@ -1,5 +1,7 @@
 "use client";
+import { useState } from "react";
 import { PlusIcon, TrashIcon } from "../../components/Icons";
+
 
 const ItemsTable = ({
   quotationData,
@@ -23,15 +25,56 @@ const ItemsTable = ({
   const hideSpecialDiscount = hiddenColumns?.hideSpecialDiscount || false;
   const hideDescription = hiddenColumns?.hideDescription || false;
   const hideGrandTotal = hiddenColumns?.hideGrandTotal || false;
+  const hideCode = hiddenColumns?.hideCode || false;
+const hideProductName = hiddenColumns?.hideProductName || false;
+const hideGST = hiddenColumns?.hideGST || false;
+const hideQty = hiddenColumns?.hideQty || false;
+const hideUnits = hiddenColumns?.hideUnits || false;
+const hideRate = hiddenColumns?.hideRate || false;
+const hideAmount = hiddenColumns?.hideAmount || false;
+const hideIGST = hiddenColumns?.hideIGST || false;
+const hideCGST = hiddenColumns?.hideCGST || false;
+const hideSGST = hiddenColumns?.hideSGST || false;
+ const [showDropdown, setShowDropdown] = useState(false);
+
+const calculateColSpan = () => {
+  let baseSpan = 11; // Start with max columns
+  if (hideCode) baseSpan -= 1;
+  if (hideProductName) baseSpan -= 1;
+  if (hideDescription) baseSpan -= 1;
+  if (hideGST) baseSpan -= 1;
+  if (hideQty) baseSpan -= 1;
+  if (hideUnits) baseSpan -= 1;
+  if (hideRate) baseSpan -= 1;
+  if (hideDisc) baseSpan -= 1;
+  if (hideFlatDisc) baseSpan -= 1;
+  if (hideAmount) baseSpan -= 1;
+  return baseSpan.toString();
+};
 
 
-  const calculateColSpan = () => {
-    let baseSpan = 9;
-    if (hideDisc) baseSpan -= 1;
-    if (hideFlatDisc) baseSpan -= 1;
-    if (hideDescription) baseSpan -= 1;
-    return baseSpan.toString();
-  };
+const fieldOptions = [
+  { key: 'hideCode', label: 'Code' },
+  { key: 'hideProductName', label: 'Product Name' },
+  { key: 'hideDescription', label: 'Description' },
+  { key: 'hideGST', label: 'GST %' },
+  { key: 'hideQty', label: 'Qty.' },
+  { key: 'hideUnits', label: 'Units' },
+  { key: 'hideRate', label: 'Rate' },
+  { key: 'hideDisc', label: 'Disc %' },
+  { key: 'hideFlatDisc', label: 'Flat Disc' },
+  { key: 'hideAmount', label: 'Amount' },
+  { key: 'hideSubtotal', label: 'Subtotal' },
+  { key: 'hideTotalQty', label: 'Total Qty' },
+  { key: 'hideTotalFlatDisc', label: 'Total Flat Discount' },
+  { key: 'hideTaxableAmount', label: 'Taxable Amount' },
+  { key: 'hideIGST', label: 'IGST' },
+  { key: 'hideCGST', label: 'CGST' },
+  { key: 'hideSGST', label: 'SGST' },
+  { key: 'hideSpecialDiscount', label: 'Special Discount' },
+  { key: 'hideTotalDiscount', label: 'Total Discount' },
+  { key: 'hideGrandTotal', label: 'Grand Total' },
+];
 
   // Calculate taxable amount - this is subtotal (which already has flat discount applied to items)
   const taxableAmount = Math.max(0, quotationData.subtotal || 0);
@@ -54,82 +97,64 @@ const ItemsTable = ({
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-medium">Items</h3>
-          <div className="flex flex-wrap gap-2">
-            <button
-              className="px-2 py-1 text-xs text-gray-700 rounded-md border border-gray-300 hover:bg-gray-50"
-              onClick={() =>
-                setHiddenColumns((prev) => ({
-                  ...prev,
-                  hideGrandTotal: !prev.hideGrandTotal,
-                }))
-              }
-            >
-              {hideGrandTotal ? "Show" : "Hide"} Grand Total
-            </button>
-            <button
-              className="px-2 py-1 text-xs text-gray-700 rounded-md border border-gray-300 hover:bg-gray-50"
-              onClick={() =>
-                setHiddenColumns((prev) => ({
-                  ...prev,
-                  hideDescription: !prev.hideDescription,
-                }))
-              }
-            >
-              {hideDescription ? "Show" : "Hide"} Description
-            </button>
-
-            <button
-              className="px-2 py-1 text-xs text-gray-700 rounded-md border border-gray-300 hover:bg-gray-50"
-              onClick={() =>
-                setHiddenColumns((prev) => ({
-                  ...prev,
-                  hideDisc: !prev.hideDisc,
-                }))
-              }
-            >
-              {hideDisc ? "Show" : "Hide"} Disc%
-            </button>
-            <button
-              className="px-2 py-1 text-xs text-gray-700 rounded-md border border-gray-300 hover:bg-gray-50"
-              onClick={() =>
-                setHiddenColumns((prev) => ({
-                  ...prev,
-                  hideFlatDisc: !prev.hideFlatDisc,
-                }))
-              }
-            >
-              {hideFlatDisc ? "Show" : "Hide"} Flat Disc
-            </button>
-            <button
-              className="px-2 py-1 text-xs text-gray-700 rounded-md border border-gray-300 hover:bg-gray-50"
-              onClick={() =>
-                setHiddenColumns((prev) => ({
-                  ...prev,
-                  hideTotalFlatDisc: !prev.hideTotalFlatDisc,
-                }))
-              }
-            >
-              {hideTotalFlatDisc ? "Show" : "Hide"} Total Flat Disc
-            </button>
-            <button
-              className="px-2 py-1 text-xs text-gray-700 rounded-md border border-gray-300 hover:bg-gray-50"
-              onClick={() =>
-                setHiddenColumns((prev) => ({
-                  ...prev,
-                  hideSpecialDiscount: !prev.hideSpecialDiscount,
-                }))
-              }
-            >
-              {hideSpecialDiscount ? "Show" : "Hide"} Special Disc
-            </button>
-            <button
-              className="px-3 py-1 text-sm text-gray-700 rounded-md border border-gray-300 hover:bg-gray-50"
-              onClick={handleAddItem}
-              disabled={isLoading}
-            >
-              <PlusIcon className="inline mr-1 w-4 h-4" /> Add Item
-            </button>
+         <div className="flex flex-wrap gap-2">
+  {/* Dropdown for Hide/Show Fields */}
+  <div className="relative">
+    <button
+      className="px-3 py-1 text-sm text-gray-700 rounded-md border border-gray-300 hover:bg-gray-50 flex items-center gap-1"
+      onClick={() => setShowDropdown(!showDropdown)}
+    >
+      Hide/Show Fields
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
+    
+    {showDropdown && (
+      <>
+        {/* Backdrop to close dropdown on outside click */}
+        <div 
+          className="fixed inset-0 z-10" 
+          onClick={() => setShowDropdown(false)}
+        />
+        
+        {/* Dropdown Menu */}
+        <div className="absolute right-0 z-20 mt-1 w-56 bg-white rounded-md border border-gray-300 shadow-lg max-h-96 overflow-y-auto">
+          <div className="p-2">
+            {fieldOptions.map((field) => (
+              <label
+                key={field.key}
+                className="flex items-center px-2 py-2 hover:bg-gray-50 cursor-pointer rounded"
+              >
+                <input
+                  type="checkbox"
+                  checked={!hiddenColumns?.[field.key]}
+                  onChange={() =>
+                    setHiddenColumns((prev) => ({
+                      ...prev,
+                      [field.key]: !prev[field.key],
+                    }))
+                  }
+                  className="mr-3 w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">{field.label}</span>
+              </label>
+            ))}
           </div>
+        </div>
+      </>
+    )}
+  </div>
+
+  {/* Add Item Button */}
+  <button
+    className="px-3 py-1 text-sm text-gray-700 rounded-md border border-gray-300 hover:bg-gray-50"
+    onClick={handleAddItem}
+    disabled={isLoading}
+  >
+    <PlusIcon className="inline mr-1 w-4 h-4" /> Add Item
+  </button>
+</div>
         </div>
 
         <div
@@ -145,659 +170,643 @@ const ItemsTable = ({
             className="min-w-full divide-y divide-gray-200"
             onWheel={(e) => e.preventDefault()}
           >
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
-                  S No.
-                </th>
-                <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
-                  Code
-                </th>
-                <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
-                  Product Name
-                </th>
-                {!hideDescription && (
-                  <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
-                    Description
-                  </th>
-                )}
-                <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
-                  GST %
-                </th>
-                <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
-                  Qty.
-                </th>
-                <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
-                  Units
-                </th>
-                <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
-                  Rate
-                </th>
-                {!hideDisc && (
-                  <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
-                    Disc %
-                  </th>
-                )}
-                {!hideFlatDisc && (
-                  <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
-                    Flat Disc
-                  </th>
-                )}
-                <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
-                  Amount
-                </th>
-                <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {quotationData.items.map((item, index) => (
-                <tr key={item.id}>
-                  <td className="px-4 py-2">{index + 1}</td>
-
-                  <td className="px-4 py-2">
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={item.code}
-                        onChange={(e) => {
-                          handleItemChange(item.id, "code", e.target.value);
-                          if (productData[e.target.value]) {
-                            const productInfo = productData[e.target.value];
-                            if (!item.name) {
-                              handleItemChange(item.id, "name", productInfo.name);
-                            }
-                            if (!item.description) {
-                              handleItemChange(
-                                item.id,
-                                "description",
-                                productInfo.description
-                              );
-                            }
-                            if (!item.rate || item.rate === 0) {
-                              handleItemChange(item.id, "rate", productInfo.rate);
-                            }
-                          }
-                        }}
-                        list={`code-list-${item.id}`}
-                        className="p-1 w-24 rounded-md border border-gray-300"
-                        disabled={isLoading}
-                      />
-                      <datalist id={`code-list-${item.id}`}>
-                        {productCodes.map((code) => (
-                          <option key={code} value={code} />
-                        ))}
-                      </datalist>
-                    </div>
-                  </td>
-
-                  <td className="px-4 py-2">
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={item.name}
-                        onChange={(e) => {
-                          handleItemChange(item.id, "name", e.target.value);
-                          if (productData[e.target.value]) {
-                            const productInfo = productData[e.target.value];
-                            if (!item.code) {
-                              handleItemChange(item.id, "code", productInfo.code);
-                            }
-                            if (!item.description) {
-                              handleItemChange(
-                                item.id,
-                                "description",
-                                productInfo.description
-                              );
-                            }
-                            if (!item.rate || item.rate === 0) {
-                              handleItemChange(item.id, "rate", productInfo.rate);
-                            }
-                          }
-                        }}
-                        list={`name-list-${item.id}`}
-                        className="p-1 w-full rounded-md border border-gray-300"
-                        placeholder="Enter item name"
-                        disabled={isLoading}
-                        required
-                      />
-                      <datalist id={`name-list-${item.id}`}>
-                        {productNames.map((name) => (
-                          <option key={name} value={name} />
-                        ))}
-                      </datalist>
-                    </div>
-                  </td>
-
-                  {!hideDescription && (
-                    <td className="px-4 py-2">
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={item.description || ""}
-                          onChange={(e) =>
-                            handleItemChange(
-                              item.id,
-                              "description",
-                              e.target.value
-                            )
-                          }
-                          className="p-1 w-full rounded-md border border-gray-300"
-                          placeholder="Enter description"
-                          disabled={isLoading}
-                        />
-                      </div>
-                    </td>
-                  )}
-
-                  <td className="px-4 py-2">
-                    <select
-                      value={String(item.gst)}
-                      onChange={(e) =>
-                        handleItemChange(item.id, "gst", e.target.value)
-                      }
-                      className="p-1 w-20 rounded-md border border-gray-300"
-                      disabled={isLoading}
-                    >
-                      <option value="0">0%</option>
-                      <option value="5">5%</option>
-                      <option value="18">18%</option>
-                    </select>
-                  </td>
-                  <td className="px-4 py-2">
-                    <input
-                      type="number"
-                      value={item.qty || ""}
-                      onChange={(e) =>
-                        handleItemChange(
-                          item.id,
-                          "qty",
-                          Number.parseFloat(e.target.value) || 0
-                        )
-                      }
-                      className="p-1 w-16 rounded-md border border-gray-300 no-spinner"
-                      placeholder=""
-                      onWheel={(e) => e.target.blur()}
-                      onKeyDown={(e) => {
-                        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-                          e.preventDefault();
-                        }
-                      }}
-                      min="0"
-                      required
-                      disabled={isLoading}
-                    />
-                  </td>
-                  <td className="px-4 py-2">
-                    <select
-                      value={item.units}
-                      onChange={(e) =>
-                        handleItemChange(item.id, "units", e.target.value)
-                      }
-                      className="p-1 w-20 rounded-md border border-gray-300"
-                      disabled={isLoading}
-                    >
-                      <option value="Nos">Nos</option>
-                      <option value="Kg">Kg</option>
-                      <option value="Roll">Roll</option>
-                      <option value="Rmt">Rmt</option>
-                      <option value="Ltr">Ltr</option>
-                      <option value="Bag">Bag</option>
-                      <option value="Pair">Pair</option>
-                      <option value="Set">Set</option>
-                      <option value="Mtr">Mtr</option>
-                      <option value="sqmtr">sqmtr</option>
-                      <option value="Box">Box</option>
-                      <option value="Pc">Pc</option>
-                    </select>
-                  </td>
-                  <td className="px-4 py-2">
-                    <input
-                      type="number"
-                      value={item.rate || ""}
-                      onChange={(e) =>
-                        handleItemChange(
-                          item.id,
-                          "rate",
-                          Number.parseFloat(e.target.value) || 0
-                        )
-                      }
-                      className="p-1 w-24 rounded-md border border-gray-300 no-spinner"
-                      placeholder="0.00"
-                      onWheel={(e) => e.target.blur()}
-                      onKeyDown={(e) => {
-                        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-                          e.preventDefault();
-                        }
-                      }}
-                      step="0.01"
-                      min="0"
-                      disabled={isLoading}
-                      required
-                    />
-                  </td>
-                  {!hideDisc && (
-                    <td className="px-4 py-2">
-                      <input
-                        type="number"
-                        value={item.discount || ""}
-                        onChange={(e) =>
-                          handleItemChange(
-                            item.id,
-                            "discount",
-                            Number.parseFloat(e.target.value) || 0
-                          )
-                        }
-                        className="p-1 w-20 rounded-md border border-gray-300 no-spinner"
-                        placeholder=""
-                        onWheel={(e) => e.target.blur()}
-                        onKeyDown={(e) => {
-                          if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-                            e.preventDefault();
-                          }
-                        }}
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        disabled={isLoading}
-                      />
-                    </td>
-                  )}
-                  {!hideFlatDisc && (
-                    <td className="px-4 py-2">
-                      <input
-                        type="number"
-                        value={item.flatDiscount || ""}
-                        onChange={(e) =>
-                          handleItemChange(
-                            item.id,
-                            "flatDiscount",
-                            Number.parseFloat(e.target.value) || 0
-                          )
-                        }
-                        className="p-1 w-16 rounded-md border border-gray-300 no-spinner"
-                        placeholder=""
-                        onWheel={(e) => e.target.blur()}
-                        onKeyDown={(e) => {
-                          if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-                            e.preventDefault();
-                          }
-                        }}
-                        step="0.01"
-                        min="0"
-                        disabled={isLoading}
-                      />
-                    </td>
-                  )}
-                  <td className="px-4 py-2">
-                    <input
-                      type="text"
-                      value={item.amount || ""}
-                      className="p-1 w-24 bg-gray-50 rounded-md border border-gray-300"
-                      readOnly
-                    />
-                  </td>
-                  <td className="px-4 py-2">
-                    <button
-                      className="p-1 text-red-500 rounded-md hover:text-red-700"
-                      onClick={() => {
-                        setQuotationData((prev) => {
-                          const newItems = prev.items.filter(
-                            (i) => i.id !== item.id
-                          );
-                          if (newItems.length === 0) {
-                            return prev;
-                          }
-
-                          const subtotal = newItems.reduce(
-                            (sum, current) => sum + Number(current.amount || 0),
-                            0
-                          );
-                          const totalFlatDiscount = newItems.reduce(
-                            (sum, current) =>
-                              sum + Number(current.flatDiscount || 0),
-                            0
-                          );
-
-                          let cgstAmount = 0;
-                          let sgstAmount = 0;
-                          let igstAmount = 0;
-
-                          newItems.forEach((current) => {
-                            const amount = Number(current.amount || 0);
-                            let itemGST = Number(current.gst || 0);
-
-                            if (amount <= 0 || itemGST <= 0) {
-                              return;
-                            }
-
-                            if (
-                              String(current.gst).toUpperCase().includes("IGST")
-                            ) {
-                              itemGST = itemGST / 2;
-                            }
-
-                            if (prev.isIGST) {
-                              igstAmount += (amount * itemGST) / 100;
-                            } else {
-                              const halfGST = itemGST / 2;
-                              const contribution = (amount * halfGST) / 100;
-                              cgstAmount += contribution;
-                              sgstAmount += contribution;
-                            }
-                          });
-
-                          const roundedSubtotal = Number(subtotal.toFixed(2));
-                          cgstAmount = Number(cgstAmount.toFixed(2));
-                          sgstAmount = Number(sgstAmount.toFixed(2));
-                          igstAmount = Number(igstAmount.toFixed(2));
-
-                          const total = Math.max(
-                            0,
-                            Number(
-                              (
-                                roundedSubtotal +
-                                cgstAmount +
-                                sgstAmount +
-                                igstAmount
-                              ).toFixed(2)
-                            )
-                          );
-
-                          const cgstRate =
-                            !prev.isIGST && roundedSubtotal > 0
-                              ? Number(
-                                  (
-                                    (cgstAmount / roundedSubtotal) *
-                                    100
-                                  ).toFixed(2)
-                                )
-                              : 0;
-                          const sgstRate =
-                            !prev.isIGST && roundedSubtotal > 0
-                              ? Number(
-                                  (
-                                    (sgstAmount / roundedSubtotal) *
-                                    100
-                                  ).toFixed(2)
-                                )
-                              : 0;
-                          const igstRate =
-                            prev.isIGST && roundedSubtotal > 0
-                              ? Number(
-                                  (
-                                    (igstAmount / roundedSubtotal) *
-                                    100
-                                  ).toFixed(2)
-                                )
-                              : 0;
-
-                          return {
-                            ...prev,
-                            items: newItems,
-                            totalFlatDiscount,
-                            subtotal: roundedSubtotal,
-                            cgstAmount,
-                            sgstAmount,
-                            igstAmount,
-                            total,
-                            cgstRate: prev.isIGST ? 0 : cgstRate,
-                            sgstRate: prev.isIGST ? 0 : sgstRate,
-                            igstRate: prev.isIGST ? igstRate : 0,
-                          };
-                        });
-                      }}
-                      disabled={quotationData.items.length <= 1 || isLoading}
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td
-                  colSpan={calculateColSpan()}
-                  className="px-4 py-2 font-medium text-right"
-                >
-                  Subtotal:
-                </td>
-                <td className="p-2 border">
-                  ₹
-                  {typeof quotationData.subtotal === "number"
-                    ? quotationData.subtotal.toFixed(2)
-                    : "0.00"}
-                </td>
-                <td></td>
-              </tr>
-              <tr>
-                <td
-                  colSpan={calculateColSpan()}
-                  className="px-4 py-2 font-medium text-right"
-                >
-                  Total Qty:
-                </td>
-                <td className="px-4 py-2">
-                  {quotationData.items.reduce(
-                    (sum, item) => sum + (Number(item.qty) || 0),
-                    0
-                  )}
-                </td>
-                <td></td>
-              </tr>
-              {!hideTotalFlatDisc && (
-                <tr>
-                  <td
-                    colSpan={calculateColSpan()}
-                    className="px-4 py-2 font-medium text-right"
-                  >
-                    Total Flat Discount:
-                  </td>
-                  <td className="p-2">
-                    ₹
-                    {typeof quotationData.totalFlatDiscount === "number"
-                      ? quotationData.totalFlatDiscount.toFixed(2)
-                      : "0.00"}
-                  </td>
-                  <td></td>
-                </tr>
-              )}
-              <tr className="border">
-                <td
-                  colSpan={calculateColSpan()}
-                  className="px-4 py-2 font-medium text-right"
-                >
-                  Taxable Amount:
-                </td>
-                <td className="px-4 py-2">₹{taxableAmount.toFixed(2)}</td>
-                <td></td>
-              </tr>
-              {quotationData.isIGST ? (
-                <>
-                  {Object.entries(quotationData.igstBreakdown || {}).map(
-                    ([rate, value]) => (
-                      <tr className="border" key={`igst-${rate}`}>
-                        <td
-                          colSpan={calculateColSpan()}
-                          className="px-4 py-2 font-medium text-right"
-                        >
-                          IGST ({Number(rate)}%):
-                        </td>
-                        <td className="px-4 py-2">
-                          ₹{Number(value).toFixed(2)}
-                        </td>
-                        <td></td>
-                      </tr>
-                    )
-                  )}
-                  <tr className="border">
-                    <td
-                      colSpan={calculateColSpan()}
-                      className="px-4 py-2 font-medium text-right"
-                    >
-                      IGST Total:
-                    </td>
-                    <td className="px-4 py-2">
-                      ₹{(quotationData.igstAmount || 0).toFixed(2)}
-                    </td>
-                    <td></td>
-                  </tr>
-                </>
-              ) : (
-                <>
-                  {Object.entries(quotationData.cgstBreakdown || {}).map(
-                    ([rate, value]) => (
-                      <tr className="border" key={`cgst-${rate}`}>
-                        <td
-                          colSpan={calculateColSpan()}
-                          className="px-4 py-2 font-medium text-right"
-                        >
-                          CGST ({Number(rate)}%):
-                        </td>
-                        <td className="px-4 py-2">
-                          ₹{Number(value).toFixed(2)}
-                        </td>
-                        <td></td>
-                      </tr>
-                    )
-                  )}
-                  <tr className="border">
-                    <td
-                      colSpan={calculateColSpan()}
-                      className="px-4 py-2 font-medium text-right"
-                    >
-                      CGST Total:
-                    </td>
-                    <td className="px-4 py-2">
-                      ₹{(quotationData.cgstAmount || 0).toFixed(2)}
-                    </td>
-                    <td></td>
-                  </tr>
-                  {Object.entries(quotationData.sgstBreakdown || {}).map(
-                    ([rate, value]) => (
-                      <tr className="border" key={`sgst-${rate}`}>
-                        <td
-                          colSpan={calculateColSpan()}
-                          className="px-4 py-2 font-medium text-right"
-                        >
-                          SGST ({Number(rate)}%):
-                        </td>
-                        <td className="px-4 py-2">
-                          ₹{Number(value).toFixed(2)}
-                        </td>
-                        <td></td>
-                      </tr>
-                    )
-                  )}
-                  <tr className="border">
-                    <td
-                      colSpan={calculateColSpan()}
-                      className="px-4 py-2 font-medium text-right"
-                    >
-                      SGST Total:
-                    </td>
-                    <td className="px-4 py-2">
-                      ₹{(quotationData.sgstAmount || 0).toFixed(2)}
-                    </td>
-                    <td></td>
-                  </tr>
-                </>
-              )}
-              {!hideSpecialDiscount && (
-                <tr>
-                  <td
-                    colSpan={calculateColSpan()}
-                    className="px-4 py-2 font-medium text-right"
-                  >
-                    Special Discount:
-                  </td>
-                  <td className="px-4 py-2">
-                    <input
-                      type="number"
-                      value={specialDiscount || ""}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setSpecialDiscount(value);
-                        handleSpecialDiscountChange(value);
-                      }}
-                      className="p-1 w-24 rounded-md border border-gray-300 no-spinner"
-                      onWheel={(e) => e.target.blur()}
-                      onKeyDown={(e) => {
-                        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-                          e.preventDefault();
-                        }
-                      }}
-                      step="0.01"
-                      min="0"
-                      placeholder=""
-                      disabled={isLoading}
-                    />
-                  </td>
-                </tr>
-              )}
-              {!hideSpecialDiscount && (
-                <tr>
-                  <td
-                    colSpan={calculateColSpan()}
-                    className="px-4 py-2 font-medium text-right"
-                  >
-                    Total Discount:
-                  </td>
-                  <td className="px-4 py-2">
-                    ₹
-                    {(() => {
-                      const discountFromPercentage = quotationData.items.reduce(
-                        (sum, item) => {
-                          const itemTotal = item.qty * item.rate;
-                          return sum + itemTotal * (item.discount / 100);
-                        },
-                        0
-                      );
-                      const totalDiscount =
-                        discountFromPercentage +
-                        quotationData.totalFlatDiscount +
-                        (Number(specialDiscount) || 0);
-                      return totalDiscount.toFixed(2);
-                    })()}
-                  </td>
-                  <td></td>
-                </tr>
-              )}
-
-{!hideGrandTotal && (
-  <tr className="font-bold">
-    <td
-      colSpan={calculateColSpan()}
-      className="px-4 py-2 text-right"
-    >
-      Grand Total:
-    </td>
-    <td className="px-4 py-2">
-      ₹
-      {(() => {
-        // Subtotal already has flat discounts applied (it's sum of item amounts)
-        // Taxes are already calculated on the correct taxable amount
-        const totalTaxAmount =
-          quotationData.cgstAmount +
-          quotationData.sgstAmount +
-          quotationData.igstAmount;
-
-        // Grand Total = Subtotal + Taxes - Special Discount
-        const grandTotal =
-          quotationData.subtotal +
-          totalTaxAmount -
-          (Number(specialDiscount) || 0);
-
-        return Math.max(0, grandTotal).toFixed(2);
-      })()}
-    </td>
-    <td></td>
+           <thead className="bg-gray-50">
+  <tr>
+    <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
+      S No.
+    </th>
+    {!hideCode && (
+      <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
+        Code
+      </th>
+    )}
+    {!hideProductName && (
+      <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
+        Product Name
+      </th>
+    )}
+    {!hideDescription && (
+      <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
+        Description
+      </th>
+    )}
+    {!hideGST && (
+      <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
+        GST %
+      </th>
+    )}
+    {!hideQty && (
+      <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
+        Qty.
+      </th>
+    )}
+    {!hideUnits && (
+      <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
+        Units
+      </th>
+    )}
+    {!hideRate && (
+      <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
+        Rate
+      </th>
+    )}
+    {!hideDisc && (
+      <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
+        Disc %
+      </th>
+    )}
+    {!hideFlatDisc && (
+      <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
+        Flat Disc
+      </th>
+    )}
+    {!hideAmount && (
+      <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
+        Amount
+      </th>
+    )}
+    <th className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase">
+      Action
+    </th>
   </tr>
+</thead>
+           <tbody className="bg-white divide-y divide-gray-200">
+  {quotationData.items.map((item, index) => (
+    <tr key={item.id}>
+      <td className="px-4 py-2">{index + 1}</td>
+
+     {!hideCode && (
+  <td className="px-4 py-2">
+    <div className="relative">
+      <input
+        type="text"
+        value={item.code}
+        onChange={(e) => {
+          const newCode = e.target.value;
+          handleItemChange(item.id, "code", newCode);
+          
+          // Always sync with product data when code changes
+          if (productData[newCode]) {
+            const productInfo = productData[newCode];
+            // Update name, description and rate from product data
+            handleItemChange(item.id, "name", productInfo.name);
+            handleItemChange(item.id, "description", productInfo.description || "");
+            handleItemChange(item.id, "rate", productInfo.rate || 0);
+            // Optionally sync GST if available in productData
+            if (productInfo.gst !== undefined) {
+              handleItemChange(item.id, "gst", productInfo.gst);
+            }
+          }
+        }}
+        list={`code-list-${item.id}`}
+        className="p-1 w-24 rounded-md border border-gray-300"
+        disabled={isLoading}
+      />
+      <datalist id={`code-list-${item.id}`}>
+        {productCodes.map((code) => (
+          <option key={code} value={code} />
+        ))}
+      </datalist>
+    </div>
+  </td>
 )}
 
-            </tfoot>
+     {!hideProductName && (
+  <td className="px-4 py-2">
+    <div className="relative">
+      <input
+        type="text"
+        value={item.name}
+        onChange={(e) => {
+          const newName = e.target.value;
+          handleItemChange(item.id, "name", newName);
+          
+          // Always sync with product data when name changes
+          if (productData[newName]) {
+            const productInfo = productData[newName];
+            // Update code, description and rate from product data
+            handleItemChange(item.id, "code", productInfo.code);
+            handleItemChange(item.id, "description", productInfo.description || "");
+            handleItemChange(item.id, "rate", productInfo.rate || 0);
+            // Optionally sync GST if available in productData
+            if (productInfo.gst !== undefined) {
+              handleItemChange(item.id, "gst", productInfo.gst);
+            }
+          }
+        }}
+        list={`name-list-${item.id}`}
+        className="p-1 w-full rounded-md border border-gray-300"
+        placeholder="Enter item name"
+        disabled={isLoading}
+        required
+      />
+      <datalist id={`name-list-${item.id}`}>
+        {productNames.map((name) => (
+          <option key={name} value={name} />
+        ))}
+      </datalist>
+    </div>
+  </td>
+)}
+
+
+      {!hideDescription && (
+        <td className="px-4 py-2">
+          <div className="relative">
+            <input
+              type="text"
+              value={item.description || ""}
+              onChange={(e) =>
+                handleItemChange(
+                  item.id,
+                  "description",
+                  e.target.value
+                )
+              }
+              className="p-1 w-full rounded-md border border-gray-300"
+              placeholder="Enter description"
+              disabled={isLoading}
+            />
+          </div>
+        </td>
+      )}
+
+      {!hideGST && (
+        <td className="px-4 py-2">
+          <select
+            value={String(item.gst)}
+            onChange={(e) =>
+              handleItemChange(item.id, "gst", e.target.value)
+            }
+            className="p-1 w-20 rounded-md border border-gray-300"
+            disabled={isLoading}
+          >
+            <option value="0">0%</option>
+            <option value="5">5%</option>
+            <option value="18">18%</option>
+          </select>
+        </td>
+      )}
+
+      {!hideQty && (
+        <td className="px-4 py-2">
+          <input
+            type="number"
+            value={item.qty || ""}
+            onChange={(e) =>
+              handleItemChange(
+                item.id,
+                "qty",
+                Number.parseFloat(e.target.value) || 0
+              )
+            }
+            className="p-1 w-16 rounded-md border border-gray-300 no-spinner"
+            placeholder=""
+            onWheel={(e) => e.target.blur()}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                e.preventDefault();
+              }
+            }}
+            min="0"
+            required
+            disabled={isLoading}
+          />
+        </td>
+      )}
+
+      {!hideUnits && (
+        <td className="px-4 py-2">
+          <select
+            value={item.units}
+            onChange={(e) =>
+              handleItemChange(item.id, "units", e.target.value)
+            }
+            className="p-1 w-20 rounded-md border border-gray-300"
+            disabled={isLoading}
+          >
+            <option value="Nos">Nos</option>
+            <option value="Kg">Kg</option>
+            <option value="Roll">Roll</option>
+            <option value="Rmt">Rmt</option>
+            <option value="Ltr">Ltr</option>
+            <option value="Bag">Bag</option>
+            <option value="Pair">Pair</option>
+            <option value="Set">Set</option>
+            <option value="Mtr">Mtr</option>
+            <option value="sqmtr">sqmtr</option>
+            <option value="Box">Box</option>
+            <option value="Pc">Pc</option>
+          </select>
+        </td>
+      )}
+
+      {!hideRate && (
+        <td className="px-4 py-2">
+          <input
+            type="number"
+            value={item.rate || ""}
+            onChange={(e) =>
+              handleItemChange(
+                item.id,
+                "rate",
+                Number.parseFloat(e.target.value) || 0
+              )
+            }
+            className="p-1 w-24 rounded-md border border-gray-300 no-spinner"
+            placeholder="0.00"
+            onWheel={(e) => e.target.blur()}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                e.preventDefault();
+              }
+            }}
+            step="0.01"
+            min="0"
+            disabled={isLoading}
+            required
+          />
+        </td>
+      )}
+
+      {!hideDisc && (
+        <td className="px-4 py-2">
+          <input
+            type="number"
+            value={item.discount || ""}
+            onChange={(e) =>
+              handleItemChange(
+                item.id,
+                "discount",
+                Number.parseFloat(e.target.value) || 0
+              )
+            }
+            className="p-1 w-20 rounded-md border border-gray-300 no-spinner"
+            placeholder=""
+            onWheel={(e) => e.target.blur()}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                e.preventDefault();
+              }
+            }}
+            step="0.01"
+            min="0"
+            max="100"
+            disabled={isLoading}
+          />
+        </td>
+      )}
+
+      {!hideFlatDisc && (
+        <td className="px-4 py-2">
+          <input
+            type="number"
+            value={item.flatDiscount || ""}
+            onChange={(e) =>
+              handleItemChange(
+                item.id,
+                "flatDiscount",
+                Number.parseFloat(e.target.value) || 0
+              )
+            }
+            className="p-1 w-16 rounded-md border border-gray-300 no-spinner"
+            placeholder=""
+            onWheel={(e) => e.target.blur()}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                e.preventDefault();
+              }
+            }}
+            step="0.01"
+            min="0"
+            disabled={isLoading}
+          />
+        </td>
+      )}
+
+      {!hideAmount && (
+        <td className="px-4 py-2">
+          <input
+            type="text"
+            value={item.amount || ""}
+            className="p-1 w-24 bg-gray-50 rounded-md border border-gray-300"
+            readOnly
+          />
+        </td>
+      )}
+
+      <td className="px-4 py-2">
+        <button
+          className="p-1 text-red-500 rounded-md hover:text-red-700"
+          onClick={() => {
+            setQuotationData((prev) => {
+              const newItems = prev.items.filter(
+                (i) => i.id !== item.id
+              );
+              if (newItems.length === 0) {
+                return prev;
+              }
+
+              const subtotal = newItems.reduce(
+                (sum, current) => sum + Number(current.amount || 0),
+                0
+              );
+              const totalFlatDiscount = newItems.reduce(
+                (sum, current) =>
+                  sum + Number(current.flatDiscount || 0),
+                0
+              );
+
+              let cgstAmount = 0;
+              let sgstAmount = 0;
+              let igstAmount = 0;
+
+              newItems.forEach((current) => {
+                const amount = Number(current.amount || 0);
+                let itemGST = Number(current.gst || 0);
+
+                if (amount <= 0 || itemGST <= 0) {
+                  return;
+                }
+
+                if (
+                  String(current.gst).toUpperCase().includes("IGST")
+                ) {
+                  itemGST = itemGST / 2;
+                }
+
+                if (prev.isIGST) {
+                  igstAmount += (amount * itemGST) / 100;
+                } else {
+                  const halfGST = itemGST / 2;
+                  const contribution = (amount * halfGST) / 100;
+                  cgstAmount += contribution;
+                  sgstAmount += contribution;
+                }
+              });
+
+              const roundedSubtotal = Number(subtotal.toFixed(2));
+              cgstAmount = Number(cgstAmount.toFixed(2));
+              sgstAmount = Number(sgstAmount.toFixed(2));
+              igstAmount = Number(igstAmount.toFixed(2));
+
+              const total = Math.max(
+                0,
+                Number(
+                  (
+                    roundedSubtotal +
+                    cgstAmount +
+                    sgstAmount +
+                    igstAmount
+                  ).toFixed(2)
+                )
+              );
+
+              const cgstRate =
+                !prev.isIGST && roundedSubtotal > 0
+                  ? Number(
+                      (
+                        (cgstAmount / roundedSubtotal) *
+                        100
+                      ).toFixed(2)
+                    )
+                  : 0;
+              const sgstRate =
+                !prev.isIGST && roundedSubtotal > 0
+                  ? Number(
+                      (
+                        (sgstAmount / roundedSubtotal) *
+                        100
+                      ).toFixed(2)
+                    )
+                  : 0;
+              const igstRate =
+                prev.isIGST && roundedSubtotal > 0
+                  ? Number(
+                      (
+                        (igstAmount / roundedSubtotal) *
+                        100
+                      ).toFixed(2)
+                    )
+                  : 0;
+
+              return {
+                ...prev,
+                items: newItems,
+                totalFlatDiscount,
+                subtotal: roundedSubtotal,
+                cgstAmount,
+                sgstAmount,
+                igstAmount,
+                total,
+                cgstRate: prev.isIGST ? 0 : cgstRate,
+                sgstRate: prev.isIGST ? 0 : sgstRate,
+                igstRate: prev.isIGST ? igstRate : 0,
+              };
+            });
+          }}
+          disabled={quotationData.items.length <= 1 || isLoading}
+        >
+          <TrashIcon className="w-4 h-4" />
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
+            <tfoot>
+  {/* Subtotal */}
+  {!hiddenColumns?.hideSubtotal && (
+    <tr>
+      <td colSpan={calculateColSpan()} className="px-4 py-2 font-medium text-right">
+        Subtotal:
+      </td>
+      <td className="p-2 border">
+        ₹{typeof quotationData.subtotal === "number" ? quotationData.subtotal.toFixed(2) : "0.00"}
+      </td>
+      <td></td>
+    </tr>
+  )}
+
+  {/* Total Qty */}
+  {!hiddenColumns?.hideTotalQty && (
+    <tr>
+      <td colSpan={calculateColSpan()} className="px-4 py-2 font-medium text-right">
+        Total Qty:
+      </td>
+      <td className="px-4 py-2">
+        {quotationData.items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0)}
+      </td>
+      <td></td>
+    </tr>
+  )}
+
+  {/* Total Flat Discount */}
+  {!hideTotalFlatDisc && (
+    <tr>
+      <td colSpan={calculateColSpan()} className="px-4 py-2 font-medium text-right">
+        Total Flat Discount:
+      </td>
+      <td className="p-2">
+        ₹{typeof quotationData.totalFlatDiscount === "number" ? quotationData.totalFlatDiscount.toFixed(2) : "0.00"}
+      </td>
+      <td></td>
+    </tr>
+  )}
+
+  {/* Taxable Amount */}
+  {!hiddenColumns?.hideTaxableAmount && (
+    <tr className="border">
+      <td colSpan={calculateColSpan()} className="px-4 py-2 font-medium text-right">
+        Taxable Amount:
+      </td>
+      <td className="px-4 py-2">₹{taxableAmount.toFixed(2)}</td>
+      <td></td>
+    </tr>
+  )}
+
+  {/* IGST Section */}
+  {!hideIGST && quotationData.isIGST && (
+    <>
+      {Object.entries(quotationData.igstBreakdown || {}).map(([rate, value]) => (
+        <tr className="border" key={`igst-${rate}`}>
+          <td colSpan={calculateColSpan()} className="px-4 py-2 font-medium text-right">
+            IGST ({Number(rate)}%):
+          </td>
+          <td className="px-4 py-2">₹{Number(value).toFixed(2)}</td>
+          <td></td>
+        </tr>
+      ))}
+      <tr className="border">
+        <td colSpan={calculateColSpan()} className="px-4 py-2 font-medium text-right">
+          IGST Total:
+        </td>
+        <td className="px-4 py-2">₹{(quotationData.igstAmount || 0).toFixed(2)}</td>
+        <td></td>
+      </tr>
+    </>
+  )}
+
+  {/* CGST Section */}
+  {!hideCGST && !quotationData.isIGST && (
+    <>
+      {Object.entries(quotationData.cgstBreakdown || {}).map(([rate, value]) => (
+        <tr className="border" key={`cgst-${rate}`}>
+          <td colSpan={calculateColSpan()} className="px-4 py-2 font-medium text-right">
+            CGST ({Number(rate)}%):
+          </td>
+          <td className="px-4 py-2">₹{Number(value).toFixed(2)}</td>
+          <td></td>
+        </tr>
+      ))}
+      <tr className="border">
+        <td colSpan={calculateColSpan()} className="px-4 py-2 font-medium text-right">
+          CGST Total:
+        </td>
+        <td className="px-4 py-2">₹{(quotationData.cgstAmount || 0).toFixed(2)}</td>
+        <td></td>
+      </tr>
+    </>
+  )}
+
+  {/* SGST Section */}
+  {!hideSGST && !quotationData.isIGST && (
+    <>
+      {Object.entries(quotationData.sgstBreakdown || {}).map(([rate, value]) => (
+        <tr className="border" key={`sgst-${rate}`}>
+          <td colSpan={calculateColSpan()} className="px-4 py-2 font-medium text-right">
+            SGST ({Number(rate)}%):
+          </td>
+          <td className="px-4 py-2">₹{Number(value).toFixed(2)}</td>
+          <td></td>
+        </tr>
+      ))}
+      <tr className="border">
+        <td colSpan={calculateColSpan()} className="px-4 py-2 font-medium text-right">
+          SGST Total:
+        </td>
+        <td className="px-4 py-2">₹{(quotationData.sgstAmount || 0).toFixed(2)}</td>
+        <td></td>
+      </tr>
+    </>
+  )}
+
+  {/* Special Discount */}
+  {!hideSpecialDiscount && (
+    <tr>
+      <td colSpan={calculateColSpan()} className="px-4 py-2 font-medium text-right">
+        Special Discount:
+      </td>
+      <td className="px-4 py-2">
+        <input
+          type="number"
+          value={specialDiscount || ""}
+          onChange={(e) => {
+            const value = e.target.value;
+            setSpecialDiscount(value);
+            handleSpecialDiscountChange(value);
+          }}
+          className="p-1 w-24 rounded-md border border-gray-300 no-spinner"
+          onWheel={(e) => e.target.blur()}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+              e.preventDefault();
+            }
+          }}
+          step="0.01"
+          min="0"
+          placeholder=""
+          disabled={isLoading}
+        />
+      </td>
+      <td></td>
+    </tr>
+  )}
+
+  {/* Total Discount */}
+  {!hiddenColumns?.hideTotalDiscount && (
+    <tr>
+      <td colSpan={calculateColSpan()} className="px-4 py-2 font-medium text-right">
+        Total Discount:
+      </td>
+      <td className="px-4 py-2">
+        ₹{(() => {
+          const discountFromPercentage = quotationData.items.reduce((sum, item) => {
+            const itemTotal = item.qty * item.rate;
+            return sum + itemTotal * (item.discount / 100);
+          }, 0);
+          const totalDiscount = discountFromPercentage + quotationData.totalFlatDiscount + (Number(specialDiscount) || 0);
+          return totalDiscount.toFixed(2);
+        })()}
+      </td>
+      <td></td>
+    </tr>
+  )}
+
+  {/* Grand Total */}
+  {!hideGrandTotal && (
+    <tr className="font-bold">
+      <td colSpan={calculateColSpan()} className="px-4 py-2 text-right">
+        Grand Total:
+      </td>
+      <td className="px-4 py-2">
+        ₹{(() => {
+          const totalTaxAmount =
+            quotationData.cgstAmount +
+            quotationData.sgstAmount +
+            quotationData.igstAmount;
+
+          const grandTotal =
+            quotationData.subtotal +
+            totalTaxAmount -
+            (Number(specialDiscount) || 0);
+
+          return Math.max(0, grandTotal).toFixed(2);
+        })()}
+      </td>
+      <td></td>
+    </tr>
+  )}
+</tfoot>
           </table>
         </div>
       </div>

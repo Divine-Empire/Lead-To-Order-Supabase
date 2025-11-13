@@ -24,7 +24,10 @@ const ConsignorDetails = ({
                   onClick={() => {
                     const updated = selectedReferences.filter((r) => r !== ref)
                     setSelectedReferences(updated)
-                    handleInputChange("consignorName", updated.join(", "))
+                    
+                    // FIX: Update consignorName properly
+                    const newConsignorName = updated.join(", ")
+                    handleInputChange("consignorName", newConsignorName)
 
                     if (updated.length > 0 && dropdownData.references) {
                       const mobileNumbers = updated.map((r) => dropdownData.references[r]?.mobile).filter(Boolean)
@@ -51,7 +54,10 @@ const ConsignorDetails = ({
               if (selectedRef && !selectedReferences.includes(selectedRef)) {
                 const updated = [...selectedReferences, selectedRef]
                 setSelectedReferences(updated)
-                handleInputChange("consignorName", updated.join(", "))
+                
+                // FIX: Update consignorName properly AFTER state update
+                const newConsignorName = updated.join(", ")
+                handleInputChange("consignorName", newConsignorName)
 
                 if (dropdownData.references && dropdownData.references[selectedRef]) {
                   const mobileNumbers = updated.map((ref) => dropdownData.references[ref]?.mobile).filter(Boolean)
@@ -60,7 +66,6 @@ const ConsignorDetails = ({
                   handleInputChange("consignorPhone", phoneNumbers.join(", "))
                 }
               }
-              e.target.value = ""
             }}
             className="w-full p-2 border border-gray-300 rounded-md"
           >
@@ -99,9 +104,7 @@ const ConsignorDetails = ({
             <label className="block text-sm font-medium">Phone</label>
             <input
               type="text"
-              // value={quotationData.consignorPhone}
               value={"0772-400515"}
-              // onChange={(e) => handleInputChange("consignorPhone", e.target.value)}
               readOnly
               className="w-full p-2 border border-gray-300 rounded-md"
             />

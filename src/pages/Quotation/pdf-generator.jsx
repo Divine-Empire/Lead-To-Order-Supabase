@@ -122,53 +122,78 @@ const QuotationPDFComponent = ({
   };
 
   // Build table headers based on hidden columns
-  const tableHeaders = ["S No.", "Code", "Product Name"];
-  if (!hiddenColumns.hideDescription) tableHeaders.push("Description");
-  tableHeaders.push("GST %", "Qty", "Units", "Rate");
+ // Build table headers based on hidden columns
+const tableHeaders = ["S No."];
+if (!hiddenColumns?.hideCode) tableHeaders.push("Code");
+if (!hiddenColumns?.hideProductName) tableHeaders.push("Product Name");
+if (!hiddenColumns?.hideDescription) tableHeaders.push("Description");
+if (!hiddenColumns?.hideGST) tableHeaders.push("GST %");
+if (!hiddenColumns?.hideQty) tableHeaders.push("Qty");
+if (!hiddenColumns?.hideUnits) tableHeaders.push("Units");
+if (!hiddenColumns?.hideRate) tableHeaders.push("Rate");
+if (!hiddenColumns?.hideDisc) tableHeaders.push("Disc %");
+if (!hiddenColumns?.hideFlatDisc) tableHeaders.push("Flat Disc");
+if (!hiddenColumns?.hideAmount) tableHeaders.push("Amount");
 
-  if (!hiddenColumns.hideDisc) tableHeaders.push("Disc %");
-  if (!hiddenColumns.hideFlatDisc) tableHeaders.push("Flat Disc");
+ 
 
-  tableHeaders.push("Amount");
-
-  // Build items data - FIXED QUANTITY DISPLAY ISSUE
-  const itemsData = quotationData.items
-    ? quotationData.items.map((item, index) => {
-        const row = [
-          String(index + 1),
-          String(item.code || " "),
-          String(item.name || " "),
-        ];
-        if (!hiddenColumns.hideDescription)
-          row.push(String(item.description || " "));
-        
-        // FIXED: Ensure quantity is displayed correctly
+  
+ // Build items data - FIXED QUANTITY DISPLAY ISSUE
+const itemsData = quotationData.items
+  ? quotationData.items.map((item, index) => {
+      const row = [String(index + 1)];
+      
+      // Code
+      if (!hiddenColumns?.hideCode) row.push(String(item.code || " "));
+      
+      // Product Name
+      if (!hiddenColumns?.hideProductName) row.push(String(item.name || " "));
+      
+      // Description
+      if (!hiddenColumns?.hideDescription) row.push(String(item.description || " "));
+      
+      // GST %
+      if (!hiddenColumns?.hideGST) row.push(String(`${item.gst || 18}%`));
+      
+      // Qty
+      if (!hiddenColumns?.hideQty) {
         const quantity = Number(item.qty) || 1;
-        row.push(
-          String(`${item.gst || 18}%`),
-          String(quantity), // This ensures proper quantity display
-          String(item.units || "Nos"),
-          `₹${formatCurrency(item.rate || 0)}`
-        );
-
-        if (!hiddenColumns.hideDisc) row.push(String(`${item.discount || 0}%`));
-        if (!hiddenColumns.hideFlatDisc)
-          row.push(`₹${formatCurrency(item.flatDiscount || 0)}`);
-        row.push(`₹${formatCurrency(item.amount || 0)}`);
-        return row;
-      })
-    : [
-        (() => {
-          const defaultRow = ["1", " ", " "];
-          if (!hiddenColumns.hideDescription) defaultRow.push(" ");
-          defaultRow.push("18%", "1", "Nos", "₹0.00");
-
-          if (!hiddenColumns.hideDisc) defaultRow.push("0%");
-          if (!hiddenColumns.hideFlatDisc) defaultRow.push("₹0.00");
-          return defaultRow;
-        })(),
-      ];
-
+        row.push(String(quantity));
+      }
+      
+      // Units
+      if (!hiddenColumns?.hideUnits) row.push(String(item.units || "Nos"));
+      
+      // Rate
+      if (!hiddenColumns?.hideRate) row.push(`₹${formatCurrency(item.rate || 0)}`);
+      
+      // Disc %
+      if (!hiddenColumns?.hideDisc) row.push(String(`${item.discount || 0}%`));
+      
+      // Flat Disc
+      if (!hiddenColumns?.hideFlatDisc) row.push(`₹${formatCurrency(item.flatDiscount || 0)}`);
+      
+      // Amount
+      if (!hiddenColumns?.hideAmount) row.push(`₹${formatCurrency(item.amount || 0)}`);
+      
+      return row;
+    })
+  : [
+      (() => {
+        const defaultRow = ["1"];
+        if (!hiddenColumns?.hideCode) defaultRow.push(" ");
+        if (!hiddenColumns?.hideProductName) defaultRow.push(" ");
+        if (!hiddenColumns?.hideDescription) defaultRow.push(" ");
+        if (!hiddenColumns?.hideGST) defaultRow.push("18%");
+        if (!hiddenColumns?.hideQty) defaultRow.push("1");
+        if (!hiddenColumns?.hideUnits) defaultRow.push("Nos");
+        if (!hiddenColumns?.hideRate) defaultRow.push("₹0.00");
+        if (!hiddenColumns?.hideDisc) defaultRow.push("0%");
+        if (!hiddenColumns?.hideFlatDisc) defaultRow.push("₹0.00");
+        if (!hiddenColumns?.hideAmount) defaultRow.push("₹0.00");
+        return defaultRow;
+      })(),
+    ];
   // Financial calculations - updated to use breakdown objects
   const subtotal = quotationData.subtotal || 0;
   const totalFlatDiscount = quotationData.totalFlatDiscount || 0;
@@ -675,284 +700,129 @@ const QuotationPDFComponent = ({
           </table>
         </div>
 
-        {/* Tax Breakdown and Amount in Words - Side by side like preview */}
-        {/* Tax Breakdown and Amount in Words - Side by side like preview */}
-        <div style={{ display: "flex", marginBottom: "20px", gap: "16px" }}>
+       
+      {/* Tax Breakdown and Amount in Words Section */}
+<div style={{ marginBottom: "20px" }}>
+  {(() => {
+    // Check if tax breakdown should be shown
+    // Hide table ONLY when BOTH CGST AND SGST are hidden (for non-IGST)
+    // OR when IGST is hidden (for IGST invoices)
+    const showTaxBreakdown = 
+      (quotationData.isIGST && !hiddenColumns?.hideIGST) ||
+      (!quotationData.isIGST && (!hiddenColumns?.hideCGST && !hiddenColumns?.hideSGST));
+    
+    return (
+      <div style={{ display: "flex", gap: "16px" }}>
+        {/* Tax Breakdown Table - Only show if any tax is visible */}
+        {showTaxBreakdown && (
           <div style={{ width: "50%" }}>
-            <h4
-              style={{
-                margin: "0 0 8px 0",
-                fontSize: "14px",
-                fontWeight: "bold",
-              }}
-            >
+            <h4 style={{ margin: "0 0 8px 0", fontSize: "14px", fontWeight: "bold" }}>
               Tax Breakdown
             </h4>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontSize: "10px",
-                border: "1px solid #ccc",
-              }}
-            >
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "10px", border: "1px solid #ccc" }}>
               <thead>
                 <tr style={{ backgroundColor: "#f8f9fa" }}>
-                  <th
-                    style={{
-                      border: "1px solid #ddd",
-                      padding: "6px",
-                      textAlign: "left",
-                    }}
-                  >
-                    Tax Type
-                  </th>
-                  <th
-                    style={{
-                      border: "1px solid #ddd",
-                      padding: "6px",
-                      textAlign: "left",
-                    }}
-                  >
-                    Rate
-                  </th>
-                  <th
-                    style={{
-                      border: "1px solid #ddd",
-                      padding: "6px",
-                      textAlign: "left",
-                    }}
-                  >
-                    Amount
-                  </th>
+                  <th style={{ border: "1px solid #ddd", padding: "6px", textAlign: "left" }}>Tax Type</th>
+                  <th style={{ border: "1px solid #ddd", padding: "6px", textAlign: "left" }}>Rate</th>
+                  <th style={{ border: "1px solid #ddd", padding: "6px", textAlign: "left" }}>Amount</th>
                 </tr>
               </thead>
               <tbody>
-                {quotationData.isIGST ? (
+                {/* IGST Breakdown */}
+                {quotationData.isIGST && !hiddenColumns?.hideIGST && (
                   <>
-                    {Object.entries(quotationData.igstBreakdown || {}).map(
-                      ([rate, value]) => (
-                        <tr className="border" key={`igst-${rate}`}>
-                          <td
-                            style={{ border: "1px solid #ddd", padding: "6px" }}
-                          >
-                            IGST
-                          </td>
-                          <td
-                            style={{ border: "1px solid #ddd", padding: "6px" }}
-                          >
-                            {Number(rate)}%
-                          </td>
-                          <td
-                            style={{
-                              border: "1px solid #ddd",
-                              padding: "6px",
-                              textAlign: "right",
-                            }}
-                          >
-                            ₹{formatCurrency(Number(value))}
-                          </td>
-                        </tr>
-                      )
-                    )}
-                    <tr
-                      style={{ backgroundColor: "#f8f9fa", fontWeight: "bold" }}
-                    >
-                      <td style={{ border: "1px solid #ddd", padding: "6px" }}>
-                        IGST Total
-                      </td>
-                      <td style={{ border: "1px solid #ddd", padding: "6px" }}>
-                        {quotationData.igstRate || 18}%
-                      </td>
-                      <td
-                        style={{
-                          border: "1px solid #ddd",
-                          padding: "6px",
-                          textAlign: "right",
-                        }}
-                      >
+                    {Object.entries(quotationData.igstBreakdown || {}).map(([rate, value]) => (
+                      <tr key={`igst-${rate}`}>
+                        <td style={{ border: "1px solid #ddd", padding: "6px" }}>IGST</td>
+                        <td style={{ border: "1px solid #ddd", padding: "6px" }}>{Number(rate)}%</td>
+                        <td style={{ border: "1px solid #ddd", padding: "6px", textAlign: "right" }}>
+                          ₹{formatCurrency(Number(value))}
+                        </td>
+                      </tr>
+                    ))}
+                    <tr style={{ backgroundColor: "#f8f9fa", fontWeight: "bold" }}>
+                      <td style={{ border: "1px solid #ddd", padding: "6px" }}>IGST Total</td>
+                      <td style={{ border: "1px solid #ddd", padding: "6px" }}>{quotationData.igstRate || 18}%</td>
+                      <td style={{ border: "1px solid #ddd", padding: "6px", textAlign: "right" }}>
                         ₹{formatCurrency(igstAmount)}
                       </td>
                     </tr>
                   </>
-                ) : (
+                )}
+
+                {/* CGST Breakdown */}
+                {!quotationData.isIGST && !hiddenColumns?.hideCGST && (
                   <>
-                    {Object.entries(quotationData.cgstBreakdown || {}).map(
-                      ([rate, value]) => (
-                        <tr className="border" key={`cgst-${rate}`}>
-                          <td
-                            style={{ border: "1px solid #ddd", padding: "6px" }}
-                          >
-                            CGST
-                          </td>
-                          <td
-                            style={{ border: "1px solid #ddd", padding: "6px" }}
-                          >
-                            {Number(rate)}%
-                          </td>
-                          <td
-                            style={{
-                              border: "1px solid #ddd",
-                              padding: "6px",
-                              textAlign: "right",
-                            }}
-                          >
-                            ₹{formatCurrency(Number(value))}
-                          </td>
-                        </tr>
-                      )
-                    )}
-                    <tr
-                      style={{ backgroundColor: "#f8f9fa", fontWeight: "bold" }}
-                    >
-                      <td style={{ border: "1px solid #ddd", padding: "6px" }}>
-                        CGST Total
-                      </td>
-                      <td style={{ border: "1px solid #ddd", padding: "6px" }}>
-                        {quotationData.cgstRate || 9}%
-                      </td>
-                      <td
-                        style={{
-                          border: "1px solid #ddd",
-                          padding: "6px",
-                          textAlign: "right",
-                        }}
-                      >
+                    {Object.entries(quotationData.cgstBreakdown || {}).map(([rate, value]) => (
+                      <tr key={`cgst-${rate}`}>
+                        <td style={{ border: "1px solid #ddd", padding: "6px" }}>CGST</td>
+                        <td style={{ border: "1px solid #ddd", padding: "6px" }}>{Number(rate)}%</td>
+                        <td style={{ border: "1px solid #ddd", padding: "6px", textAlign: "right" }}>
+                          ₹{formatCurrency(Number(value))}
+                        </td>
+                      </tr>
+                    ))}
+                    <tr style={{ backgroundColor: "#f8f9fa", fontWeight: "bold" }}>
+                      <td style={{ border: "1px solid #ddd", padding: "6px" }}>CGST Total</td>
+                      <td style={{ border: "1px solid #ddd", padding: "6px" }}>{quotationData.cgstRate || 9}%</td>
+                      <td style={{ border: "1px solid #ddd", padding: "6px", textAlign: "right" }}>
                         ₹{formatCurrency(cgstAmount)}
                       </td>
                     </tr>
-                    {Object.entries(quotationData.sgstBreakdown || {}).map(
-                      ([rate, value]) => (
-                        <tr className="border" key={`sgst-${rate}`}>
-                          <td
-                            style={{ border: "1px solid #ddd", padding: "6px" }}
-                          >
-                            SGST
-                          </td>
-                          <td
-                            style={{ border: "1px solid #ddd", padding: "6px" }}
-                          >
-                            {Number(rate)}%
-                          </td>
-                          <td
-                            style={{
-                              border: "1px solid #ddd",
-                              padding: "6px",
-                              textAlign: "right",
-                            }}
-                          >
-                            ₹{formatCurrency(Number(value))}
-                          </td>
-                        </tr>
-                      )
-                    )}
-                    <tr
-                      style={{ backgroundColor: "#f8f9fa", fontWeight: "bold" }}
-                    >
-                      <td style={{ border: "1px solid #ddd", padding: "6px" }}>
-                        SGST Total
-                      </td>
-                      <td style={{ border: "1px solid #ddd", padding: "6px" }}>
-                        {quotationData.sgstRate || 9}%
-                      </td>
-                      <td
-                        style={{
-                          border: "1px solid #ddd",
-                          padding: "6px",
-                          textAlign: "right",
-                        }}
-                      >
+                  </>
+                )}
+
+                {/* SGST Breakdown */}
+                {!quotationData.isIGST && !hiddenColumns?.hideSGST && (
+                  <>
+                    {Object.entries(quotationData.sgstBreakdown || {}).map(([rate, value]) => (
+                      <tr key={`sgst-${rate}`}>
+                        <td style={{ border: "1px solid #ddd", padding: "6px" }}>SGST</td>
+                        <td style={{ border: "1px solid #ddd", padding: "6px" }}>{Number(rate)}%</td>
+                        <td style={{ border: "1px solid #ddd", padding: "6px", textAlign: "right" }}>
+                          ₹{formatCurrency(Number(value))}
+                        </td>
+                      </tr>
+                    ))}
+                    <tr style={{ backgroundColor: "#f8f9fa", fontWeight: "bold" }}>
+                      <td style={{ border: "1px solid #ddd", padding: "6px" }}>SGST Total</td>
+                      <td style={{ border: "1px solid #ddd", padding: "6px" }}>{quotationData.sgstRate || 9}%</td>
+                      <td style={{ border: "1px solid #ddd", padding: "6px", textAlign: "right" }}>
                         ₹{formatCurrency(sgstAmount)}
                       </td>
                     </tr>
                   </>
                 )}
-                {!hiddenColumns.hideSpecialDiscount && specialDiscount > 0 && (
-                  <tr>
-                    <td
-                      style={{ border: "1px solid #ddd", padding: "6px" }}
-                      colSpan="2"
-                    >
-                      Special Discount
-                    </td>
-                    <td
-                      style={{
-                        border: "1px solid #ddd",
-                        padding: "6px",
-                        textAlign: "right",
-                      }}
-                    >
-                      -₹{formatCurrency(specialDiscount)}
-                    </td>
-                  </tr>
-                )}
-                {/* {!hiddenColumns.hideGrandTotal && (
-  <tr style={{ backgroundColor: "#e6f3ff", fontWeight: "bold" }}>
-    <td
-      style={{ border: "1px solid #ddd", padding: "6px" }}
-      colSpan="2"
-    >
-      Grand Total
-    </td>
-    <td
-      style={{
-        border: "1px solid #ddd",
-        padding: "6px",
-        textAlign: "right",
-      }}
-    >
-      ₹{formatCurrency(grandTotal)}
-    </td>
-  </tr>
-)}              */}
-
-
- </tbody>
+              </tbody>
             </table>
           </div>
+        )}
 
-          <div
-            style={{
-              width: "50%",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-            }}
-          >
-            {!hiddenColumns.hideGrandTotal && (
-  <div>
-    <h4
-      style={{
-        margin: "0 0 8px 0",
-        fontSize: "14px",
-        fontWeight: "bold",
-      }}
-    >
-      Amount Chargeable (in words)
-    </h4>
-    <p
-      style={{
-        fontSize: "11px",
-        margin: "0",
-        textTransform: "capitalize",
-      }}
-    >
-      {Number(grandTotal) > 0
-        ? numberToWords(grandTotal)
-        : "Zero Only"}
-    </p>
-  </div>
-)}
-            {!hiddenColumns.hideGrandTotal && (
-        <div style={{ textAlign: "right" }}>
-        <p style={{ fontSize: "18px", fontWeight: "bold", margin: "0" }}>
-          Grand Total: ₹{formatCurrency(grandTotal)}
-         </p>
-         </div>
+        {/* Amount in Words - ALWAYS SHOW */}
+        <div style={{ width: showTaxBreakdown ? "50%" : "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+          {!hiddenColumns?.hideGrandTotal && (
+            <>
+              <div>
+                <h4 style={{ margin: "0 0 8px 0", fontSize: "14px", fontWeight: "bold" }}>
+                  Amount Chargeable (in words)
+                </h4>
+                <p style={{ fontSize: "11px", margin: 0, textTransform: "capitalize" }}>
+                  {Number(grandTotal) > 0 ? numberToWords(grandTotal) : "Zero"} Only
+                </p>
+              </div>
+              <div style={{ textAlign: "right", marginTop: "20px" }}>
+                <p style={{ fontSize: "18px", fontWeight: "bold", margin: 0 }}>
+                  Grand Total: ₹{formatCurrency(grandTotal)}
+                </p>
+              </div>
+            </>
           )}
-          
-          </div>
         </div>
+      </div>
+    );
+  })()}
+</div>
+
 
         {/* ManiqQuip Logo and Terms Section */}
         <div
@@ -1090,8 +960,10 @@ const QuotationPDFComponent = ({
             "Transit insurance for all shipment is at Buyer's scope."}
         </td>
       </tr>
-    )}
-  </tbody>
+     )}
+            
+            </tbody>
+  
 </table>
 
             {/* Special Offers */}
