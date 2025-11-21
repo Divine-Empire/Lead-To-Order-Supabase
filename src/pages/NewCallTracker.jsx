@@ -826,7 +826,196 @@ const updateLeadToOrderTable = async (enquiryNo, allFormData, currentStage, orde
   }
 };
 
-const updateEnquiryToOrderTable = async (enquiryNo, formData, currentStage) => {
+// const updateEnquiryToOrderTable = async (enquiryNo, formData, currentStage) => {
+//   try {
+//     // Helper function to safely convert to boolean
+//     const toBoolean = (value) => {
+//       if (value === null || value === undefined || value === '') return false;
+//       if (typeof value === 'boolean') return value;
+//       if (typeof value === 'string') {
+//         return value.toLowerCase() === 'true' || value === '1';
+//       }
+//       return Boolean(value);
+//     };
+
+//     // Base fields always updated
+//     let updateData = {
+//       enquiry_no: formData.enquiryNo,
+//       enquiry_status: formData.enquiryStatus,
+//       customer_feedback: formData.customerFeedback,
+//       current_stage: currentStage,
+//     };
+
+//     switch (currentStage) {
+//       case "make-quotation":
+//         Object.assign(updateData, {
+//           // fill quotation fields
+//           send_quotation_no: formData.sendQuotationNo,
+//           quotation_shared_by: formData.quotationSharedBy,
+//           quotation_number: formData.quotationNumber,
+//           quotation_value_without_tax: formData.valueWithoutTax,
+//           quotation_value_with_tax: formData.valueWithTax,
+//           quotation_upload: formData.quotationFileUrl,
+//           quotation_remarks: formData.remarks,
+
+//           // reset followup + order fields
+//           // next_call_date: null,
+//           // next_call_time: null,
+//           // is_order_received_status: null,
+//           // acceptance_via: null,
+//           // payment_mode: null,
+//           // payment_terms_days: null,
+//           // transport_mode: null,
+//         });
+//         break;
+
+//       case "order-expected":
+//         Object.assign(updateData, {
+//           // fill followup fields
+//           next_call_date: formData.nextCallDate,
+//           next_call_time: formData.nextCallTime,
+
+//           // reset quotation + order fields
+//           // send_quotation_no: null,
+//           // quotation_shared_by: null,
+//           // quotation_number: null,
+//           // quotation_value_without_tax: null,
+//           // quotation_value_with_tax: null,
+//           // quotation_upload: null,
+//           // quotation_remarks: null,
+//           // is_order_received_status: null,
+//           // acceptance_via: null,
+//           // payment_mode: null,
+//           // payment_terms_days: null,
+//           // transport_mode: null,
+//         });
+//         break;
+
+//       case "order-status":
+//         // Always set the status
+//         updateData.quotation_number = orderStatusData.orderStatusQuotationNumber;
+//         updateData.is_order_received_status = formData.orderStatus;
+
+//         if (formData.orderStatus?.toLowerCase() === "yes") {
+//           Object.assign(updateData, {
+//             actual1: new Date().toISOString(),
+//             acceptance_via: formData.acceptanceVia,
+//             payment_mode: formData.paymentMode,
+//             destination: formData.destination,
+//             po_number: formData.poNumber,
+//             payment_terms_days: formData.paymentTerms,
+//             transport_mode: formData.transportMode,
+//             // if_no_reason_status: null,
+//             // if_no_reason_remark: null,
+//             // customer_order_hold_reason_category: null,
+
+//             // ✅ Use the helper function for boolean conversion
+//             conveyed_for_registration_form: toBoolean(formData.conveyedForRegistration),
+
+//             offer: formData.orderVideo,
+//             acceptance_file_upload:  typeof formData.acceptanceFile === "string" 
+//       ? formData.acceptanceFile 
+//       : "", // handle upload later
+//             remark: formData.orderRemark,
+
+//             // // reset "no" + "hold" fields
+//             // order_lost_apology_video: null,
+//             // holding_date: null,
+//             // hold_remark: null,
+//           });
+//         } else if (formData.orderStatus?.toLowerCase() === "no") {
+//           Object.assign(updateData, {
+//              actual1: new Date().toISOString(),
+//             order_lost_apology_video:typeof formData.apologyVideo === "string" 
+//       ? formData.apologyVideo 
+//       : "", // handle upload later
+//             if_no_reason_status: orderStatusData.reasonStatus,
+//             if_no_reason_remark: orderStatusData.reasonRemark,
+//             // customer_order_hold_reason_category: null,
+//             // // reset "yes" + "hold" fields
+//             // acceptance_via: null,
+//             // payment_mode: null,
+//             // destination: null,
+//             // po_number: null,
+//             // payment_terms_days: null,
+//             // transport_mode: null,
+          
+//             // ✅ Use the helper function for boolean conversion
+//            // conveyed_for_registration_form: toBoolean(formData.conveyedForRegistration),
+
+//             // offer: null,
+//             // acceptance_file_upload: null,
+           
+//             // holding_date: null,
+//             // hold_remark: null,
+//           });
+//         } else if (formData.orderStatus?.toLowerCase() === "hold") {
+//           Object.assign(updateData, {
+//             holding_date: formData.holdingDate,
+//             hold_remark: formData.holdRemark,
+//             // if_no_reason_status: null,
+//             // if_no_reason_remark: null,
+//             customer_order_hold_reason_category: orderStatusData.holdReason,
+//             // reset "yes" + "no" fields
+//             // acceptance_via: null,
+//             // payment_mode: null,
+//             // destination: null,
+//             // po_number: null,
+//             // payment_terms_days: null,
+//             // transport_mode: null,
+           
+//             // ✅ Use the helper function for boolean conversion
+//             //conveyed_for_registration_form: toBoolean(formData.conveyedForRegistration),
+
+//             // offer: null,
+//             // acceptance_file_upload: null,
+//             // order_lost_apology_video: null,
+//           });
+//         }
+
+//         // reset quotation + followup fields (like in your original code)
+//         Object.assign(updateData, {
+//           // send_quotation_no: null,
+//           // quotation_shared_by: null,
+//           // quotation_number: null,
+//           // quotation_value_without_tax: null,
+//           // quotation_value_with_tax: null,
+//           // quotation_upload: null,
+//           // quotation_remarks: null,
+//           // next_call_date: null,
+//           // next_call_time: null,
+//         });
+
+//         break;
+
+//       default:
+//         console.warn("Unknown stage:", currentStage);
+//     }
+
+//     const { data, error } = await supabase
+//       .from("enquiry_to_order")
+//       .update(updateData)
+//       .eq("enquiry_no", enquiryNo)
+//       .select()
+//       .single();
+
+//     if (error) {
+//       console.error("Error updating enquiry_to_order:", error);
+//       return false;
+//     }
+
+//     console.log("Successfully updated enquiry_to_order:", data);
+//     return true;
+//   } catch (error) {
+//     console.error("Exception updating enquiry_to_order:", error);
+//     return false;
+//   }
+// };
+  // Add this function to your NewCallTracker component
+
+
+
+  const updateEnquiryToOrderTable = async (enquiryNo, allFormData, currentStage) => {
   try {
     // Helper function to safely convert to boolean
     const toBoolean = (value) => {
@@ -840,152 +1029,78 @@ const updateEnquiryToOrderTable = async (enquiryNo, formData, currentStage) => {
 
     // Base fields always updated
     let updateData = {
-      enquiry_no: formData.enquiryNo,
-      enquiry_status: formData.enquiryStatus,
-      customer_feedback: formData.customerFeedback,
+      enquiry_no: enquiryNo,
+      enquiry_status: allFormData.enquiryStatus,
+      customer_feedback: allFormData.customerFeedback,
       current_stage: currentStage,
     };
 
     switch (currentStage) {
       case "make-quotation":
+        // Only update quotation fields, don't reset others
         Object.assign(updateData, {
-          // fill quotation fields
-          send_quotation_no: formData.sendQuotationNo,
-          quotation_shared_by: formData.quotationSharedBy,
-          quotation_number: formData.quotationNumber,
-          quotation_value_without_tax: formData.valueWithoutTax,
-          quotation_value_with_tax: formData.valueWithTax,
-          quotation_upload: formData.quotationFileUrl,
-          quotation_remarks: formData.remarks,
-
-          // reset followup + order fields
-          // next_call_date: null,
-          // next_call_time: null,
-          // is_order_received_status: null,
-          // acceptance_via: null,
-          // payment_mode: null,
-          // payment_terms_days: null,
-          // transport_mode: null,
+          send_quotation_no: allFormData.sendQuotationNo,
+          quotation_shared_by: allFormData.quotationSharedBy,
+          quotation_number: allFormData.quotationNumber,
+          quotation_value_without_tax: allFormData.valueWithoutTax,
+          quotation_value_with_tax: allFormData.valueWithTax,
+          quotation_upload: allFormData.quotationFileUrl,
+          quotation_remarks: allFormData.remarks,
         });
+        // DON'T reset followup + order fields - keep existing data
         break;
 
       case "order-expected":
+        // Only update followup fields, don't reset others
         Object.assign(updateData, {
-          // fill followup fields
-          next_call_date: formData.nextCallDate,
-          next_call_time: formData.nextCallTime,
-
-          // reset quotation + order fields
-          // send_quotation_no: null,
-          // quotation_shared_by: null,
-          // quotation_number: null,
-          // quotation_value_without_tax: null,
-          // quotation_value_with_tax: null,
-          // quotation_upload: null,
-          // quotation_remarks: null,
-          // is_order_received_status: null,
-          // acceptance_via: null,
-          // payment_mode: null,
-          // payment_terms_days: null,
-          // transport_mode: null,
+          next_call_date: allFormData.nextCallDate,
+          next_call_time: allFormData.nextCallTime,
         });
+        // DON'T reset quotation + order fields - keep existing data
         break;
 
       case "order-status":
-        // Always set the status
+        // Always set the status and quotation number
         updateData.quotation_number = orderStatusData.orderStatusQuotationNumber;
-        updateData.is_order_received_status = formData.orderStatus;
+        updateData.is_order_received_status = allFormData.orderStatus;
 
-        if (formData.orderStatus?.toLowerCase() === "yes") {
+        if (allFormData.orderStatus?.toLowerCase() === "yes") {
           Object.assign(updateData, {
             actual1: new Date().toISOString(),
-            acceptance_via: formData.acceptanceVia,
-            payment_mode: formData.paymentMode,
-            destination: formData.destination,
-            po_number: formData.poNumber,
-            payment_terms_days: formData.paymentTerms,
-            transport_mode: formData.transportMode,
-            // if_no_reason_status: null,
-            // if_no_reason_remark: null,
-            // customer_order_hold_reason_category: null,
-
-            // ✅ Use the helper function for boolean conversion
-            conveyed_for_registration_form: toBoolean(formData.conveyedForRegistration),
-
-            offer: formData.orderVideo,
-            acceptance_file_upload:  typeof formData.acceptanceFile === "string" 
-      ? formData.acceptanceFile 
-      : "", // handle upload later
-            remark: formData.orderRemark,
-
-            // // reset "no" + "hold" fields
-            // order_lost_apology_video: null,
-            // holding_date: null,
-            // hold_remark: null,
+            acceptance_via: allFormData.acceptanceVia,
+            payment_mode: allFormData.paymentMode,
+            destination: allFormData.destination,
+            po_number: allFormData.poNumber,
+            payment_terms_days: allFormData.paymentTerms,
+            transport_mode: allFormData.transportMode,
+            conveyed_for_registration_form: toBoolean(allFormData.conveyedForRegistration),
+            offer: allFormData.orderVideo,
+            acceptance_file_upload: typeof allFormData.acceptanceFile === "string" 
+              ? allFormData.acceptanceFile 
+              : "",
+            remark: allFormData.orderRemark,
           });
-        } else if (formData.orderStatus?.toLowerCase() === "no") {
+          // DON'T reset "no" + "hold" fields - they might contain important data
+        } else if (allFormData.orderStatus?.toLowerCase() === "no") {
           Object.assign(updateData, {
-             actual1: new Date().toISOString(),
-            order_lost_apology_video:typeof formData.apologyVideo === "string" 
-      ? formData.apologyVideo 
-      : "", // handle upload later
+            actual1: new Date().toISOString(),
+            order_lost_apology_video: typeof allFormData.apologyVideo === "string" 
+              ? allFormData.apologyVideo 
+              : "",
             if_no_reason_status: orderStatusData.reasonStatus,
             if_no_reason_remark: orderStatusData.reasonRemark,
-            // customer_order_hold_reason_category: null,
-            // // reset "yes" + "hold" fields
-            // acceptance_via: null,
-            // payment_mode: null,
-            // destination: null,
-            // po_number: null,
-            // payment_terms_days: null,
-            // transport_mode: null,
-          
-            // ✅ Use the helper function for boolean conversion
-           // conveyed_for_registration_form: toBoolean(formData.conveyedForRegistration),
-
-            // offer: null,
-            // acceptance_file_upload: null,
-           
-            // holding_date: null,
-            // hold_remark: null,
           });
-        } else if (formData.orderStatus?.toLowerCase() === "hold") {
+          // DON'T reset "yes" + "hold" fields
+        } else if (allFormData.orderStatus?.toLowerCase() === "hold") {
           Object.assign(updateData, {
-            holding_date: formData.holdingDate,
-            hold_remark: formData.holdRemark,
-            // if_no_reason_status: null,
-            // if_no_reason_remark: null,
+            holding_date: allFormData.holdingDate,
+            hold_remark: allFormData.holdRemark,
             customer_order_hold_reason_category: orderStatusData.holdReason,
-            // reset "yes" + "no" fields
-            // acceptance_via: null,
-            // payment_mode: null,
-            // destination: null,
-            // po_number: null,
-            // payment_terms_days: null,
-            // transport_mode: null,
-           
-            // ✅ Use the helper function for boolean conversion
-            //conveyed_for_registration_form: toBoolean(formData.conveyedForRegistration),
-
-            // offer: null,
-            // acceptance_file_upload: null,
-            // order_lost_apology_video: null,
           });
+          // DON'T reset "yes" + "no" fields
         }
 
-        // reset quotation + followup fields (like in your original code)
-        Object.assign(updateData, {
-          // send_quotation_no: null,
-          // quotation_shared_by: null,
-          // quotation_number: null,
-          // quotation_value_without_tax: null,
-          // quotation_value_with_tax: null,
-          // quotation_upload: null,
-          // quotation_remarks: null,
-          // next_call_date: null,
-          // next_call_time: null,
-        });
-
+        // DON'T reset quotation + followup fields - keep existing data
         break;
 
       default:
@@ -1011,8 +1126,6 @@ const updateEnquiryToOrderTable = async (enquiryNo, formData, currentStage) => {
     return false;
   }
 };
-  // Add this function to your NewCallTracker component
-
 const validateNumericFields = (data) => {
   const numericFields = [
     'valueWithoutTax', 'valueWithTax', 'paymentTerms', 
@@ -1190,24 +1303,24 @@ const handleSubmit = async (e) => {
       console.log("Inserted successfully:", data);
       
       // Update the appropriate table based on activeTab
-      if (activeTab === "directEnquiry") { 
-        const updateSuccess = await updateEnquiryToOrderTable(
-          formData.enquiryNo, 
-          {
-            ...formData,
-            ...quotationData,
-            ...orderExpectedData,
-            ...orderStatusData
-          },
-          currentStage
-        );
-        
-        if (updateSuccess) {
-          showNotification("Call tracker updated successfully and enquiry record updated", "success");
-        } else {
-          showNotification("Call tracker updated but enquiry record could not be updated", "warning");
-        }
-      }
+    if (activeTab === "directEnquiry") { 
+  const updateSuccess = await updateEnquiryToOrderTable(
+    formData.enquiryNo, 
+    {
+      ...formData,
+      ...quotationData,
+      ...orderExpectedData,
+      ...orderStatusData
+    },
+    currentStage
+  );
+  
+  if (updateSuccess) {
+    showNotification("Call tracker updated successfully and enquiry record updated", "success");
+  } else {
+    showNotification("Call tracker updated but enquiry record could not be updated", "warning");
+  }
+}
       
       if (activeTab === "pending") { 
   // Pass the correct data structure
