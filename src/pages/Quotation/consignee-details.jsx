@@ -29,16 +29,16 @@ const ConsigneeDetails = ({
       handleInputChange("consigneeStateCode", companyDetails.stateCode)
 
       // Get company prefix and update quotation number
-      try {
-        const companyPrefix = await getCompanyPrefix(selectedCompany)
-        const newQuotationNumber = await getNextQuotationNumber(companyPrefix)
+      // try {
+      //   const companyPrefix = await getCompanyPrefix(selectedCompany)
+      //   const newQuotationNumber = await getNextQuotationNumber(companyPrefix)
 
-        if (onQuotationNumberUpdate) {
-          onQuotationNumberUpdate(newQuotationNumber)
-        }
-      } catch (error) {
-        console.error("Error updating quotation number:", error)
-      }
+      //   if (onQuotationNumberUpdate) {
+      //     onQuotationNumberUpdate(newQuotationNumber)
+      //   }
+      // } catch (error) {
+      //   console.error("Error updating quotation number:", error)
+      // }
 
       // Auto-fill items based on company selection
       if (onAutoFillItems) {
