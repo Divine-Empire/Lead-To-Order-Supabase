@@ -263,63 +263,136 @@ function FollowUp() {
     }
   };
 
-  const handleSaveClick = async (index) => {
+const handleSaveClick = async (index) => {
+  try {
+    // Map the JavaScript field names to actual database column names
+    const updateData = {
+      Company_Name: editedData.companyName,
+      "What_Did_The_Customer_say?": editedData.customerSay,
+      Leads_Tracking_Status: editedData.status,
+      Enquiry_Received_Status: editedData.enquiryStatus,
+      Enquiry_Received_Date: convertDateToYYYYMMDD(editedData.enquiryReceivedDate),
+      Enquiry_for_State: editedData.enquiryState,
+      Project_Name: editedData.projectName,
+      Enquiry_Type: editedData.salesType,
+      Project_Approximate_Value: editedData.projectApproxValue,
+      Item_Name1: editedData.itemName1,
+      Quantity1: editedData.quantity1,
+      Item_Name2: editedData.itemName2,
+      Quantity2: editedData.quantity2,
+      Item_Name3: editedData.itemName3,
+      Quantity3: editedData.quantity3,
+      Item_Name4: editedData.itemName4,
+      Quantity4: editedData.quantity4,
+      Item_Name5: editedData.itemName5,
+      Quantity5: editedData.quantity5,
+      Next_Action: editedData.nextAction,
+      Next_Call_Date: convertDateToYYYYMMDD(editedData.nextCallDate),
+      Next_Call_Time: convertTimeTo24Hour(editedData.nextCallTime),
+      Item_Qty: editedData.itemQty,
+    };
 
-    try {
-      // Map the JavaScript field names to actual database column names
-      const updateData = {
-        Company_Name: editedData.companyName,
-        "What_Did_The_Customer_say?": editedData.customerSay,
-        Leads_Tracking_Status: editedData.status,
-        Enquiry_Received_Status: editedData.enquiryStatus,
-        Enquiry_Received_Date: convertDateToYYYYMMDD(
-          editedData.enquiryReceivedDate
-        ), // ← Convert date
-        Enquiry_for_State: editedData.enquiryState,
-        Project_Name: editedData.projectName,
-        Enquiry_Type: editedData.salesType,
-        Project_Approximate_Value: editedData.projectApproxValue,
-        Item_Name1: editedData.itemName1,
-        Quantity1: editedData.quantity1,
-        Item_Name2: editedData.itemName2,
-        Quantity2: editedData.quantity2,
-        Item_Name3: editedData.itemName3,
-        Quantity3: editedData.quantity3,
-        Item_Name4: editedData.itemName4,
-        Quantity4: editedData.quantity4,
-        Item_Name5: editedData.itemName5,
-        Quantity5: editedData.quantity5,
-        Next_Action: editedData.nextAction,
-        Next_Call_Date: convertDateToYYYYMMDD(editedData.nextCallDate), // ← Convert date
-        Next_Call_Time: convertTimeTo24Hour(editedData.nextCallTime),
-        Item_Qty: editedData.itemQty,
-      };
+    // Remove undefined/null values
+    Object.keys(updateData).forEach((key) => {
+      if (updateData[key] === undefined || updateData[key] === null) {
+        delete updateData[key];
+      }
+    });
 
-      // Remove undefined/null values
-      Object.keys(updateData).forEach((key) => {
-        if (updateData[key] === undefined || updateData[key] === null) {
-          delete updateData[key];
-        }
-      });
+    // Get the lead number for updating leads_to_order table
+    const leadNo = editedData.leadNo;
+    
+    if (!leadNo) {
+      throw new Error("Lead number is required for updating leads_to_order table");
+    }
 
-      const { error } = await supabase
+    // Define the fields to update in leads_to_order
+    const leadsToOrderUpdateData = {
+      "Status": editedData.status,
+      "What_Did_The_Customer say?": editedData.customerSay,
+      "Enquiry_Received_Status": editedData.enquiryStatus,
+      "Enquiry_Received_Date": convertDateToYYYYMMDD(editedData.enquiryReceivedDate),
+      "Enquiry_for_State": editedData.enquiryState,
+      "Project_Name": editedData.projectName,
+      "Enquiry_Type": editedData.salesType,
+      "Project_Approximate_Value": editedData.projectApproxValue,
+      "Item_Name1": editedData.itemName1,
+      "Quantity1": editedData.quantity1,
+      "Item_Name2": editedData.itemName2,
+      "Quantity2": editedData.quantity2,
+      "Item_Name3": editedData.itemName3,
+      "Quantity3": editedData.quantity3,
+      "Item_Name4": editedData.itemName4,
+      "Quantity4": editedData.quantity4,
+      "Item_Name5": editedData.itemName5,
+      "Quantity5": editedData.quantity5,
+      "Next_Action": editedData.nextAction,
+      "Next_Call_Date": convertDateToYYYYMMDD(editedData.nextCallDate),
+      "Next_Call_Time": convertTimeTo24Hour(editedData.nextCallTime),
+    };
+
+    // Remove undefined/null values from leads_to_order update
+    Object.keys(leadsToOrderUpdateData).forEach((key) => {
+      if (leadsToOrderUpdateData[key] === undefined || leadsToOrderUpdateData[key] === null) {
+        delete leadsToOrderUpdateData[key];
+      }
+    });
+
+    // Update both tables in parallel
+    const [updateTrackerResult, updateLeadsOrderResult] = await Promise.allSettled([
+      // Update leads_tracker table
+      supabase
         .from("leads_tracker")
         .update(updateData)
-        .eq("id", editedData.id);
+        .eq("id", editedData.id),
+      
+      // Update leads_to_order table using LD-Lead-No
+      supabase
+        .from("leads_to_order")
+        .update(leadsToOrderUpdateData)
+        .eq("LD-Lead-No", leadNo)
+    ]);
 
-      if (error) throw error;
-
-      alert("Updated successfully!"); // ← Add success message
-
-      // Refresh data
-      fetchFollowUpData(1, false, searchTerm);
-      setEditingRowId(null);
-      setEditedData({});
-    } catch (error) {
-      console.error("Error updating:", error);
-      alert(`Error updating: ${error.message}`); // ← Add error message
+    // Check for errors in leads_tracker update
+    if (updateTrackerResult.status === 'rejected') {
+      throw new Error(`Error updating leads_tracker: ${updateTrackerResult.reason.message}`);
     }
-  };
+    
+    const trackerError = updateTrackerResult.value.error;
+    if (trackerError) {
+      throw new Error(`leads_tracker update failed: ${trackerError.message}`);
+    }
+
+    // Check for errors in leads_to_order update
+    if (updateLeadsOrderResult.status === 'rejected') {
+      console.warn(`Warning: Error updating leads_to_order: ${updateLeadsOrderResult.reason.message}`);
+      // Continue anyway as leads_tracker was updated successfully
+    } else {
+      const leadsOrderError = updateLeadsOrderResult.value.error;
+      if (leadsOrderError) {
+        console.warn(`Warning: leads_to_order update failed: ${leadsOrderError.message}`);
+        // Continue anyway as leads_tracker was updated successfully
+      }
+    }
+
+    alert("Updated successfully in both tables!");
+
+    // Refresh data
+    fetchFollowUpData(1, false, searchTerm);
+    setEditingRowId(null);
+    setEditedData({});
+  } catch (error) {
+    console.error("Error updating:", error);
+    
+    // If leads_tracker update failed but leads_to_order succeeded,
+    // show a different message
+    if (error.message.includes('leads_tracker') && !error.message.includes('leads_to_order')) {
+      alert(`Partially updated: leads_to_order was updated but leads_tracker failed: ${error.message}`);
+    } else {
+      alert(`Error updating: ${error.message}`);
+    }
+  }
+};
 
   const handleCancelClick = () => {
     setEditingRowId(null);

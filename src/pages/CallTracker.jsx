@@ -252,68 +252,285 @@ function CallTracker() {
     }
   };
 
-  const handleSaveClick = async (index) => {
-    try {
-      const updateData = {
-        "Enquiry Status": editedData.enquiryStatus,
-        "What Did Customer Say": editedData.customerFeedback,
-        "Current Stage": editedData.currentStage,
-        "Send Quotation No.": editedData.sendQuotationNo,
-        "Quotation Shared By": editedData.quotationSharedBy,
-        "Quotation Number": editedData.quotationNumber,
-        "Quotation Value Without Tax": editedData.valueWithoutTax,
-        "Quotation Value With Tax": editedData.valueWithTax,
-        "Quotation Upload": editedData.quotationUpload,
-        "Quotation Remarks": editedData.quotationRemarks,
-        "Quotation Validator Name": editedData.validatorName,
-        "Quotation Send Status": editedData.sendStatus,
-        "Quotation Validation Remark": editedData.validationRemark,
-        "Send Faq Video": editedData.faqVideo,
-        "Send Product Video": editedData.productVideo,
-        "Send Offer Video": editedData.offerVideo,
-        "Send Product Catalog": editedData.productCatalog,
-        "Send Product Image": editedData.productImage,
-        "Next Call Date": convertDateToYYYYMMDD(editedData.nextCallDate),
-        "Next Call Time": convertTimeTo24Hour(editedData.nextCallTime),
-        "Is Order Received? Status": editedData.orderStatus,
-        "Acceptance Via": editedData.acceptanceVia,
-        "Payment Mode": editedData.paymentMode,
-        "Payment Terms (In Days)": editedData.paymentTerms,
-        "Transport Mode": editedData.transportMode,
-        "CONVEYED FOR REGISTRATION FORM": editedData.registrationFrom,
-        "Acceptance File Upload": editedData.acceptanceFile,
-        Remark: editedData.orderRemark,
-        "Order Lost Apology Video": editedData.apologyVideo,
-        "If No Then Get Relevant Reason Status": editedData.reasonStatus,
-        "If No Then Get Relevant Reason Remark": editedData.reasonRemark,
-        "Customer Order Hold Reason Category": editedData.holdReason,
-        "Holding Date": convertDateToYYYYMMDD(editedData.holdingDate),
-        "Hold Remark": editedData.holdRemark,
+const handleSaveClick = async (index) => {
+  try {
+    // Map the JavaScript field names to actual database column names for enquiry_tracker
+    const updateData = {
+      "Enquiry Status": editedData.enquiryStatus,
+      "What Did Customer Say": editedData.customerFeedback,
+      "Current Stage": editedData.currentStage,
+      "Send Quotation No.": editedData.sendQuotationNo,
+      "Quotation Shared By": editedData.quotationSharedBy,
+      "Quotation Number": editedData.quotationNumber,
+      "Quotation Value Without Tax": editedData.valueWithoutTax,
+      "Quotation Value With Tax": editedData.valueWithTax,
+      "Quotation Upload": editedData.quotationUpload,
+      "Quotation Remarks": editedData.quotationRemarks,
+      "Quotation Validator Name": editedData.validatorName,
+      "Quotation Send Status": editedData.sendStatus,
+      "Quotation Validation Remark": editedData.validationRemark,
+      "Send Faq Video": editedData.faqVideo,
+      "Send Product Video": editedData.productVideo,
+      "Send Offer Video": editedData.offerVideo,
+      "Send Product Catalog": editedData.productCatalog,
+      "Send Product Image": editedData.productImage,
+      "Next Call Date": convertDateToYYYYMMDD(editedData.nextCallDate),
+      "Next Call Time": convertTimeTo24Hour(editedData.nextCallTime),
+      "Is Order Received? Status": editedData.orderStatus,
+      "Acceptance Via": editedData.acceptanceVia,
+      "Payment Mode": editedData.paymentMode,
+      "Payment Terms (In Days)": editedData.paymentTerms,
+      "Transport Mode": editedData.transportMode,
+      "CONVEYED FOR REGISTRATION FORM": editedData.registrationFrom,
+      "Acceptance File Upload": editedData.acceptanceFile,
+      Remark: editedData.orderRemark,
+      "Order Lost Apology Video": editedData.apologyVideo,
+      "If No Then Get Relevant Reason Status": editedData.reasonStatus,
+      "If No Then Get Relevant Reason Remark": editedData.reasonRemark,
+      "Customer Order Hold Reason Category": editedData.holdReason,
+      "Holding Date": convertDateToYYYYMMDD(editedData.holdingDate),
+      "Hold Remark": editedData.holdRemark,
+    };
+
+    // Remove undefined/null values
+    Object.keys(updateData).forEach((key) => {
+      if (updateData[key] === undefined || updateData[key] === null) {
+        delete updateData[key];
+      }
+    });
+
+    // Get the record identifier
+    const identifier = editedData.enquiryNo;
+    
+    if (!identifier) {
+      throw new Error("Record identifier is required");
+    }
+
+    // Check if it's a lead number (LD-*) or enquiry number (EN-*)
+    const isLeadNumber = identifier.toUpperCase().startsWith('LD-');
+    const isEnquiryNumber = identifier.toUpperCase().startsWith('EN-');
+
+    // Always update enquiry_tracker
+    const updatePromises = [
+      supabase
+        .from("enquiry_tracker")
+        .update(updateData)
+        .eq("id", editedData.id)
+    ];
+
+    let leadsOrderUpdate = null;
+    let enquiryOrderUpdate = null;
+
+    // If it's a lead number (LD-01), update leads_to_order
+    if (isLeadNumber) {
+      // Define the fields to update in leads_to_order table
+      const leadsToOrderUpdateData = {
+        "Enquiry_Status": editedData.enquiryStatus,
+        "What_Did_Customer_Say": editedData.customerFeedback,
+        "Current_Stage": editedData.currentStage,
+        "Send_Quotation_No.": editedData.sendQuotationNo,
+        "Quotation_Shared_By": editedData.quotationSharedBy,
+        "Quotation_Number": editedData.quotationNumber,
+        "Quotation_Value_With_Tax": editedData.valueWithTax,
+        "Quotation_Upload": editedData.quotationUpload,
+        "Quotation_Remarks": editedData.quotationRemarks,
+        "Quotation_Validator_Name": editedData.validatorName,
+        "Quotation_Send_Status": editedData.sendStatus,
+        "Quotation_Validation_Remark": editedData.validationRemark,
+        "Send_FAQ_Video": editedData.faqVideo,
+        "Send_Product_Video": editedData.productVideo,
+        "Send_Offer_Video": editedData.offerVideo,
+        "Send_Product_Catalog": editedData.productCatalog,
+        "Send_Product_Image": editedData.productImage,
+        "Is_Order_Received?_Status": editedData.orderStatus,
+        "Acceptance_Via": editedData.acceptanceVia,
+        "Payment_Mode": editedData.paymentMode,
+        "Payment_Terms _In_Days": editedData.paymentTerms,
+        "Offer": editedData.offer || "",
+        "Acceptance_File_Upload": editedData.acceptanceFile,
+        "REMARK": editedData.orderRemark,
+        "Order_Lost_Apology_Video": editedData.apologyVideo,
+        "If_No_Then_Get_Relevant_Reason_Status": editedData.reasonStatus,
+        "If_No_Then_Get_Relevant_Reason_Remark": editedData.reasonRemark,
+        "CUSTOMER_ORDER_HOLD_REASON_CATEGORY": editedData.holdReason,
+        "HOLDING_DATE": convertDateToYYYYMMDD(editedData.holdingDate),
+        "HOLD_REMARK": editedData.holdRemark,
+        "Leads_Tracking_Status": editedData.status || "",
+        "Order_No": editedData.order_no || "",
+        "Transport_Mode": editedData.transportMode,
+        "CONVEYED_FOR_REGISTRATION_FORM": editedData.registrationFrom,
+        "Quotation_Value_Without_Tax": editedData.valueWithoutTax,
+        "Next Call Date_1": convertDateToYYYYMMDD(editedData.nextCallDate),
+        "Next Call Time_1": convertTimeTo24Hour(editedData.nextCallTime),
       };
 
       // Remove undefined/null values
-      Object.keys(updateData).forEach((key) => {
-        if (updateData[key] === undefined || updateData[key] === null) {
-          delete updateData[key];
+      Object.keys(leadsToOrderUpdateData).forEach((key) => {
+        if (leadsToOrderUpdateData[key] === undefined || leadsToOrderUpdateData[key] === null) {
+          delete leadsToOrderUpdateData[key];
         }
       });
 
-      const { error } = await supabase
-        .from("enquiry_tracker")
-        .update(updateData)
-        .eq("id", editedData.id);
-
-      if (error) throw error;
-
-      alert("Updated successfully!");
-      fetchHistoryData(1, searchTerm, false, getDateFiltersFromCallingDays());
-      setEditingRowId(null);
-      setEditedData({});
-    } catch (error) {
-      console.error("Error updating:", error);
-      alert(`Error updating: ${error.message}`);
+      leadsOrderUpdate = supabase
+        .from("leads_to_order")
+        .update(leadsToOrderUpdateData)
+        .eq('"LD-Lead-No"', identifier); // Exact match on LD-Lead-No
     }
-  };
+
+    // If it's an enquiry number (EN-01), update enquiry_to_order
+    if (isEnquiryNumber) {
+      // Helper function to convert empty string to null for numeric fields
+      const parseNumericField = (value) => {
+        if (value === "" || value === undefined || value === null) return null;
+        // Try to parse as number
+        const num = parseFloat(value);
+        return isNaN(num) ? null : num;
+      };
+
+      // Define the fields to update in enquiry_to_order table
+      const enquiryToOrderUpdateData = {
+        enquiry_status: editedData.enquiryStatus,
+        customer_feedback: editedData.customerFeedback,
+        current_stage: editedData.currentStage,
+        send_quotation_no: editedData.sendQuotationNo,
+        quotation_shared_by: editedData.quotationSharedBy,
+        quotation_number: editedData.quotationNumber,
+        // Fix: Convert numeric fields properly
+        quotation_value_without_tax: parseNumericField(editedData.valueWithoutTax),
+        quotation_value_with_tax: parseNumericField(editedData.valueWithTax),
+        quotation_upload: editedData.quotationUpload,
+        quotation_remarks: editedData.quotationRemarks,
+        quotation_validator_name: editedData.validatorName,
+        quotation_send_status: editedData.sendStatus,
+        quotation_validation_remark: editedData.validationRemark,
+        send_faq_video: editedData.faqVideo === "Yes" || editedData.faqVideo === "yes" || editedData.faqVideo === true,
+        send_product_video: editedData.productVideo === "Yes" || editedData.productVideo === "yes" || editedData.productVideo === true,
+        send_offer_video: editedData.offerVideo === "Yes" || editedData.offerVideo === "yes" || editedData.offerVideo === true,
+        send_product_catalog: editedData.productCatalog === "Yes" || editedData.productCatalog === "yes" || editedData.productCatalog === true,
+        send_product_image: editedData.productImage === "Yes" || editedData.productImage === "yes" || editedData.productImage === true,
+        next_call_date: convertDateToYYYYMMDD(editedData.nextCallDate),
+        next_call_time: convertTimeTo24Hour(editedData.nextCallTime),
+        is_order_received_status: editedData.orderStatus,
+        acceptance_via: editedData.acceptanceVia,
+        payment_mode: editedData.paymentMode,
+        // Fix: Convert numeric field properly
+        payment_terms_days: parseNumericField(editedData.paymentTerms),
+        acceptance_file_upload: editedData.acceptanceFile,
+        remark: editedData.orderRemark,
+        order_lost_apology_video: editedData.apologyVideo,
+        if_no_reason_status: editedData.reasonStatus,
+        if_no_reason_remark: editedData.reasonRemark,
+        customer_order_hold_reason_category: editedData.holdReason,
+        holding_date: convertDateToYYYYMMDD(editedData.holdingDate),
+        hold_remark: editedData.holdRemark,
+        transport_mode: editedData.transportMode,
+        conveyed_for_registration_form: editedData.registrationFrom === "Yes" || editedData.registrationFrom === "yes" || editedData.registrationFrom === true,
+        order_no: editedData.order_no || "",
+        // Fix: Convert numeric field properly
+        amount_with_gst: parseNumericField(editedData.valueWithTax),
+        destination: editedData.destination || "",
+        po_number: editedData.po_number || "",
+      };
+
+      // Remove undefined/null values
+      Object.keys(enquiryToOrderUpdateData).forEach((key) => {
+        if (enquiryToOrderUpdateData[key] === undefined || enquiryToOrderUpdateData[key] === null) {
+          delete enquiryToOrderUpdateData[key];
+        }
+      });
+
+      // FIX: Use ilike for case-insensitive matching
+      const normalizedIdentifier = identifier.trim().toUpperCase();
+      
+      // Debug: Check if record exists
+      console.log("Looking for enquiry_no:", normalizedIdentifier);
+      
+      // First check if the record exists
+      const { data: existingRecord, error: checkError } = await supabase
+        .from("enquiry_to_order")
+        .select("enquiry_no")
+        .ilike("enquiry_no", `%${normalizedIdentifier}%`)
+        .limit(1);
+        
+      if (checkError) {
+        console.error("Error checking record existence:", checkError);
+      }
+      
+      if (!existingRecord || existingRecord.length === 0) {
+        console.log(`Record ${normalizedIdentifier} not found in enquiry_to_order`);
+        // Set a flag to indicate record doesn't exist
+        enquiryOrderSuccess = false;
+        successMessage += " Note: enquiry_to_order record not found.";
+      } else {
+        console.log(`Found record: ${existingRecord[0].enquiry_no}`);
+        enquiryOrderUpdate = supabase
+          .from("enquiry_to_order")
+          .update(enquiryToOrderUpdateData)
+          .ilike("enquiry_no", normalizedIdentifier);
+      }
+    }
+
+    // Add conditional updates to promises array
+    if (leadsOrderUpdate) updatePromises.push(leadsOrderUpdate);
+    if (enquiryOrderUpdate) updatePromises.push(enquiryOrderUpdate);
+
+    // Execute all relevant updates
+    const results = await Promise.allSettled(updatePromises);
+
+    // Check results
+    let successMessage = "Updated successfully in enquiry_tracker";
+    let enquiryTrackerSuccess = false;
+    let leadsOrderSuccess = false;
+    let enquiryOrderSuccess = false;
+
+    results.forEach((result, idx) => {
+      if (result.status === 'fulfilled' && !result.value.error) {
+        if (idx === 0) {
+          enquiryTrackerSuccess = true;
+        } else if (isLeadNumber && idx === 1) {
+          leadsOrderSuccess = true;
+          successMessage += " and leads_to_order";
+        } else if (isEnquiryNumber && idx === 1) {
+          enquiryOrderSuccess = true;
+          successMessage += " and enquiry_to_order";
+        }
+      } else if (result.status === 'fulfilled' && result.value.error) {
+        console.error(`Update ${idx} error:`, result.value.error);
+        if (idx === 1 && isEnquiryNumber) {
+          if (result.value.error.message && result.value.error.message.includes("invalid input syntax for type numeric")) {
+            alert(`Error: Invalid numeric value. Please check quotation values and payment terms. They should be numbers only.`);
+          }
+        }
+      }
+    });
+
+    successMessage += "!";
+
+    // Add warnings if some updates failed
+    if (!enquiryTrackerSuccess) {
+      alert("Error: Failed to update enquiry_tracker");
+      return;
+    }
+
+    if (isLeadNumber && !leadsOrderSuccess) {
+      successMessage += " Note: leads_to_order was not updated (record may not exist).";
+    }
+
+    if (isEnquiryNumber && !enquiryOrderSuccess) {
+      successMessage += " Note: enquiry_to_order was not updated (record may not exist or had invalid data).";
+    }
+
+    alert(successMessage);
+
+    // Refresh data
+    fetchHistoryData(1, searchTerm, false, getDateFiltersFromCallingDays());
+    setEditingRowId(null);
+    setEditedData({});
+  } catch (error) {
+    console.error("Error updating:", error);
+    alert(`Error updating: ${error.message}`);
+  }
+};
 
   const handleCancelClick = () => {
     setEditingRowId(null);
