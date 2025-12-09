@@ -740,8 +740,8 @@ const updateLeadToOrderTable = async (enquiryNo, allFormData, currentStage, orde
           "Send_Quotation_No.": allFormData.sendQuotationNo,
           Quotation_Shared_By: allFormData.quotationSharedBy,
           Quotation_Number: allFormData.quotationNumber,
-          Quotation_Value_Without_Tax: allFormData.valueWithoutTax,
-          Quotation_Value_With_Tax: allFormData.valueWithTax,
+          Quotation_Value_Without_Tax: allFormData.valueWithoutTax || null,
+          Quotation_Value_With_Tax: allFormData.valueWithTax || null,
           Quotation_Upload: allFormData.quotationFileUrl,
           Quotation_Remarks: allFormData.remarks,
         });
@@ -760,16 +760,26 @@ const updateLeadToOrderTable = async (enquiryNo, allFormData, currentStage, orde
         updateData["Is_Order_Received?_Status"] = orderStatusData.orderStatus;
 
         if (orderStatusData.orderStatus?.toLowerCase() === "yes") {
+          // Convert empty strings to null for integer fields
+          const creditDaysValue = orderStatusData.creditDays === "" ? null : Number(orderStatusData.creditDays);
+          const paymentTermsValue = orderStatusData.paymentTerms === "" ? null : Number(orderStatusData.paymentTerms);
+          
+          // Handle credit limit conversion
+          let creditLimitValue = null;
+          if (orderStatusData.creditLimit && orderStatusData.creditLimit !== "") {
+            creditLimitValue = Number(orderStatusData.creditLimit);
+          }
+
           Object.assign(updateData, {
             Actual1: new Date().toISOString().slice(0, 10),
             Acceptance_Via: orderStatusData.acceptanceVia,
             Payment_Mode: orderStatusData.paymentMode,
             Destination: orderStatusData.destination,
             "Po Number": orderStatusData.poNumber,
-            "Payment_Terms _In_Days": orderStatusData.paymentTerms,
+            "Payment_Terms _In_Days": paymentTermsValue, // Use converted value
             Transport_Mode: orderStatusData.transportMode,
-            "Credit_Limit": orderStatusData.creditLimit,
-            "Credit_Days": orderStatusData.creditDays,
+            "Credit_Limit": creditLimitValue, // Use converted value
+            "Credit_Days": creditDaysValue, // Use converted value (null if empty)
             CONVEYED_FOR_REGISTRATION_FORM: toBoolean(orderStatusData.conveyedForRegistration),
             Offer: orderStatusData.orderVideo,
             Acceptance_File_Upload: typeof orderStatusData.acceptanceFile === "string" 
@@ -1015,7 +1025,7 @@ const updateLeadToOrderTable = async (enquiryNo, allFormData, currentStage, orde
 
 
 
-  const updateEnquiryToOrderTable = async (enquiryNo, allFormData, currentStage) => {
+const updateEnquiryToOrderTable = async (enquiryNo, allFormData, currentStage) => {
   try {
     // Helper function to safely convert to boolean
     const toBoolean = (value) => {
@@ -1042,8 +1052,8 @@ const updateLeadToOrderTable = async (enquiryNo, allFormData, currentStage, orde
           send_quotation_no: allFormData.sendQuotationNo,
           quotation_shared_by: allFormData.quotationSharedBy,
           quotation_number: allFormData.quotationNumber,
-          quotation_value_without_tax: allFormData.valueWithoutTax,
-          quotation_value_with_tax: allFormData.valueWithTax,
+          quotation_value_without_tax: allFormData.valueWithoutTax || null,
+          quotation_value_with_tax: allFormData.valueWithTax || null,
           quotation_upload: allFormData.quotationFileUrl,
           quotation_remarks: allFormData.remarks,
         });
@@ -1065,14 +1075,26 @@ const updateLeadToOrderTable = async (enquiryNo, allFormData, currentStage, orde
         updateData.is_order_received_status = allFormData.orderStatus;
 
         if (allFormData.orderStatus?.toLowerCase() === "yes") {
+          // Convert empty strings to null for integer fields
+          const creditDaysValue = orderStatusData.creditDays === "" ? null : Number(orderStatusData.creditDays);
+          const paymentTermsValue = orderStatusData.paymentTerms === "" ? null : Number(orderStatusData.paymentTerms);
+          
+          // Handle credit limit conversion
+          let creditLimitValue = null;
+          if (orderStatusData.creditLimit && orderStatusData.creditLimit !== "") {
+            creditLimitValue = Number(orderStatusData.creditLimit);
+          }
+
           Object.assign(updateData, {
             actual1: new Date().toISOString(),
             acceptance_via: allFormData.acceptanceVia,
             payment_mode: allFormData.paymentMode,
             destination: allFormData.destination,
             po_number: allFormData.poNumber,
-            payment_terms_days: allFormData.paymentTerms,
+            payment_terms_days: paymentTermsValue, // Use converted value
             transport_mode: allFormData.transportMode,
+            credit_days: creditDaysValue, // Use converted value (null if empty)
+            credit_limit: creditLimitValue, // Use converted value (null if empty)
             conveyed_for_registration_form: toBoolean(allFormData.conveyedForRegistration),
             offer: allFormData.orderVideo,
             acceptance_file_upload: typeof allFormData.acceptanceFile === "string" 
@@ -1161,8 +1183,7 @@ const handleSubmit = async (e) => {
   setIsSubmitting(true);
 
   try {
-
-      let orderNumber = "";
+    let orderNumber = "";
     if (currentStage === "order-status" && orderStatusData.orderStatus === "yes") {
       orderNumber = await generateNextOrderNumber();
       console.log("Generated order number:", orderNumber);
@@ -1199,8 +1220,7 @@ const handleSubmit = async (e) => {
       showNotification("Apology video uploaded successfully", "success");
     }
 
-    
-  if (currentStage === "make-quotation" && quotationData.quotationFile && !quotationData.quotationFileUrl) {
+    if (currentStage === "make-quotation" && quotationData.quotationFile && !quotationData.quotationFileUrl) {
       showNotification("Uploading quotation file...", "info");
       const fileUrl = await uploadFileToSupabase(quotationData.quotationFile, "make_quotation");
       
@@ -1213,33 +1233,33 @@ const handleSubmit = async (e) => {
       showNotification("Quotation file uploaded successfully", "success");
     }
 
-
-     const currentDate = new Date();
+    const currentDate = new Date();
     const formattedDate = formatDate(currentDate);
+    
     // Prepare the data object for Supabase
     const supabaseData = {
       "Enquiry No.": formData.enquiryNo,
       "Enquiry Status": formData.enquiryStatus,
       "What Did Customer Say": formData.customerFeedback,
       "Current Stage": currentStage,
-      "Sales Cordinator":sc_name,
+      "Sales Cordinator": sc_name,
     };
 
     // Add stage-specific data with proper numeric handling
-       if (currentStage === "make-quotation") {
+    if (currentStage === "make-quotation") {
       Object.assign(supabaseData, {
         "Send Quotation No.": quotationData.sendQuotationNo,
         "Quotation Shared By": quotationData.quotationSharedBy,
         "Quotation Number": quotationData.quotationNumber,
-        "Quotation Value Without Tax": quotationData.valueWithoutTax,
-        "Quotation Value With Tax": quotationData.valueWithTax,
+        "Quotation Value Without Tax": quotationData.valueWithoutTax || null,
+        "Quotation Value With Tax": quotationData.valueWithTax || null,
         "Quotation Remarks": quotationData.remarks,
-          "Quotation Upload": quotationData.quotationFileUrl || "",
+        "Quotation Upload": quotationData.quotationFileUrl || "",
       });
     } 
     else if (currentStage === "order-expected") {
       Object.assign(supabaseData, {
-        "Followup Status": orderExpectedData.followupStatus, // Current date as followup start
+        "Followup Status": orderExpectedData.followupStatus,
         "Next Call Date": orderExpectedData.nextCallDate,
         "Next Call Time": orderExpectedData.nextCallTime,
       });
@@ -1252,29 +1272,39 @@ const handleSubmit = async (e) => {
 
       // Add additional fields based on order status
       if (orderStatusData.orderStatus === "yes") {
+        // Convert empty strings to null for integer fields
+        const creditDaysValue = orderStatusData.creditDays === "" ? null : Number(orderStatusData.creditDays);
+        const paymentTermsValue = orderStatusData.paymentTerms === "" ? null : Number(orderStatusData.paymentTerms);
+        
+        // For credit limit, handle both empty string and convert to number if it exists
+        let creditLimitValue = null;
+        if (orderStatusData.creditLimit && orderStatusData.creditLimit !== "") {
+          creditLimitValue = Number(orderStatusData.creditLimit);
+        }
+
         Object.assign(supabaseData, {
           "Acceptance Via": orderStatusData.acceptanceVia,
           "Payment Mode": orderStatusData.paymentMode,
           "Destination": orderStatusData.destination,
-          "PO Number":orderStatusData.poNumber, 
-          "Payment Terms (In Days)": orderStatusData.paymentTerms,
+          "PO Number": orderStatusData.poNumber, 
+          "Payment Terms (In Days)": paymentTermsValue, // Use converted value
           "Transport Mode": orderStatusData.transportMode,
-          "Credit Days":orderStatusData.creditDays,
-          "Credit Limit":orderStatusData.creditLimit,
+          "Credit Days": creditDaysValue, // Use converted value (null if empty)
+          "Credit Limit": creditLimitValue, // Use converted value (null if empty)
           "CONVEYED FOR REGISTRATION FORM": orderStatusData.conveyedForRegistration,
           "Offer": orderStatusData.orderVideo,
           "Acceptance File Upload": typeof orderStatusData.acceptanceFile === "string" 
             ? orderStatusData.acceptanceFile 
-            : "",// You can add file upload logic here
+            : "",
           "Remark": orderStatusData.orderRemark,
-          "Order No.":orderNumber,
+          "Order No.": orderNumber,
         });
       } 
       else if (orderStatusData.orderStatus === "no") {
         Object.assign(supabaseData, {
           "Order Lost Apology Video": typeof orderStatusData.apologyVideo === "string" 
             ? orderStatusData.apologyVideo 
-            : "", // You can add file upload logic here
+            : "",
           "If No Then Get Relevant Reason Status": orderStatusData.reasonStatus,
           "If No Then Get Relevant Reason Remark": orderStatusData.reasonRemark,
         });
@@ -1287,12 +1317,11 @@ const handleSubmit = async (e) => {
         });
       }
     }
-    
 
     console.log("Supabase Data to be inserted:", supabaseData);
 
     // Insert into Supabase
-   const { data, error } = await supabase
+    const { data, error } = await supabase
       .from("enquiry_tracker")
       .insert([supabaseData]);
 
@@ -1303,45 +1332,45 @@ const handleSubmit = async (e) => {
       console.log("Inserted successfully:", data);
       
       // Update the appropriate table based on activeTab
-    if (activeTab === "directEnquiry") { 
-  const updateSuccess = await updateEnquiryToOrderTable(
-    formData.enquiryNo, 
-    {
-      ...formData,
-      ...quotationData,
-      ...orderExpectedData,
-      ...orderStatusData
-    },
-    currentStage
-  );
-  
-  if (updateSuccess) {
-    showNotification("Call tracker updated successfully and enquiry record updated", "success");
-  } else {
-    showNotification("Call tracker updated but enquiry record could not be updated", "warning");
-  }
-}
+      if (activeTab === "directEnquiry") { 
+        const updateSuccess = await updateEnquiryToOrderTable(
+          formData.enquiryNo, 
+          {
+            ...formData,
+            ...quotationData,
+            ...orderExpectedData,
+            ...orderStatusData
+          },
+          currentStage
+        );
+        
+        if (updateSuccess) {
+          showNotification("Call tracker updated successfully and enquiry record updated", "success");
+        } else {
+          showNotification("Call tracker updated but enquiry record could not be updated", "warning");
+        }
+      }
       
       if (activeTab === "pending") { 
-  // Pass the correct data structure
-  const updateSuccess = await updateLeadToOrderTable(
-    formData.enquiryNo,
-    {
-      ...formData,
-      ...quotationData,
-      ...orderExpectedData,
-      ...orderStatusData
-    },
-    currentStage,
-    orderStatusData // Pass orderStatusData as the 4th parameter
-  );
-  
-  if (updateSuccess) {
-    showNotification("Call tracker updated successfully and lead record updated", "success");
-  } else {
-    showNotification("Call tracker updated but lead record could not be updated", "warning");
-  }
-}
+        // Pass the correct data structure
+        const updateSuccess = await updateLeadToOrderTable(
+          formData.enquiryNo,
+          {
+            ...formData,
+            ...quotationData,
+            ...orderExpectedData,
+            ...orderStatusData
+          },
+          currentStage,
+          orderStatusData // Pass orderStatusData as the 4th parameter
+        );
+        
+        if (updateSuccess) {
+          showNotification("Call tracker updated successfully and lead record updated", "success");
+        } else {
+          showNotification("Call tracker updated but lead record could not be updated", "warning");
+        }
+      }
       
       navigate("/call-tracker");
     }
@@ -1351,215 +1380,7 @@ const handleSubmit = async (e) => {
   } finally {
     setIsSubmitting(false);
   }
-
-
-
-    // try {
-    //   const currentDate = new Date();
-    //   const formattedDate = formatDate(currentDate);
-  
-    //   // If there's a quotation file and it's an image, upload it first
-    //   let fileUrl = "";
-    //   if (currentStage === "make-quotation" && quotationData.quotationFile) {
-    //     const fileType = quotationData.quotationFile.type.startsWith("image/") ? "image" : "pdf";
-    //     showNotification(`Uploading ${fileType}...`, "info");
-    //     fileUrl = await uploadFileToDrive(quotationData.quotationFile, fileType);
-    //     showNotification(`${fileType.charAt(0).toUpperCase() + fileType.slice(1)} uploaded successfully`, "success");
-    //   }
-  
-    //   // If there are order status files, upload them
-    //   let acceptanceFileUrl = "";
-    //   let apologyVideoUrl = "";
-  
-    //   // Generate order number if status is "yes"
-    //   let orderNumber = "";
-    //   if (currentStage === "order-status" && orderStatusData.orderStatus === "yes") {
-    //     // Get the latest order number from the sheet
-    //     const latestOrderNumber = await getLatestOrderNumber();
-    //     orderNumber = generateNextOrderNumber(latestOrderNumber);
-        
-    //     if (orderStatusData.acceptanceFile) {
-    //       showNotification("Uploading acceptance file...", "info");
-    //       acceptanceFileUrl = await uploadFileToDrive(orderStatusData.acceptanceFile);
-    //       showNotification("Acceptance file uploaded successfully", "success");
-    //     }
-    //   } else if (currentStage === "order-status" && orderStatusData.orderStatus === "no") {
-    //     if (orderStatusData.apologyVideo) {
-    //       showNotification("Uploading apology video...", "info");
-    //       apologyVideoUrl = await uploadFileToDrive(orderStatusData.apologyVideo);
-    //       showNotification("Apology video uploaded successfully", "success");
-    //     }
-    //   }
-  
-    //   // Prepare row data based on the selected stage
-    //   let rowData = [
-    //     formattedDate, // Date
-    //     formData.enquiryNo, // Enquiry No
-    //     formData.enquiryStatus, // Status (hot/warm/cold)
-    //     formData.customerFeedback, // Customer feedback
-    //     currentStage, // Current Stage
-    //   ];
-  
-    //   // Add stage-specific data based on what's selected
-    //   if (currentStage === "make-quotation") {
-    //     rowData.push(
-    //       quotationData.sendQuotationNo,
-    //       quotationData.quotationSharedBy,
-    //       quotationData.quotationNumber, // Column H
-    //       quotationData.valueWithoutTax,
-    //       quotationData.valueWithTax,
-    //       fileUrl || "", // Add the image URL in column K
-    //       quotationData.remarks // Add the remarks in column L
-    //     );
-    //     // Add empty values for columns M-AI (validation, order expected, and order status columns)
-    //     rowData.push(...new Array(29).fill(""));
-    //   } else if (currentStage === "quotation-validation") {
-    //     // Add empty values for columns F-G
-    //     rowData.push("", "");
-    //     // Add quotation number in column H
-    //     rowData.push(validationData.validationQuotationNumber);
-    //     // Add empty values for columns I-L (remaining quotation data)
-    //     rowData.push("", "", "", "");
-    //     // Add validation data for columns M-T
-    //     rowData.push(
-    //       validationData.validatorName, // Column M
-    //       validationData.sendStatus, // Column N
-    //       validationData.validationRemark, // Column O
-    //       validationData.faqVideo, // Column P
-    //       validationData.productVideo, // Column Q
-    //       validationData.offerVideo, // Column R
-    //       validationData.productCatalog, // Column S
-    //       validationData.productImage // Column T
-    //     );
-    //     // Add empty values for columns U-AI (order expected and order status columns)
-    //     rowData.push(...new Array(15).fill(""));
-    //   } else if (currentStage === "order-expected") {
-    //     // Add empty values for columns F-T
-    //     rowData.push(...new Array(15).fill(""));
-    //     // Add order expected data for columns U-V
-    //     rowData.push(
-    //       orderExpectedData.nextCallDate, // Column U
-    //       orderExpectedData.nextCallTime // Column V
-    //     );
-    //     rowData.push(...new Array(16).fill(""));
-    //     // Add followup status in column AM
-    //     rowData.push(orderExpectedData.followupStatus); // Column AM
-    //     // Add empty values for columns W-AI (order status columns)
-    //     rowData.push(...new Array(17).fill(""));
-    //   } else if (currentStage === "order-status") {
-    //     // Add empty values for columns F-G
-    //     rowData.push("", "");
-    //     // Add quotation number in column H
-    //     rowData.push(orderStatusData.orderStatusQuotationNumber);
-    //     // Add empty values for columns I-V
-    //     rowData.push(...new Array(14).fill(""));
-    //     // Add order status in column W
-    //     rowData.push(orderStatusData.orderStatus);
-  
-    //     // Based on order status, add data to appropriate columns
-    //     if (orderStatusData.orderStatus === "yes") {
-    //       // Add YES data for columns X-AC
-    //       rowData.push(
-    //         orderStatusData.acceptanceVia, // Column X
-    //         orderStatusData.paymentMode, // Column Y
-    //         orderStatusData.paymentTerms, // Column Z
-    //         orderStatusData.transportMode || "", // Column AD (new field)
-    //         orderStatusData.conveyedForRegistration || "", // Column AE (new field)
-    //         orderStatusData.orderVideo, // Column AA
-    //         acceptanceFileUrl || "", // Column AB
-    //         orderStatusData.orderRemark // Column AC
-    //       );
-    //       rowData.push(...new Array(8).fill(""));
-    //       rowData.push(
-    //         orderStatusData.creditDays, // Column AN - Credit Days
-    //         orderStatusData.creditLimit // Column AO - Credit Limit
-    //       );
-    //       rowData.push(""); 
-    //       // Add the generated order number in column AQ (index 42)
-    //       rowData.push(orderNumber); // Column AQ - Order Number
-    //       rowData.push(
-    //         orderStatusData.destination || "", // Column AR - Destination
-    //         orderStatusData.poNumber || "" // Column AS - PO Number
-    //       );
-    //       // Add empty values for remaining columns (AF-AI)
-    //       rowData.push(...new Array(4).fill(""));
-    //     } else if (orderStatusData.orderStatus === "no") {
-    //       // Add empty values for YES columns (X-AE)
-    //       rowData.push(...new Array(8).fill(""));
-    //       // Add NO data for columns AF-AH
-    //       rowData.push(
-    //         apologyVideoUrl || "", // Column AF
-    //         orderStatusData.reasonStatus, // Column AG
-    //         orderStatusData.reasonRemark // Column AH
-    //       );
-    //       // Add empty values for HOLD columns (AI-AL)
-    //       rowData.push(...new Array(3).fill(""));
-    //     } else if (orderStatusData.orderStatus === "hold") {
-    //       // Add empty values for YES and NO columns (X-AH)
-    //       rowData.push(...new Array(11).fill(""));
-    //       // Add HOLD data for columns AI-AL
-    //       rowData.push(
-    //         orderStatusData.holdReason, // Column AI
-    //         orderStatusData.holdingDate, // Column AJ
-    //         orderStatusData.holdRemark // Column AK
-    //       );
-    //       // Add empty value for remaining column
-    //       rowData.push(""); // Column AL
-    //     } else {
-    //       // If no status selected, fill all columns with empty
-    //       rowData.push(...new Array(12).fill(""));
-    //     }
-    //   } else {
-    //     // Add empty values for all stage-specific columns (F-AI)
-    //     rowData.push(...new Array(30).fill(""));
-    //   }
-  
-    //   console.log("Row Data to be submitted:", rowData);
-  
-    //   // Script URL - replace with your Google Apps Script URL
-    //   const scriptUrl =
-    //     "https://script.google.com/macros/s/AKfycbzTPj_x_0Sh6uCNnMDi-KlwVzkGV3nC4tRF6kGUNA1vXG0Ykx4Lq6ccR9kYv6Cst108aQ/exec";
-  
-    //   // Parameters for Google Apps Script
-    //   const params = {
-    //     sheetName: "Enquiry Tracker",
-    //     action: "insert",
-    //     rowData: JSON.stringify(rowData),
-    //   };
-  
-    //   // Create URL-encoded string for the parameters
-    //   const urlParams = new URLSearchParams();
-    //   for (const key in params) {
-    //     urlParams.append(key, params[key]);
-    //   }
-  
-    //   // Send the data
-    //   const response = await fetch(scriptUrl, {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/x-www-form-urlencoded",
-    //     },
-    //     body: urlParams,
-    //   });
-  
-    //   const result = await response.json();
-  
-    //   if (result.success) {
-    //     showNotification("Call tracker updated successfully", "success");
-    //     navigate("/call-tracker");
-    //   } else {
-    //     showNotification(
-    //       "Error updating call tracker: " + (result.error || "Unknown error"),
-    //       "error"
-    //     );
-    //   }
-    // } catch (error) {
-    //   console.error("Error submitting form:", error);
-    //   showNotification("Error submitting form: " + error.message, "error");
-    // } finally {
-    //   setIsSubmitting(false);
-    // }
-  };
+};
   
 
    const handleStageChange = (stage) => {
