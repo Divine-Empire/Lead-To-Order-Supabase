@@ -360,7 +360,7 @@ const ItemsTable = ({
 
                   {!hideProductName && (
                     <td className="px-4 py-2">
-                      <div className="relative">
+                      <div className="relative min-w-[200px]">
                         <input
                           type="text"
                           value={item.name}
@@ -471,9 +471,8 @@ const ItemsTable = ({
 
                   {!hideDescription && (
                     <td className="px-4 py-2">
-                      <div className="relative">
-                        <input
-                          type="text"
+                      <div className="relative min-w-[200px]">
+                        <textarea
                           value={item.description || ""}
                           onChange={(e) =>
                             handleItemChange(
@@ -483,6 +482,14 @@ const ItemsTable = ({
                             )
                           }
                           className="p-1 w-full rounded-md border border-gray-300"
+                          style={{
+                          width: `${Math.max(
+                            200,
+                            (item.description || "").length * 8
+                          )}px`,
+                          height: "auto",
+                          minHeight: "32px",
+                        }}
                           placeholder="Enter description"
                           disabled={isLoading}
                         />
