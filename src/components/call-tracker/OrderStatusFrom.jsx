@@ -15,7 +15,11 @@ function OrderStatusForm({ formData, onFieldChange, enquiryNo,activeTab }) {
   const [quotationNumbers, setQuotationNumbers] = useState([])
   const [isLoadingQuotations, setIsLoadingQuotations] = useState(false)
   const [creditDaysOptions, setCreditDaysOptions] = useState([])
-const [creditLimitOptions, setCreditLimitOptions] = useState([])
+  const [creditLimitOptions, setCreditLimitOptions] = useState([])
+  
+  // State for items fetched from Make_Quotation table
+  const [quotationItems, setQuotationItems] = useState([])
+  const [isLoadingItems, setIsLoadingItems] = useState(false)
 
   // Fetch dropdown options from DROPDOWN sheet
   useEffect(() => {
@@ -159,7 +163,62 @@ const [creditLimitOptions, setCreditLimitOptions] = useState([])
     //    }
     //  }, [quotationNumbers, formData.orderStatusQuotationNumber, stableOnFieldChange]);
    
-   
+  // Function to fetch items from Make_Quotation table based on quotation number
+  const fetchItemsFromQuotation = async (quotationNumber) => {
+    if (!quotationNumber) {
+      setQuotationItems([])
+      return
+    }
+    
+    try {
+      setIsLoadingItems(true)
+      console.log("Fetching items for quotation number:", quotationNumber)
+      
+      const { data, error } = await supabase
+        .from("Make_Quotation")
+        .select("Items")
+        .eq("Quotation_No", quotationNumber)
+        .single()
+      
+      if (error) {
+        console.error("Error fetching from Make_Quotation:", error)
+        setQuotationItems([])
+        return
+      }
+      
+      if (data && data.Items) {
+        // Parse Items JSON and extract name and qty
+        let items = []
+        try {
+          items = typeof data.Items === 'string' ? JSON.parse(data.Items) : data.Items
+        } catch (e) {
+          console.error("Error parsing Items JSON:", e)
+          items = []
+        }
+        
+        // Extract only name and qty from items
+        const extractedItems = items.map((item, index) => ({
+          id: index + 1,
+          name: item.name || "",
+          qty: item.qty || 0
+        }))
+        
+        console.log("Fetched items from Make_Quotation:", extractedItems)
+        setQuotationItems(extractedItems)
+        
+        // Pass items to parent component
+        onFieldChange('quotationItems', extractedItems)
+      } else {
+        console.log("No items found in Make_Quotation for:", quotationNumber)
+        setQuotationItems([])
+      }
+    } catch (error) {
+      console.error("Exception fetching items from Make_Quotation:", error)
+      setQuotationItems([])
+    } finally {
+      setIsLoadingItems(false)
+    }
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -184,6 +243,14 @@ const [creditLimitOptions, setCreditLimitOptions] = useState([])
   const handleStatusChange = (status) => {
     setOrderStatus(status)
     onFieldChange('orderStatus', status)
+    
+    // When "yes" is selected, fetch items from Make_Quotation table
+    if (status === "yes" && formData.orderStatusQuotationNumber) {
+      fetchItemsFromQuotation(formData.orderStatusQuotationNumber)
+    } else {
+      setQuotationItems([])
+      onFieldChange('quotationItems', [])
+    }
   }
 
   return (
@@ -298,6 +365,45 @@ const [creditLimitOptions, setCreditLimitOptions] = useState([])
       {orderStatus === "yes" && (
         <div className="space-y-4 border p-4 rounded-md">
           <h4 className="font-medium">Order Received Details</h4>
+
+          {/* Items Display Section */}
+          {isLoadingItems ? (
+            <div className="p-4 bg-gray-50 rounded-md">
+              <p className="text-sm text-gray-500">Loading items from quotation...</p>
+            </div>
+          ) : quotationItems.length > 0 ? (
+            <div className="space-y-3 p-4 bg-blue-50 rounded-md border border-blue-200">
+              <h5 className="font-medium text-blue-800">Items from Quotation</h5>
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white rounded-md overflow-hidden">
+                  <thead className="bg-blue-100">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-blue-800">#</th>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-blue-800">Item Name</th>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-blue-800">Quantity</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {quotationItems.map((item, index) => (
+                      <tr key={item.id} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                        <td className="px-4 py-2 text-sm text-gray-700">{index + 1}</td>
+                        <td className="px-4 py-2 text-sm text-gray-700">{item.name}</td>
+                        <td className="px-4 py-2 text-sm text-gray-700">{item.qty}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-blue-600 mt-2">
+                Total Items: {quotationItems.length} | 
+                Total Qty: {quotationItems.reduce((sum, item) => sum + (Number(item.qty) || 0), 0)}
+              </p>
+            </div>
+          ) : (
+            <div className="p-3 bg-yellow-50 rounded-md border border-yellow-200">
+              <p className="text-sm text-yellow-700">No items found in quotation. Please ensure the quotation number is correct.</p>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
