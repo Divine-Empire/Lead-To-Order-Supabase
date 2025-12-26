@@ -17,7 +17,9 @@ const TermsAndConditions = ({
           freight: "Freight",
           insurance: "Insurance",
           taxes: "Taxes",
-          warranty: " warranty",
+          warranty: "Warranty",
+          afterReceiptOfMaterial: "After Receipt of Material",
+          technicalSupport: "Technical Support",
         }).map(([field, label]) => (
           <div key={field} className="space-y-2">
             <div className="flex justify-between items-center">
@@ -35,7 +37,7 @@ const TermsAndConditions = ({
                 type="text"
                 value={quotationData[field] || 
                   (field === 'freight' ? 'Extra as per actual' : 
-                   field === 'taxes' ? 'Extra as mentioned in the quotation' :
+                   field === 'taxes' ? 'Extra as per actual.' :
                    field === 'warranty' ? '6 months warranty applicable against Manufacturing defects' :
                    '')}
                 onChange={(e) => handleInputChange(field, e.target.value)}

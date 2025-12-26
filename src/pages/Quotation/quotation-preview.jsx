@@ -387,6 +387,18 @@ const QuotationPreview = ({
         <td className="py-1">{quotationData.taxes}</td>
       </tr>
     )}
+    {!hiddenFields?.afterReceiptOfMaterial && (
+      <tr>
+        <td className="py-1 font-medium">After Receipt of Material</td>
+        <td className="py-1">{quotationData.afterReceiptOfMaterial}</td>
+      </tr>
+    )}
+    {!hiddenFields?.technicalSupport && (
+      <tr>
+        <td className="py-1 font-medium">Technical Support</td>
+        <td className="py-1">{quotationData.technicalSupport}</td>
+      </tr>
+    )}
   </tbody>
 </table>
 

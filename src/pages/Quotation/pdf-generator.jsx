@@ -1193,6 +1193,42 @@ const QuotationPDFComponent = ({
                       </td>
                     </tr>
                   )}
+
+                  {!hiddenFields?.afterReceiptOfMaterial && (
+                    <tr>
+                      <td
+                        style={{
+                          padding: "4px 0",
+                          fontWeight: "bold",
+                          verticalAlign: "top",
+                        }}
+                      >
+                        After Receipt of Material
+                      </td>
+                      <td style={{ padding: "4px 0" }}>
+                        {quotationData.afterReceiptOfMaterial ||
+                          "In case of any discrepancy in the material, please inform us within 24 hours with supporting images attached. After this period, the company will not be responsible for any discrepancies."}
+                      </td>
+                    </tr>
+                  )}
+
+                  {!hiddenFields?.technicalSupport && (
+                    <tr>
+                      <td
+                        style={{
+                          padding: "4px 0",
+                          fontWeight: "bold",
+                          verticalAlign: "top",
+                        }}
+                      >
+                        Technical Support
+                      </td>
+                      <td style={{ padding: "4px 0" }}>
+                        {quotationData.technicalSupport ||
+                          "Video call assistance for installation and troubleshooting of the machine is FOC. For physical assistance: Service charges are free during the warranty period; however, TA & DA will be charged extra as per actuals."}
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
 

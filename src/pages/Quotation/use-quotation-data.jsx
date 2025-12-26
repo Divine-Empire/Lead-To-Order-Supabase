@@ -14,6 +14,8 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
     insurance: false,
     taxes: false,
     warranty: false,
+    afterReceiptOfMaterial: false,
+    technicalSupport: false,
   });
 
   const [quotationData, setQuotationData] = useState({
@@ -66,10 +68,12 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
       "100% advance payment in the mode of NEFT, RTGS & DD.Payment only accepted in company's account - DIVINE EMPIRE INDIA PVT LTD.",
     delivery:
       "Material will be dispatched after receipt of advance payment and upon confirmation of complete purchase order (PO) from the buyer.",
-    freight: "Extra mentioned in the quotation.",
+    freight: "Extra as per actual.",
     insurance: "Transit insurance for all shipment is at Buyer's scope.",
     warranty: "6 months warranty applicable against Manufacturing defects.",
-    taxes: "Extra as mentioned in the quotation.",
+    taxes: "Extra as per actual.",
+    afterReceiptOfMaterial: "In case of any discrepancy in the material, please inform us within 24 hours with supporting images attached. After this period, the company will not be responsible for any discrepancies.",
+    technicalSupport: "Video call assistance for installation and troubleshooting of the machine is FOC. For physical assistance: Service charges are free during the warranty period; however, TA & DA will be charged extra as per actuals.",
     accountNo: "",
     bankName: "",
     bankAddress: "",

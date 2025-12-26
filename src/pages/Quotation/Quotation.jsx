@@ -678,7 +678,7 @@ useEffect(() => {
           "100% advance payment in the mode of NEFT, RTGS & DD.Payment only accepted in company's account - DIVINE EMPIRE INDIA PVT LTD.",
         delivery:
           "Material will be dispatched after receipt of advance payment and upon confirmation of complete purchase order (PO) from the buyer.",
-        freight: "Extra mentioned in the quotation.",
+        freight: "Extra as per actual.",
         insurance: "Transit insurance for all shipment is at Buyer's scope.",
         taxes: "Extra mentioned in the quotation.",
         accountNo: "",
