@@ -6,7 +6,7 @@ import { AuthContext } from "../../App" // Import AuthContext
 import supabase from "../../utils/supabase" // Import your Supabase client
 
 function DashboardMetrics() {
-  const { currentUser, userType, isAdmin } = useContext(AuthContext) // Get user info and admin function
+  const { currentUser, userType, isAdmin, getUsernamesToFilter } = useContext(AuthContext) // Get user info and admin function
   const [metrics, setMetrics] = useState({
     totalLeads: "0",
     pendingFollowups: "0",
@@ -37,7 +37,8 @@ function DashboardMetrics() {
         
         // Apply user filter if not admin - use SC_Name field like in FollowUp component
         if (!isAdmin() && currentUser?.username) {
-          leadsCountQuery = leadsCountQuery.eq('SC_Name', currentUser.username)
+          const usernamesToFilter = getUsernamesToFilter()
+          leadsCountQuery = leadsCountQuery.in('SC_Name', usernamesToFilter)
         }
         
         const { count: leadsCount, error: leadsCountError } = await leadsCountQuery
@@ -57,7 +58,8 @@ function DashboardMetrics() {
         
         // Apply user filter if not admin
         if (!isAdmin() && currentUser?.username) {
-          pendingFollowupsQuery = pendingFollowupsQuery.eq('SC_Name', currentUser.username)
+          const usernamesToFilter = getUsernamesToFilter()
+          pendingFollowupsQuery = pendingFollowupsQuery.in('SC_Name', usernamesToFilter)
         }
         
         const { count: pendingCount, error: pendingCountError } = await pendingFollowupsQuery
@@ -77,7 +79,8 @@ function DashboardMetrics() {
         
         // No user filtering for quotations - show all data
           if (!isAdmin() && currentUser?.username) {
-          quotationsQuery = quotationsQuery.eq('Sales Cordinator', currentUser.username)
+          const usernamesToFilter = getUsernamesToFilter()
+          quotationsQuery = quotationsQuery.in('Sales Cordinator', usernamesToFilter)
         }
         
         const { count: quotationsCount, error: quotationsError } = await quotationsQuery
@@ -96,7 +99,8 @@ function DashboardMetrics() {
         
         // No user filtering for orders - show all data
           if (!isAdmin() && currentUser?.username) {
-          ordersQuery = ordersQuery.eq('Sales Cordinator', currentUser.username)
+          const usernamesToFilter = getUsernamesToFilter()
+          ordersQuery = ordersQuery.in('Sales Cordinator', usernamesToFilter)
         }
         
         const { count: ordersCount, error: ordersError } = await ordersQuery
@@ -114,7 +118,8 @@ function DashboardMetrics() {
         
         // No user filtering - show all enquiries for everyone
           if (!isAdmin() && currentUser?.username) {
-          totalEnquiryQuery = totalEnquiryQuery.eq('sales_coordinator_name', currentUser.username)
+          const usernamesToFilter = getUsernamesToFilter()
+          totalEnquiryQuery = totalEnquiryQuery.in('sales_coordinator_name', usernamesToFilter)
         }
         
         const { count: totalEnquiryCount, error: totalEnquiryError } = await totalEnquiryQuery
@@ -134,7 +139,8 @@ function DashboardMetrics() {
         
         // No user filtering - show all data
           if (!isAdmin() && currentUser?.username) {
-          pendingEnquiryQuery = pendingEnquiryQuery.eq('sales_coordinator_name', currentUser.username)
+          const usernamesToFilter = getUsernamesToFilter()
+          pendingEnquiryQuery = pendingEnquiryQuery.in('sales_coordinator_name', usernamesToFilter)
         }
         
         const { count: pendingEnquiryCount, error: pendingEnquiryError } = await pendingEnquiryQuery

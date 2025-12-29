@@ -30,7 +30,7 @@ const useIsMobile = () => {
 
 function FollowUp() {
   const isMobile = useIsMobile();
-  const { currentUser, userType, isAdmin } = useContext(AuthContext);
+  const { currentUser, userType, isAdmin, getUsernamesToFilter } = useContext(AuthContext);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("pending");
   const [pendingFollowUps, setPendingFollowUps] = useState([]);
@@ -513,8 +513,9 @@ const handleSaveClick = async (index) => {
 
       // Apply user filter if not admin
       if (!isAdmin() && currentUser && currentUser.username) {
-        todayQuery = todayQuery.eq("SC_Name", currentUser.username);
-        olderQuery = olderQuery.eq("SC_Name", currentUser.username);
+        const usernamesToFilter = getUsernamesToFilter();
+        todayQuery = todayQuery.in("SC_Name", usernamesToFilter);
+        olderQuery = olderQuery.in("SC_Name", usernamesToFilter);
       }
 
       const [todayResult, olderResult] = await Promise.all([
@@ -576,7 +577,8 @@ const handleSaveClick = async (index) => {
 
           // Apply user filter if not admin
           if (!isAdmin() && currentUser && currentUser.username) {
-            pendingQuery = pendingQuery.eq("SC_Name", currentUser.username);
+            const usernamesToFilter = getUsernamesToFilter();
+            pendingQuery = pendingQuery.in("SC_Name", usernamesToFilter);
           }
 
           // Add sorting by lead number (LD-Lead-No) in ascending order
@@ -651,7 +653,8 @@ const handleSaveClick = async (index) => {
 
           // Apply user filter if not admin
           if (!isAdmin() && currentUser && currentUser.username) {
-            historyQuery = historyQuery.eq("SC_Name", currentUser.username);
+            const usernamesToFilter = getUsernamesToFilter();
+            historyQuery = historyQuery.in("SC_Name", usernamesToFilter);
           }
 
           // Apply date filter at database level

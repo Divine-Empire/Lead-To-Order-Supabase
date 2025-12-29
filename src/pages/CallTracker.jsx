@@ -41,7 +41,7 @@ const useIsMobile = () => {
 
 function CallTracker() {
   const isMobile = useIsMobile();
-  const { currentUser, userType, isAdmin } = useContext(AuthContext);
+  const { currentUser, userType, isAdmin, getUsernamesToFilter } = useContext(AuthContext);
   const [searchTerm, setSearchTerm] = useState("");
   const [tenDaysSearchTerm, setTenDaysSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("pending");
@@ -1146,7 +1146,8 @@ const handleSaveClick = async (index) => {
     }
 
     if (!isAdmin() && currentUser && currentUser.username) {
-      query = query.eq("SC_Name", currentUser.username);
+      const usernamesToFilter = getUsernamesToFilter();
+      query = query.in("SC_Name", usernamesToFilter);
     }
 
     const { data, error, count } = await query;
@@ -1237,7 +1238,8 @@ const handleSaveClick = async (index) => {
     }
 
     if (!isAdmin() && currentUser && currentUser.username) {
-      query = query.eq("Sales Cordinator", currentUser.username);
+      const usernamesToFilter = getUsernamesToFilter();
+      query = query.in("Sales Cordinator", usernamesToFilter);
     }
 
     const { data, error, count } = await query;
@@ -1366,7 +1368,8 @@ const handleSaveClick = async (index) => {
     }
 
     if (!isAdmin() && currentUser && currentUser.username) {
-      query = query.eq("sales_coordinator_name", currentUser.username);
+      const usernamesToFilter = getUsernamesToFilter();
+      query = query.in("sales_coordinator_name", usernamesToFilter);
     }
 
     const { data, error, count } = await query;
@@ -2003,7 +2006,8 @@ const handleSaveClick = async (index) => {
           .from(table)
           .select("*", { count: "exact", head: true });
         if (role === "user" && currentUser?.username) {
-          return query.eq("sales_coordinator_name", currentUser.username);
+          const usernamesToFilter = getUsernamesToFilter();
+          return query.in("sales_coordinator_name", usernamesToFilter);
         }
         return query;
       };

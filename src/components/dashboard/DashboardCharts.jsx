@@ -43,7 +43,7 @@ const fallbackSourceData = [
 ]
 
 function DashboardCharts() {
-  const { currentUser, userType, isAdmin } = useContext(AuthContext) // Get user info and admin function
+  const { currentUser, userType, isAdmin, getUsernamesToFilter } = useContext(AuthContext) // Get user info and admin function
   const [activeTab, setActiveTab] = useState("overview")
   const [leadData, setLeadData] = useState(fallbackLeadData)
   const [conversionData, setConversionData] = useState(fallbackConversionData)
@@ -69,7 +69,8 @@ function DashboardCharts() {
         
         // Apply user filter if not admin - use SC_Name field
         if (!isAdmin() && currentUser?.username) {
-          leadsCountQuery = leadsCountQuery.eq('SC_Name', currentUser.username)
+          const usernamesToFilter = getUsernamesToFilter()
+          leadsCountQuery = leadsCountQuery.in('SC_Name', usernamesToFilter)
         }
         
         const { count: leadsCount, error: leadsCountError } = await leadsCountQuery
@@ -85,7 +86,8 @@ function DashboardCharts() {
         
         // Apply user filter if not admin - use SC_Name field
         if (!isAdmin() && currentUser?.username) {
-          enquiriesCountQuery = enquiriesCountQuery.eq('SC_Name', currentUser.username)
+          const usernamesToFilter = getUsernamesToFilter()
+          enquiriesCountQuery = enquiriesCountQuery.in('SC_Name', usernamesToFilter)
         }
         
         const { count: enquiriesCount, error: enquiriesCountError } = await enquiriesCountQuery
@@ -131,7 +133,8 @@ function DashboardCharts() {
         
         // Apply user filter if not admin
         if (!isAdmin() && currentUser?.username) {
-          leadSourcesQuery = leadSourcesQuery.eq('SC_Name', currentUser.username)
+          const usernamesToFilter = getUsernamesToFilter()
+          leadSourcesQuery = leadSourcesQuery.in('SC_Name', usernamesToFilter)
         }
         
         const { data: leadSourcesData, error: leadSourcesError } = await leadSourcesQuery

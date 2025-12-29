@@ -26,24 +26,56 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null)
   const [userType, setUserType] = useState(null)
   const [userData, setUserData] = useState(null)
+  const [alternateAccess, setAlternateAccess] = useState(null)
 
-  // Check if user is already logged in
+  // Check if user is already logged in and fetch latest alternate_access from database
   useEffect(() => {
     const auth = localStorage.getItem("isAuthenticated")
     const storedUser = localStorage.getItem("currentUser")
     const storedUserType = localStorage.getItem("userType")
     
     if (auth === "true" && storedUser) {
+      const parsedUser = JSON.parse(storedUser)
       setIsAuthenticated(true)
-      setCurrentUser(JSON.parse(storedUser))
+      setCurrentUser(parsedUser)
       setUserType(storedUserType)
-      // Fetch data based on user type from Supabase
-      fetchUserData(JSON.parse(storedUser).username, storedUserType)
+      
+      // Fetch latest alternate_access from database to ensure it's always up-to-date
+      const fetchLatestAlternateAccess = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('login')
+            .select('alternate_access')
+            .eq('username', parsedUser.username)
+            .single()
+          
+          if (!error && data) {
+            const latestAlternateAccess = data.alternate_access || null
+            setAlternateAccess(latestAlternateAccess)
+            localStorage.setItem("alternateAccess", latestAlternateAccess || '')
+            // Fetch data with latest alternate_access
+            fetchUserData(parsedUser.username, storedUserType, latestAlternateAccess)
+          } else {
+            // Fallback to stored value if database fetch fails
+            const storedAlternateAccess = localStorage.getItem("alternateAccess")
+            setAlternateAccess(storedAlternateAccess || null)
+            fetchUserData(parsedUser.username, storedUserType, storedAlternateAccess)
+          }
+        } catch (err) {
+          console.error("Error fetching alternate_access:", err)
+          // Fallback to stored value
+          const storedAlternateAccess = localStorage.getItem("alternateAccess")
+          setAlternateAccess(storedAlternateAccess || null)
+          fetchUserData(parsedUser.username, storedUserType, storedAlternateAccess)
+        }
+      }
+      
+      fetchLatestAlternateAccess()
     }
   }, [])
 
   // Function to fetch data based on user type FROM SUPABASE
-  const fetchUserData = async (username, userType) => {
+  const fetchUserData = async (username, userType, altAccess = null) => {
     try {
       if (userType === "admin") {
         // Admin sees all data - fetch from appropriate Supabase tables
@@ -73,18 +105,29 @@ function App() {
         
         setUserData(combinedData);
       } else {
-        // Regular user only sees their own data
+        // Regular user sees their own data + data from alternate_access users
+        // Build a list of usernames to fetch data for
+        let usernamesToFetch = [username];
+        
+        // If alternate_access has comma-separated values, add them to the list
+        if (altAccess && altAccess.trim() !== '') {
+          const alternateUsers = altAccess.split(',').map(u => u.trim()).filter(u => u !== '');
+          usernamesToFetch = [...new Set([...usernamesToFetch, ...alternateUsers])];
+        }
+
+        // Fetch leads for all usernames in the list
         const { data: userLeads, error: userLeadsError } = await supabase
           .from('leads_to_order')
           .select('*')
-          .eq('Salesperson_Name', username)
+          .in('Salesperson_Name', usernamesToFetch)
           .order('id', { ascending: false })
           .limit(100);
 
+        // Fetch enquiries for all usernames in the list
         const { data: userEnquiries, error: userEnquiriesError } = await supabase
           .from('enquiry_to_order')
           .select('*')
-          .eq('sales_person_name', username)
+          .in('sales_person_name', usernamesToFetch)
           .order('created_at', { ascending: false })
           .limit(100);
 
@@ -109,10 +152,10 @@ function App() {
 
   const login = async (username, password) => {
     try {
-      // Query Supabase login table
+      // Query Supabase login table - now also fetching alternate_access
       const { data, error } = await supabase
         .from('login')
-        .select('username, usertype')
+        .select('username, usertype, alternate_access')
         .eq('username', username)
         .eq('password', password)
         .single()
@@ -133,13 +176,15 @@ function App() {
         setIsAuthenticated(true);
         setCurrentUser(userInfo);
         setUserType(data.usertype);
+        setAlternateAccess(data.alternate_access || null);
         
         localStorage.setItem("isAuthenticated", "true");
         localStorage.setItem("currentUser", JSON.stringify(userInfo));
         localStorage.setItem("userType", data.usertype);
+        localStorage.setItem("alternateAccess", data.alternate_access || '');
         
-        // Fetch data based on user type FROM SUPABASE
-        await fetchUserData(data.username, data.usertype);
+        // Fetch data based on user type FROM SUPABASE, passing alternate_access
+        await fetchUserData(data.username, data.usertype, data.alternate_access);
         
         showNotification(`Welcome, ${username}! (${data.usertype})`, "success");
         return true;
@@ -159,9 +204,11 @@ function App() {
     setCurrentUser(null);
     setUserType(null);
     setUserData(null);
+    setAlternateAccess(null);
     localStorage.removeItem("isAuthenticated");
     localStorage.removeItem("currentUser");
     localStorage.removeItem("userType");
+    localStorage.removeItem("alternateAccess");
     localStorage.removeItem('quotation_auto_save');
     showNotification("Logged out successfully", "success");
   }
@@ -176,6 +223,16 @@ function App() {
   // Check if user has admin privileges
   const isAdmin = () => {
     return userType === "admin";
+  }
+
+  // Get list of usernames to filter by (current user + alternate access users)
+  const getUsernamesToFilter = () => {
+    let usernames = [currentUser?.username].filter(Boolean);
+    if (alternateAccess && alternateAccess.trim() !== '') {
+      const alternateUsers = alternateAccess.split(',').map(u => u.trim()).filter(u => u !== '');
+      usernames = [...new Set([...usernames, ...alternateUsers])];
+    }
+    return usernames;
   }
 
   // Protected route component
@@ -201,7 +258,9 @@ function App() {
       showNotification, 
       currentUser, 
       userType, 
-      isAdmin: isAdmin 
+      isAdmin: isAdmin,
+      alternateAccess,
+      getUsernamesToFilter
     }}>
       <DataContext.Provider value={{ userData, fetchUserData }}>
         <Router>
