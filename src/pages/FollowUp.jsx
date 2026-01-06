@@ -58,6 +58,7 @@ function FollowUp() {
   const [editedData, setEditedData] = useState({});
 
   const [historyCounts, setHistoryCounts] = useState({ today: 0, older: 0 });
+  const [filteredCount, setFilteredCount] = useState(0);
 
   const [visibleColumns, setVisibleColumns] = useState({
     timestamp: true,
@@ -688,6 +689,11 @@ const handleSaveClick = async (index) => {
           const { data, error, count } = await historyQuery;
 
           if (error) throw error;
+
+          // Update filtered count
+          if (!isLoadMore) {
+            setFilteredCount(count || 0);
+          }
 
           const filteredHistory = (data || []).map((row) => ({
             id: row.id,
@@ -1602,9 +1608,19 @@ const handleSaveClick = async (index) => {
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           {/* Card Header */}
           <div className="p-4 sm:p-6 border-b border-gray-200">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-              All Call Tracker
-            </h2>
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                All Call Tracker
+              </h2>
+              {activeTab === "history" && (startDate || endDate || dateFilter !== "all") && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Showing:</span>
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-amber-100 text-amber-800">
+                    {filteredCount} {filteredCount === 1 ? 'record' : 'records'}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Card Content */}
