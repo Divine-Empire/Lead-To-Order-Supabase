@@ -43,6 +43,8 @@ function FollowUp() {
   const [companyFilter, setCompanyFilter] = useState("all");
   const [personFilter, setPersonFilter] = useState("all");
   const [phoneFilter, setPhoneFilter] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Fixed pagination state management
   const [pendingPage, setPendingPage] = useState(1);
@@ -672,6 +674,14 @@ const handleSaveClick = async (index) => {
             historyQuery = historyQuery.lt("Timestamp", todayStr);
           }
 
+          // Apply date range filter
+          if (startDate) {
+            historyQuery = historyQuery.gte("Timestamp", startDate);
+          }
+          if (endDate) {
+            historyQuery = historyQuery.lte("Timestamp", endDate);
+          }
+
           // Apply pagination with range
           historyQuery = historyQuery.range(from, to);
 
@@ -748,7 +758,7 @@ const handleSaveClick = async (index) => {
         setIsLoadingMore(false);
       }
     },
-    [currentUser, isAdmin, activeTab, dateFilter]
+    [currentUser, isAdmin, activeTab, dateFilter, startDate, endDate]
   );
 
   // Remove or comment out these filter functions since filtering now happens at database level:
@@ -795,7 +805,7 @@ const handleSaveClick = async (index) => {
         setHistoryCounts(counts);
       });
     }
-  }, [activeTab, calculateHistoryCounts, dateFilter, searchTerm]); // Add searchTerm here
+  }, [activeTab, calculateHistoryCounts, dateFilter, searchTerm, startDate, endDate]); // Add date range filters
 
   useEffect(() => {
     console.log(`Tab or dateFilter changed to: ${activeTab}, ${dateFilter}`);
@@ -1459,6 +1469,30 @@ const handleSaveClick = async (index) => {
                   )}
                 </select>
               </div>
+
+              {/* Date Range Filters - Only show for history tab */}
+              {activeTab === "history" && (
+                <>
+                  <div className="min-w-0">
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      placeholder="Start Date"
+                      className="w-full px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      placeholder="End Date"
+                      className="w-full px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                    />
+                  </div>
+                </>
+              )}
 
               {/* Column Selection Dropdown - Only show for history tab */}
               {activeTab === "history" && (
