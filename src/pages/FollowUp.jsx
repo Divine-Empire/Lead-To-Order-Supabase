@@ -617,7 +617,26 @@ const handleSaveClick = async (index) => {
             callingDays: row["Calling_Days"] || "",
             priority: determinePriority(row["Lead_Source"] || ""),
             assignedTo: row["SC_Name"] || row["assigned_user"] || "",
-            itemQty: row["Item_Qty"] || "",
+            // New customer detail columns
+            Email_Address: row["Email_Address"] || "",
+            State: row["State"] || "",
+            Address: row["Address"] || "",
+            Person_name_1: row["Person_name_1"] || "",
+            Designation_1: row["Designation_1"] || "",
+            Phone_Number_1: row["Phone_Number_1"] || "",
+            Person_Name_2: row["Person_Name_2"] || "",
+            Designation_2: row["Designation_2"] || "",
+            Phone_Number_2: row["Phone_Number_2"] || "",
+            Person_Name_3: row["Person_Name_3"] || "",
+            Designation_3: row["Designation_3"] || "",
+            Phone_Number_3: row["Phone_Number_3"] || "",
+            NOB: row["NOB"] || "",
+            GST_Number: row["GST_Number"] || "",
+            Customer_Registration_Form: row["Customer_Registration Form"] || "",
+            Credit_Access: row["Credit _Access"] || "",
+            Credit_Days: row["Credit_Days"] || "",
+            Credit_Limit: row["Credit_Limit"] || "",
+            Additional_Notes: row["Additional_Notes"] || "",
           }));
 
           if (isLoadMore) {
@@ -1734,22 +1753,130 @@ const handleSaveClick = async (index) => {
                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
                                 >
                                   Enquiry Status
-                                </th>
-                                {isAdmin() && (
-                                  <th
-                                    scope="col"
-                                    className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                                  >
-                                    Assigned To
-                                  </th>
-                                )}
-                                <th
-                                  scope="col"
-                                  className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                                >
-                                  Item/Qty
-                                </th>
-                              </tr>
+                                 </th>
+                                 {isAdmin() && (
+                                   <th
+                                     scope="col"
+                                     className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                   >
+                                     Assigned To
+                                   </th>
+                                 )}
+                                 <th
+                                   scope="col"
+                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                 >
+                                   Email Address
+                                 </th>
+                                 <th
+                                   scope="col"
+                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                 >
+                                   State
+                                 </th>
+                                 <th
+                                   scope="col"
+                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                 >
+                                   Address
+                                 </th>
+                                 <th
+                                   scope="col"
+                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                 >
+                                   Person Name 1
+                                 </th>
+                                 <th
+                                   scope="col"
+                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                 >
+                                   Designation 1
+                                 </th>
+                                 <th
+                                   scope="col"
+                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                 >
+                                   Phone Number 1
+                                 </th>
+                                 <th
+                                   scope="col"
+                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                 >
+                                   Person Name 2
+                                 </th>
+                                 <th
+                                   scope="col"
+                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                 >
+                                   Designation 2
+                                 </th>
+                                 <th
+                                   scope="col"
+                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                 >
+                                   Phone Number 2
+                                 </th>
+                                 <th
+                                   scope="col"
+                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                 >
+                                   Person Name 3
+                                 </th>
+                                 <th
+                                   scope="col"
+                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                 >
+                                   Designation 3
+                                 </th>
+                                 <th
+                                   scope="col"
+                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                 >
+                                   Phone Number 3
+                                 </th>
+                                 <th
+                                   scope="col"
+                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                 >
+                                   Nature of Business
+                                 </th>
+                                 <th
+                                   scope="col"
+                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                 >
+                                   GST Number
+                                 </th>
+                                 <th
+                                   scope="col"
+                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                 >
+                                   Customer Registration Form
+                                 </th>
+                                 <th
+                                   scope="col"
+                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                 >
+                                   Credit Access
+                                 </th>
+                                 <th
+                                   scope="col"
+                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                 >
+                                   Credit Days
+                                 </th>
+                                 <th
+                                   scope="col"
+                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                 >
+                                   Credit Limit
+                                 </th>
+                                 <th
+                                   scope="col"
+                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                 >
+                                   Additional Notes
+                                 </th>
+                               </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                               {filteredPendingFollowUps.length > 0 ? (
@@ -1840,15 +1967,62 @@ const handleSaveClick = async (index) => {
                                           {followUp.assignedTo}
                                         </td>
                                       )}
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
-                                        <div
-                                          className="min-w-[300px] break-words whitespace-normal"
-                                          title={formatItemQty(
-                                            followUp.itemQty
-                                          )}
-                                        >
-                                          {formatItemQty(followUp.itemQty)}
-                                        </div>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {followUp.Email_Address}
+                                      </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {followUp.State}
+                                      </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {followUp.Address}
+                                      </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {followUp.Person_name_1}
+                                      </td>
+                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {followUp.Designation_1}
+                                      </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {followUp.Phone_Number_1}
+                                      </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {followUp.Person_Name_2}
+                                      </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {followUp.Designation_2}
+                                      </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {followUp.Phone_Number_2}
+                                      </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {followUp.Person_Name_3}
+                                      </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {followUp.Designation_3}
+                                      </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {followUp.Phone_Number_3}
+                                      </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {followUp.NOB}
+                                      </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {followUp.GST_Number}
+                                      </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {followUp.Customer_Registration_Form}
+                                      </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {followUp.Credit_Access}
+                                      </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {followUp.Credit_Days}
+                                      </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {followUp.Credit_Limit}
+                                      </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {followUp.Additional_Notes}
                                       </td>
                                     </tr>
                                   )
@@ -1856,7 +2030,7 @@ const handleSaveClick = async (index) => {
                               ) : (
                                 <tr>
                                   <td
-                                    colSpan={isAdmin() ? 12 : 11}
+                                    colSpan={isAdmin() ? 31 : 30}
                                     className="px-4 py-8 text-center text-sm text-slate-500"
                                   >
                                     <div className="flex flex-col items-center space-y-2">

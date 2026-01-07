@@ -1174,6 +1174,28 @@ const handleSaveClick = async (index) => {
         sc_name: item["SC_Name"] || "",
         nextCallDate: item["Next_Call_Date"] || "",
         nextCallDate1: item["Next Call Date_1"] || "",
+        // New columns added
+        What_Did_The_Customer_Say: item["What_Did_The_Customer say?"] || "",
+        Enquiry_Received_Status: item["Enquiry_Received_Status"] || "",
+        Enquiry_Received_Date: formatDateToDDMMYYYY(item["Enquiry_Received_Date"]) || "",
+        Enquiry_for_State: item["Enquiry_for_State"] || "",
+        Project_Name: item["Project_Name"] || "",
+        Enquiry_Type: item["Enquiry_Type"] || "",
+        Enquiry_Approach: item["Enquiry_Approach"] || "",
+        Project_Approximate_Value: item["Project_Approximate_Value"] || "",
+        Item_Name1: item["Item_Name1"] || "",
+        Quantity1: item["Quantity1"] || "",
+        Item_Name2: item["Item_Name2"] || "",
+        Quantity2: item["Quantity2"] || "",
+        Item_Name3: item["Item_Name3"] || "",
+        Quantity3: item["Quantity3"] || "",
+        Item_Name4: item["Item_Name4"] || "",
+        Quantity4: item["Quantity4"] || "",
+        Item_Name5: item["Item_Name5"] || "",
+        Quantity5: item["Quantity5"] || "",
+        Next_Action: item["Next_Action"] || "",
+        Next_Call_Date_Field: formatDateToDDMMYYYY(item["Next_Call_Date"]) || "",
+        Next_Call_Time: formatTimeTo12Hour(item["Next_Call_Time"]) || "",
       }));
 
       if (isLoadMore) {
@@ -1396,6 +1418,36 @@ const handleSaveClick = async (index) => {
         item_qty: formatItemQty(item.item_qty) || "",
         sc_name: item.sales_coordinator_name || "",
         nextCallDate: item.next_call_date || "",
+        // New columns added
+        shipping_address: item.shipping_address || "",
+        enquiry_receiver_name: item.enquiry_receiver_name || "",
+        enquiry_assign_to_project: item.enquiry_assign_to_project || "",
+        gst_number: item.gst_number || "",
+        enquiry_date: item.enquiry_date || "",
+        enquiry_for_state: item.enquiry_for_state || "",
+        project_name: item.project_name || "",
+        sales_type: item.sales_type || "",
+        enquiry_approach: item.enquiry_approach || "",
+        item_name1: item.item_name1 || "",
+        quantity1: item.quantity1 || "",
+        item_name2: item.item_name2 || "",
+        quantity2: item.quantity2 || "",
+        item_name3: item.item_name3 || "",
+        quantity3: item.quantity3 || "",
+        item_name4: item.item_name4 || "",
+        quantity4: item.quantity4 || "",
+        item_name5: item.item_name5 || "",
+        quantity5: item.quantity5 || "",
+        item_name6: item.item_name6 || "",
+        quantity6: item.quantity6 || "",
+        item_name7: item.item_name7 || "",
+        quantity7: item.quantity7 || "",
+        item_name8: item.item_name8 || "",
+        quantity8: item.quantity8 || "",
+        item_name9: item.item_name9 || "",
+        quantity9: item.quantity9 || "",
+        item_name10: item.item_name10 || "",
+        quantity10: item.quantity10 || "",
       }));
 
       // ✅ Sort by numeric part of enquiry_no (e.g., "En-1" -> 1, "En-10" -> 10)
@@ -3105,6 +3157,69 @@ const handleSaveClick = async (index) => {
                           >
                             Total Qty
                           </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            What Did Customer Say
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Enquiry Received Status
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Enquiry Received Date
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Enquiry for State
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Project Name
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Enquiry Type
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Enquiry Approach
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Project Approximate Value
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Item Name 1
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quantity 1
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Item Name 2
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quantity 2
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Item Name 3
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quantity 3
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Item Name 4
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quantity 4
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Item Name 5
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quantity 5
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Next Action
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Next Call Date
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Next Call Time
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -3191,12 +3306,77 @@ const handleSaveClick = async (index) => {
                               <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                                 {tracker.totalQty}
                               </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                <div className="max-w-[200px] truncate" title={tracker.What_Did_The_Customer_Say}>
+                                  {tracker.What_Did_The_Customer_Say}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                {tracker.Enquiry_Received_Status}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                {tracker.Enquiry_Received_Date}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                {tracker.Enquiry_for_State}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                {tracker.Project_Name}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                {tracker.Enquiry_Type}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                {tracker.Enquiry_Approach}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                {tracker.Project_Approximate_Value}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                {tracker.Item_Name1}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                {tracker.Quantity1}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                {tracker.Item_Name2}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                {tracker.Quantity2}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                {tracker.Item_Name3}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                {tracker.Quantity3}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                {tracker.Item_Name4}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                {tracker.Quantity4}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                {tracker.Item_Name5}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                {tracker.Quantity5}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                {tracker.Next_Action}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                {tracker.Next_Call_Date_Field}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                {tracker.Next_Call_Time}
+                              </td>
                             </tr>
                           ))
                         ) : (
                           <tr>
                             <td
-                              colSpan={isAdmin() ? 13 : 12} // Fixed: 12 base columns + 1 for admin column
+                            colSpan={isAdmin() ? 34 : 33} // Fixed: 12 base columns + 1 for admin column
                               className="px-6 py-4 text-sm text-center text-slate-500"
                             >
                               No pending call trackers found
@@ -4697,6 +4877,93 @@ const handleSaveClick = async (index) => {
                           >
                             Total Qty
                           </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Shipping Address
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Enquiry Receiver Name
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Enquiry Assign to Project
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            GST Number
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Enquiry Date
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Enquiry for State
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Project Name
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Sales Type
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Enquiry Approach
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Item Name 1
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quantity 1
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Item Name 2
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quantity 2
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Item Name 3
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quantity 3
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Item Name 4
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quantity 4
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Item Name 5
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quantity 5
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Item Name 6
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quantity 6
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Item Name 7
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quantity 7
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Item Name 8
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quantity 8
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Item Name 9
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quantity 9
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Item Name 10
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quantity 10
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -4778,13 +5045,102 @@ const handleSaveClick = async (index) => {
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                                   {tracker.total_qty}
                                 </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  <div className="max-w-[200px] truncate" title={tracker.shipping_address}>
+                                    {tracker.shipping_address}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.enquiry_receiver_name}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.enquiry_assign_to_project}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.gst_number}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.enquiry_date}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.enquiry_for_state}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.project_name}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.sales_type}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.enquiry_approach}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.item_name1}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.quantity1}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.item_name2}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.quantity2}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.item_name3}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.quantity3}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.item_name4}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.quantity4}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.item_name5}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.quantity5}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.item_name6}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.quantity6}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.item_name7}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.quantity7}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.item_name8}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.quantity8}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.item_name9}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.quantity9}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.item_name10}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.quantity10}
+                                </td>
                               </tr>
                             )
                           )
                         ) : (
                           <tr>
                             <td
-                              colSpan={7}
+                              colSpan={39}
                               className="px-6 py-4 text-sm text-center text-slate-500"
                             >
                               No direct enquiry pending trackers found
