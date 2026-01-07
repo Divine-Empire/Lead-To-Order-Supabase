@@ -4890,6 +4890,18 @@ const handleSaveClick = async (index) => {
                             scope="col"
                             className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
                           >
+                            Phone Number
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                          >
+                            Salesperson Name
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                          >
                             Current Stage
                           </th>
                           <th
@@ -5141,6 +5153,12 @@ const handleSaveClick = async (index) => {
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                                   {tracker.company_name}
                                 </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.phone_number}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.salesperson_name}
+                                </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <span
                                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -5372,7 +5390,7 @@ const handleSaveClick = async (index) => {
                         ) : (
                           <tr>
                             <td
-                              colSpan={69}
+                              colSpan={71}
                               className="px-6 py-4 text-sm text-center text-slate-500"
                             >
                               No direct enquiry pending trackers found
