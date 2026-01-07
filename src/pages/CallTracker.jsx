@@ -1448,6 +1448,39 @@ const handleSaveClick = async (index) => {
         quantity9: item.quantity9 || "",
         item_name10: item.item_name10 || "",
         quantity10: item.quantity10 || "",
+        // Additional requested columns
+        enquiry_status: item.enquiry_status || "",
+        customer_feedback: item.customer_feedback || "",
+        send_quotation_no: item.send_quotation_no || "",
+        quotation_shared_by: item.quotation_shared_by || "",
+        quotation_number: item.quotation_number || "",
+        quotation_value_without_tax: item.quotation_value_without_tax || "",
+        quotation_value_with_tax: item.quotation_value_with_tax || "",
+        quotation_upload: item.quotation_upload || "",
+        quotation_remarks: item.quotation_remarks || "",
+        quotation_validator_name: item.quotation_validator_name || "",
+        quotation_send_status: item.quotation_send_status || "",
+        quotation_validation_remark: item.quotation_validation_remark || "",
+        send_faq_video: item.send_faq_video || false,
+        send_product_video: item.send_product_video || false,
+        send_offer_video: item.send_offer_video || false,
+        send_product_catalog: item.send_product_catalog || false,
+        send_product_image: item.send_product_image || false,
+        next_call_time: formatTimeTo12Hour(item.next_call_time) || "",
+        is_order_received_status: item.is_order_received_status || "",
+        if_no_reason_status: item.if_no_reason_status || "",
+        if_no_reason_remark: item.if_no_reason_remark || "",
+        customer_order_hold_reason_category: item.customer_order_hold_reason_category || "",
+        holding_date: formatDateToDDMMYYYY(item.holding_date) || "",
+        hold_remark: item.hold_remark || "",
+        transport_mode: item.transport_mode || "",
+        conveyed_for_registration_form: item.conveyed_for_registration_form || false,
+        sales_coordinator_name: item.sales_coordinator_name || "",
+        order_no: item.order_no || "",
+        amount_with_gst: item.amount_with_gst || "",
+        total_qty: item.total_qty || "",
+        destination: item.destination || "",
+        po_number: item.po_number || "",
       }));
 
       // ✅ Sort by numeric part of enquiry_no (e.g., "En-1" -> 1, "En-10" -> 10)
@@ -4964,6 +4997,96 @@ const handleSaveClick = async (index) => {
                           <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
                             Quantity 10
                           </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Enquiry Status
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Customer Feedback
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Send Quotation No.
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quotation Shared By
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quotation Number
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quotation Value Without Tax
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quotation Value With Tax
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quotation Upload
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quotation Remarks
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quotation Validator Name
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quotation Send Status
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Quotation Validation Remark
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Send FAQ Video
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Send Product Video
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Send Offer Video
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Send Product Catalog
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Send Product Image
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Next Call Time
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Order Received Status
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            If No Reason Status
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            If No Reason Remark
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Customer Order Hold Reason Category
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Holding Date
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Hold Remark
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Transport Mode
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Conveyed For Registration Form
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Order No
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Amount With GST
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            Destination
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                            PO Number
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -5134,13 +5257,122 @@ const handleSaveClick = async (index) => {
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                                   {tracker.quantity10}
                                 </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.enquiry_status}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  <div className="max-w-[200px] truncate" title={tracker.customer_feedback}>
+                                    {tracker.customer_feedback}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.send_quotation_no}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.quotation_shared_by}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.quotation_number}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.quotation_value_without_tax}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.quotation_value_with_tax}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.quotation_upload && (
+                                    <a
+                                      href={tracker.quotation_upload}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:underline"
+                                    >
+                                      View File
+                                    </a>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  <div className="max-w-[200px] truncate" title={tracker.quotation_remarks}>
+                                    {tracker.quotation_remarks}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.quotation_validator_name}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.quotation_send_status}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  <div className="max-w-[200px] truncate" title={tracker.quotation_validation_remark}>
+                                    {tracker.quotation_validation_remark}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.send_faq_video ? 'Yes' : 'No'}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.send_product_video ? 'Yes' : 'No'}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.send_offer_video ? 'Yes' : 'No'}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.send_product_catalog ? 'Yes' : 'No'}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.send_product_image ? 'Yes' : 'No'}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.next_call_time}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.is_order_received_status}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.if_no_reason_status}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  <div className="max-w-[200px] truncate" title={tracker.if_no_reason_remark}>
+                                    {tracker.if_no_reason_remark}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.customer_order_hold_reason_category}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.holding_date}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  <div className="max-w-[200px] truncate" title={tracker.hold_remark}>
+                                    {tracker.hold_remark}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.transport_mode}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.conveyed_for_registration_form ? 'Yes' : 'No'}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.order_no}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.amount_with_gst}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.destination}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.po_number}
+                                </td>
                               </tr>
                             )
                           )
                         ) : (
                           <tr>
                             <td
-                              colSpan={39}
+                              colSpan={69}
                               className="px-6 py-4 text-sm text-center text-slate-500"
                             >
                               No direct enquiry pending trackers found

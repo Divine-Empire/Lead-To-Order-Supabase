@@ -957,13 +957,7 @@ const handleSaveClick = async (index) => {
     );
   });
 
-  useEffect(() => {
-    if (activeTab !== "pending") {
-      setCompanyFilter("all");
-      setPersonFilter("all");
-      setPhoneFilter("all");
-    }
-  }, [activeTab]);
+
 
   // const filteredHistoryFollowUps = historyFollowUps.filter((followUp) => {
   //   const searchLower = searchTerm.toLowerCase()
@@ -1027,7 +1021,10 @@ const handleSaveClick = async (index) => {
       }
     })();
 
-    return matchesFilterType;
+    const matchesCompanyFilter =
+      companyFilter === "all" || followUp.companyName === companyFilter;
+
+    return matchesFilterType && matchesCompanyFilter;
   });
 
   const handleColumnToggle = (columnKey) => {
@@ -1387,28 +1384,36 @@ const handleSaveClick = async (index) => {
           {/* Filters Section */}
           <div className="flex flex-col space-y-3 lg:space-y-0 lg:flex-row lg:space-x-3 lg:items-center">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-row gap-2 lg:gap-3">
-              {/* Company Name Filter - Only show for pending tab */}
-              {activeTab === "pending" && (
-                <div className="min-w-0">
-                  <input
-                    list="company-options"
-                    value={companyFilter === "all" ? "" : companyFilter}
-                    onChange={(e) => setCompanyFilter(e.target.value || "all")}
-                    placeholder="Select or type company"
-                    className="w-full px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
-                  />
-                  <datalist id="company-options">
-                    <option value="all">All Companies</option>
-                    {Array.from(
+              {/* Company Name Filter */}
+              <div className="min-w-0">
+                <input
+                  list="company-options"
+                  value={companyFilter === "all" ? "" : companyFilter}
+                  onChange={(e) => setCompanyFilter(e.target.value || "all")}
+                  placeholder="Select or type company"
+                  className="w-full px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                />
+                <datalist id="company-options">
+                  <option value="all">All Companies</option>
+                  {activeTab === "pending" ? (
+                    Array.from(
                       new Set(pendingFollowUps.map((item) => item.companyName))
                     )
                       .filter(Boolean)
                       .map((company) => (
                         <option key={company} value={company} />
-                      ))}
-                  </datalist>
-                </div>
-              )}
+                      ))
+                  ) : (
+                    Array.from(
+                      new Set(historyFollowUps.map((item) => item.companyName))
+                    )
+                      .filter(Boolean)
+                      .map((company) => (
+                        <option key={company} value={company} />
+                      ))
+                  )}
+                </datalist>
+              </div>
 
               {/* Person Name Filter - Only show for pending tab */}
               {activeTab === "pending" && (
@@ -1631,11 +1636,11 @@ const handleSaveClick = async (index) => {
               <h2 className="text-lg sm:text-xl font-bold text-gray-900">
                 All Call Tracker
               </h2>
-              {activeTab === "history" && (startDate || endDate || dateFilter !== "all") && (
+              {activeTab === "history" && (startDate || endDate || dateFilter !== "all" || companyFilter !== "all") && (
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-600">Showing:</span>
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-amber-100 text-amber-800">
-                    {filteredCount} {filteredCount === 1 ? 'record' : 'records'}
+                    {filteredHistoryFollowUps.length} {filteredHistoryFollowUps.length === 1 ? 'record' : 'records'}
                   </span>
                 </div>
               )}
