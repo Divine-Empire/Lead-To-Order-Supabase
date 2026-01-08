@@ -140,6 +140,121 @@ function CallTracker() {
   });
   const [showColumnDropdown, setShowColumnDropdown] = useState(false);
 
+  // Pending tab column visibility state
+  const [visiblePendingColumns, setVisiblePendingColumns] = useState({
+    actions: true,
+    timestamp: true,
+    leadNo: true,
+    leadReceiverName: false,
+    leadSource: true,
+    phoneNo: true,
+    salespersonName: true,
+    companyName: true,
+    currentStage: true,
+    callingDate: true,
+    assignedTo: true,
+    itemQty: false,
+    totalQty: true,
+    customerSay: false,
+    enquiryReceivedStatus: false,
+    enquiryReceivedDate: false,
+    enquiryForState: false,
+    projectName: false,
+    enquiryType: false,
+    enquiryApproach: false,
+    projectApproximateValue: false,
+    itemName1: false,
+    quantity1: false,
+    itemName2: false,
+    quantity2: false,
+    itemName3: false,
+    quantity3: false,
+    itemName4: false,
+    quantity4: false,
+    itemName5: false,
+    quantity5: false,
+    nextAction: false,
+    nextCallDate: false,
+    nextCallTime: false,
+  });
+  const [showPendingColumnDropdown, setShowPendingColumnDropdown] = useState(false);
+
+  // Direct Enquiry tab column visibility state
+  const [visibleDirectEnquiryColumns, setVisibleDirectEnquiryColumns] = useState({
+    actions: true,
+    timestamp: true,
+    enquiryNo: true,
+    leadSource: true,
+    companyName: true,
+    phoneNo: true,
+    salespersonName: true,
+    currentStage: true,
+    callingDate: true,
+    assignedTo: true,
+    itemQty: false,
+    totalQty: true,
+    shippingAddress: false,
+    leadReceiverName: true,
+    enquiryAssignToProject: false,
+    gstNumber: false,
+    enquiryDate: false,
+    enquiryForState: false,
+    projectName: false,
+    salesType: false,
+    enquiryApproach: false,
+    itemName1: false,
+    quantity1: false,
+    itemName2: false,
+    quantity2: false,
+    itemName3: false,
+    quantity3: false,
+    itemName4: false,
+    quantity4: false,
+    itemName5: false,
+    quantity5: false,
+    itemName6: false,
+    quantity6: false,
+    itemName7: false,
+    quantity7: false,
+    itemName8: false,
+    quantity8: false,
+    itemName9: false,
+    quantity9: false,
+    itemName10: false,
+    quantity10: false,
+    enquiryStatus: false,
+    customerFeedback: false,
+    sendQuotationNo: false,
+    quotationSharedBy: false,
+    quotationNumber: false,
+    quotationValueWithoutTax: false,
+    quotationValueWithTax: false,
+    quotationUpload: false,
+    quotationRemarks: false,
+    quotationValidatorName: false,
+    quotationSendStatus: false,
+    quotationValidationRemark: false,
+    sendFaqVideo: false,
+    sendProductVideo: false,
+    sendOfferVideo: false,
+    sendProductCatalog: false,
+    sendProductImage: false,
+    nextCallTime: false,
+    isOrderReceivedStatus: false,
+    ifNoReasonStatus: false,
+    ifNoReasonRemark: false,
+    customerOrderHoldReasonCategory: false,
+    holdingDate: false,
+    holdRemark: false,
+    transportMode: false,
+    conveyedForRegistrationForm: false,
+    orderNo: false,
+    amountWithGst: false,
+    destination: false,
+    poNumber: false,
+  });
+  const [showDirectEnquiryColumnDropdown, setShowDirectEnquiryColumnDropdown] = useState(false);
+
   // Refs for observer
   const observer = useRef();
   const lastElementRef = useCallback(
@@ -741,6 +856,150 @@ const handleSaveClick = async (index) => {
     { key: "holdRemark", label: "Hold Remark" },
   ];
 
+  // Pending tab column options
+  const pendingColumnOptions = [
+    { key: "actions", label: "Actions" },
+    { key: "timestamp", label: "Timestamp" },
+    { key: "leadNo", label: "Lead No." },
+    { key: "leadReceiverName", label: "Lead Receiver Name" },
+    { key: "leadSource", label: "Lead Source" },
+    { key: "phoneNo", label: "Phone No." },
+    { key: "salespersonName", label: "Salesperson Name" },
+    { key: "companyName", label: "Company Name" },
+    { key: "currentStage", label: "Current Stage" },
+    { key: "callingDate", label: "Calling Date" },
+    { key: "assignedTo", label: "Assigned To" },
+    { key: "itemQty", label: "Item/Qty" },
+    { key: "totalQty", label: "Total Qty" },
+    { key: "customerSay", label: "What Did Customer Say" },
+    { key: "enquiryReceivedStatus", label: "Enquiry Received Status" },
+    { key: "enquiryReceivedDate", label: "Enquiry Received Date" },
+    { key: "enquiryForState", label: "Enquiry for State" },
+    { key: "projectName", label: "Project Name" },
+    { key: "enquiryType", label: "Enquiry Type" },
+    { key: "enquiryApproach", label: "Enquiry Approach" },
+    { key: "projectApproximateValue", label: "Project Approximate Value" },
+    { key: "itemName1", label: "Item Name 1" },
+    { key: "quantity1", label: "Quantity 1" },
+    { key: "itemName2", label: "Item Name 2" },
+    { key: "quantity2", label: "Quantity 2" },
+    { key: "itemName3", label: "Item Name 3" },
+    { key: "quantity3", label: "Quantity 3" },
+    { key: "itemName4", label: "Item Name 4" },
+    { key: "quantity4", label: "Quantity 4" },
+    { key: "itemName5", label: "Item Name 5" },
+    { key: "quantity5", label: "Quantity 5" },
+    { key: "nextAction", label: "Next Action" },
+    { key: "nextCallDate", label: "Next Call Date" },
+    { key: "nextCallTime", label: "Next Call Time" },
+  ];
+
+  // Direct Enquiry tab column options
+  const directEnquiryColumnOptions = [
+    { key: "actions", label: "Actions" },
+    { key: "timestamp", label: "Timestamp" },
+    { key: "enquiryNo", label: "Lead No." },
+    { key: "leadSource", label: "Lead Source" },
+    { key: "companyName", label: "Company Name" },
+    { key: "phoneNo", label: "Phone Number" },
+    { key: "salespersonName", label: "Salesperson Name" },
+    { key: "currentStage", label: "Current Stage" },
+    { key: "callingDate", label: "Calling Days" },
+    { key: "itemQty", label: "Item/Qty" },
+    { key: "totalQty", label: "Total Qty" },
+    { key: "shippingAddress", label: "Shipping Address" },
+    { key: "leadReceiverName", label: "Enquiry Receiver Name" },
+    { key: "enquiryAssignToProject", label: "Enquiry Assign to Project" },
+    { key: "gstNumber", label: "GST Number" },
+    { key: "enquiryDate", label: "Enquiry Date" },
+    { key: "enquiryForState", label: "Enquiry for State" },
+    { key: "projectName", label: "Project Name" },
+    { key: "salesType", label: "Sales Type" },
+    { key: "enquiryApproach", label: "Enquiry Approach" },
+    { key: "itemName1", label: "Item Name 1" },
+    { key: "quantity1", label: "Quantity 1" },
+    { key: "itemName2", label: "Item Name 2" },
+    { key: "quantity2", label: "Quantity 2" },
+    { key: "itemName3", label: "Item Name 3" },
+    { key: "quantity3", label: "Quantity 3" },
+    { key: "itemName4", label: "Item Name 4" },
+    { key: "quantity4", label: "Quantity 4" },
+    { key: "itemName5", label: "Item Name 5" },
+    { key: "quantity5", label: "Quantity 5" },
+    { key: "itemName6", label: "Item Name 6" },
+    { key: "quantity6", label: "Quantity 6" },
+    { key: "itemName7", label: "Item Name 7" },
+    { key: "quantity7", label: "Quantity 7" },
+    { key: "itemName8", label: "Item Name 8" },
+    { key: "quantity8", label: "Quantity 8" },
+    { key: "itemName9", label: "Item Name 9" },
+    { key: "quantity9", label: "Quantity 9" },
+    { key: "itemName10", label: "Item Name 10" },
+    { key: "quantity10", label: "Quantity 10" },
+    { key: "enquiryStatus", label: "Enquiry Status" },
+    { key: "customerFeedback", label: "Customer Feedback" },
+    { key: "sendQuotationNo", label: "Send Quotation No." },
+    { key: "quotationSharedBy", label: "Quotation Shared By" },
+    { key: "quotationNumber", label: "Quotation Number" },
+    { key: "quotationValueWithoutTax", label: "Quotation Value Without Tax" },
+    { key: "quotationValueWithTax", label: "Quotation Value With Tax" },
+    { key: "quotationUpload", label: "Quotation Upload" },
+    { key: "quotationRemarks", label: "Quotation Remarks" },
+    { key: "quotationValidatorName", label: "Quotation Validator Name" },
+    { key: "quotationSendStatus", label: "Quotation Send Status" },
+    { key: "quotationValidationRemark", label: "Quotation Validation Remark" },
+    { key: "sendFaqVideo", label: "Send FAQ Video" },
+    { key: "sendProductVideo", label: "Send Product Video" },
+    { key: "sendOfferVideo", label: "Send Offer Video" },
+    { key: "sendProductCatalog", label: "Send Product Catalog" },
+    { key: "sendProductImage", label: "Send Product Image" },
+    { key: "nextCallTime", label: "Next Call Time" },
+    { key: "isOrderReceivedStatus", label: "Order Received Status" },
+    { key: "ifNoReasonStatus", label: "If No Reason Status" },
+    { key: "ifNoReasonRemark", label: "If No Reason Remark" },
+    { key: "customerOrderHoldReasonCategory", label: "Customer Order Hold Reason Category" },
+    { key: "holdingDate", label: "Holding Date" },
+    { key: "holdRemark", label: "Hold Remark" },
+    { key: "transportMode", label: "Transport Mode" },
+    { key: "conveyedForRegistrationForm", label: "Conveyed For Registration Form" },
+    { key: "orderNo", label: "Order No" },
+    { key: "amountWithGst", label: "Amount With GST" },
+    { key: "destination", label: "Destination" },
+    { key: "poNumber", label: "PO Number" },
+  ];
+
+  // Toggle functions for pending tab columns
+  const handlePendingColumnToggle = (columnKey) => {
+    setVisiblePendingColumns((prev) => ({
+      ...prev,
+      [columnKey]: !prev[columnKey],
+    }));
+  };
+
+  const handlePendingSelectAll = () => {
+    const allSelected = Object.values(visiblePendingColumns).every(Boolean);
+    const newState = Object.fromEntries(
+      Object.keys(visiblePendingColumns).map((key) => [key, !allSelected])
+    );
+    setVisiblePendingColumns(newState);
+  };
+
+  // Toggle functions for direct enquiry tab columns
+  const handleDirectEnquiryColumnToggle = (columnKey) => {
+    setVisibleDirectEnquiryColumns((prev) => ({
+      ...prev,
+      [columnKey]: !prev[columnKey],
+    }));
+  };
+
+  const handleDirectEnquirySelectAll = () => {
+    const allSelected = Object.values(visibleDirectEnquiryColumns).every(Boolean);
+    const newState = Object.fromEntries(
+      Object.keys(visibleDirectEnquiryColumns).map((key) => [key, !allSelected])
+    );
+    setVisibleDirectEnquiryColumns(newState);
+  };
+
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -749,7 +1008,9 @@ const handleSaveClick = async (index) => {
         setShowEnquiryNoDropdown(false);
         setShowCurrentStageDropdown(false);
         setShowColumnDropdown(false);
-        setShowSerialDropdown(false); // NEW: Close serial dropdown
+        setShowSerialDropdown(false);
+        setShowPendingColumnDropdown(false);
+        setShowDirectEnquiryColumnDropdown(false);
       }
     };
 
@@ -2948,7 +3209,153 @@ const handleSaveClick = async (index) => {
             )}
           </div>
 
-          {/* Column Selection Dropdown - Only show for history tab */}
+          {/* Column Selection Dropdown - Show for pending, direct enquiry, and history tabs */}
+          {activeTab === "pending" && (
+            <div className="relative dropdown-container">
+              <button
+                onClick={() => setShowPendingColumnDropdown(!showPendingColumnDropdown)}
+                className="flex items-center px-3 py-2 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <span>Select Columns</span>
+                <svg
+                  className={`w-4 h-4 ml-2 transition-transform ${
+                    showPendingColumnDropdown ? "rotate-180" : ""
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+
+              {showPendingColumnDropdown && (
+                <div className="overflow-y-auto absolute left-0 top-full z-50 mt-1 w-64 max-h-80 bg-white rounded-md border border-gray-300 shadow-lg">
+                  <div className="p-2">
+                    {/* Select All Option */}
+                    <div className="flex items-center p-2 rounded hover:bg-gray-50">
+                      <input
+                        type="checkbox"
+                        id="select-all-pending"
+                        checked={Object.values(visiblePendingColumns).every(Boolean)}
+                        onChange={handlePendingSelectAll}
+                        className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                      />
+                      <label
+                        htmlFor="select-all-pending"
+                        className="ml-2 text-sm font-medium text-gray-900 cursor-pointer"
+                      >
+                        All Columns
+                      </label>
+                    </div>
+
+                    <hr className="my-2" />
+
+                    {/* Individual Column Options */}
+                    {pendingColumnOptions.map((option) => (
+                      <div
+                        key={option.key}
+                        className="flex items-center p-2 rounded hover:bg-gray-50"
+                      >
+                        <input
+                          type="checkbox"
+                          id={`pending-column-${option.key}`}
+                          checked={visiblePendingColumns[option.key]}
+                          onChange={() => handlePendingColumnToggle(option.key)}
+                          className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                        />
+                        <label
+                          htmlFor={`pending-column-${option.key}`}
+                          className="flex-1 ml-2 text-sm text-gray-700 cursor-pointer"
+                        >
+                          {option.label}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "directEnquiry" && (
+            <div className="relative dropdown-container">
+              <button
+                onClick={() => setShowDirectEnquiryColumnDropdown(!showDirectEnquiryColumnDropdown)}
+                className="flex items-center px-3 py-2 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <span>Select Columns</span>
+                <svg
+                  className={`w-4 h-4 ml-2 transition-transform ${
+                    showDirectEnquiryColumnDropdown ? "rotate-180" : ""
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+
+              {showDirectEnquiryColumnDropdown && (
+                <div className="overflow-y-auto absolute left-0 top-full z-50 mt-1 w-64 max-h-80 bg-white rounded-md border border-gray-300 shadow-lg">
+                  <div className="p-2">
+                    {/* Select All Option */}
+                    <div className="flex items-center p-2 rounded hover:bg-gray-50">
+                      <input
+                        type="checkbox"
+                        id="select-all-direct-enquiry"
+                        checked={Object.values(visibleDirectEnquiryColumns).every(Boolean)}
+                        onChange={handleDirectEnquirySelectAll}
+                        className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                      />
+                      <label
+                        htmlFor="select-all-direct-enquiry"
+                        className="ml-2 text-sm font-medium text-gray-900 cursor-pointer"
+                      >
+                        All Columns
+                      </label>
+                    </div>
+
+                    <hr className="my-2" />
+
+                    {/* Individual Column Options */}
+                    {directEnquiryColumnOptions.map((option) => (
+                      <div
+                        key={option.key}
+                        className="flex items-center p-2 rounded hover:bg-gray-50"
+                      >
+                        <input
+                          type="checkbox"
+                          id={`direct-enquiry-column-${option.key}`}
+                          checked={visibleDirectEnquiryColumns[option.key]}
+                          onChange={() => handleDirectEnquiryColumnToggle(option.key)}
+                          className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                        />
+                        <label
+                          htmlFor={`direct-enquiry-column-${option.key}`}
+                          className="flex-1 ml-2 text-sm text-gray-700 cursor-pointer"
+                        >
+                          {option.label}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === "history" && (
             <div className="relative dropdown-container">
               <button
@@ -3119,58 +3526,78 @@ const handleSaveClick = async (index) => {
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-slate-50">
                         <tr>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                          >
-                            Actions
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                          >
-                            Timestamp
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                          >
-                            Lead No.
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                          >
-                            Lead Receiver Name
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                          >
-                            Lead Source
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                          >
-                            Phone No.
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                          >
-                            Salesperson Name
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
-                            Company Name
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
-                            Current Stage
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
-                            Calling Date
-                          </th>
-                          {isAdmin() && (
+                          {visiblePendingColumns.actions && (
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                            >
+                              Actions
+                            </th>
+                          )}
+                          {visiblePendingColumns.timestamp && (
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                            >
+                              Timestamp
+                            </th>
+                          )}
+                          {visiblePendingColumns.leadNo && (
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                            >
+                              Lead No.
+                            </th>
+                          )}
+                          {visiblePendingColumns.leadReceiverName && (
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                            >
+                              Lead Receiver Name
+                            </th>
+                          )}
+                          {visiblePendingColumns.leadSource && (
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                            >
+                              Lead Source
+                            </th>
+                          )}
+                          {visiblePendingColumns.phoneNo && (
+                            <th
+                              scope="col"
+                              className="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                            >
+                              Phone No.
+                            </th>
+                          )}
+                          {visiblePendingColumns.salespersonName && (
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                            >
+                              Salesperson Name
+                            </th>
+                          )}
+                          {visiblePendingColumns.companyName && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+                              Company Name
+                            </th>
+                          )}
+                          {visiblePendingColumns.currentStage && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+                              Current Stage
+                            </th>
+                          )}
+                          {visiblePendingColumns.callingDate && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+                              Calling Date
+                            </th>
+                          )}
+                          {visiblePendingColumns.assignedTo && isAdmin() && (
                             <th
                               scope="col"
                               className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
@@ -3178,81 +3605,127 @@ const handleSaveClick = async (index) => {
                               Assigned To
                             </th>
                           )}
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                          >
-                            Item/Qty
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                          >
-                            Total Qty
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            What Did Customer Say
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Enquiry Received Status
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Enquiry Received Date
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Enquiry for State
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Project Name
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Enquiry Type
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Enquiry Approach
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Project Approximate Value
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Item Name 1
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quantity 1
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Item Name 2
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quantity 2
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Item Name 3
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quantity 3
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Item Name 4
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quantity 4
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Item Name 5
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quantity 5
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Next Action
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Next Call Date
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Next Call Time
-                          </th>
+                          {visiblePendingColumns.itemQty && (
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                            >
+                              Item/Qty
+                            </th>
+                          )}
+                          {visiblePendingColumns.totalQty && (
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                            >
+                              Total Qty
+                            </th>
+                          )}
+                          {visiblePendingColumns.customerSay && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              What Did Customer Say
+                            </th>
+                          )}
+                          {visiblePendingColumns.enquiryReceivedStatus && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Enquiry Received Status
+                            </th>
+                          )}
+                          {visiblePendingColumns.enquiryReceivedDate && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Enquiry Received Date
+                            </th>
+                          )}
+                          {visiblePendingColumns.enquiryForState && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Enquiry for State
+                            </th>
+                          )}
+                          {visiblePendingColumns.projectName && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Project Name
+                            </th>
+                          )}
+                          {visiblePendingColumns.enquiryType && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Enquiry Type
+                            </th>
+                          )}
+                          {visiblePendingColumns.enquiryApproach && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Enquiry Approach
+                            </th>
+                          )}
+                          {visiblePendingColumns.projectApproximateValue && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Project Approximate Value
+                            </th>
+                          )}
+                          {visiblePendingColumns.itemName1 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Item Name 1
+                            </th>
+                          )}
+                          {visiblePendingColumns.quantity1 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quantity 1
+                            </th>
+                          )}
+                          {visiblePendingColumns.itemName2 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Item Name 2
+                            </th>
+                          )}
+                          {visiblePendingColumns.quantity2 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quantity 2
+                            </th>
+                          )}
+                          {visiblePendingColumns.itemName3 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Item Name 3
+                            </th>
+                          )}
+                          {visiblePendingColumns.quantity3 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quantity 3
+                            </th>
+                          )}
+                          {visiblePendingColumns.itemName4 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Item Name 4
+                            </th>
+                          )}
+                          {visiblePendingColumns.quantity4 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quantity 4
+                            </th>
+                          )}
+                          {visiblePendingColumns.itemName5 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Item Name 5
+                            </th>
+                          )}
+                          {visiblePendingColumns.quantity5 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quantity 5
+                            </th>
+                          )}
+                          {visiblePendingColumns.nextAction && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Next Action
+                            </th>
+                          )}
+                          {visiblePendingColumns.nextCallDate && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Next Call Date
+                            </th>
+                          )}
+                          {visiblePendingColumns.nextCallTime && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Next Call Time
+                            </th>
+                          )}
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -3267,143 +3740,208 @@ const handleSaveClick = async (index) => {
                                   : null
                               }
                             >
-                              <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
-                                <div className="flex space-x-2">
-                                  <Link
-                                    state={{
-                                      activeTab: activeTab,
-                                      sc_name: tracker.sc_name,
-                                    }}
-                                    to={`/call-tracker/new?leadId=${tracker.lead_no}`}
+                              {visiblePendingColumns.actions && (
+                                <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
+                                  <div className="flex space-x-2">
+                                    <Link
+                                      state={{
+                                        activeTab: activeTab,
+                                        sc_name: tracker.sc_name,
+                                      }}
+                                      to={`/call-tracker/new?leadId=${tracker.lead_no}`}
+                                    >
+                                      <button className="px-3 py-1 text-xs text-purple-600 rounded-md border border-purple-200 hover:bg-purple-50">
+                                        Process{" "}
+                                        <ArrowRightIcon className="inline ml-1 w-3 h-3" />
+                                      </button>
+                                    </Link>
+                                  </div>
+                                </td>
+                              )}
+                              {visiblePendingColumns.timestamp && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Timestamp}
+                                </td>
+                              )}
+                              {visiblePendingColumns.leadNo && (
+                                <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
+                                  {tracker.lead_no}
+                                </td>
+                              )}
+                              {visiblePendingColumns.leadReceiverName && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Lead_Receiver_Name}
+                                </td>
+                              )}
+                              {visiblePendingColumns.leadSource && (
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <span
+                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                      tracker.priority === "High"
+                                        ? "bg-red-100 text-red-800"
+                                        : tracker.priority === "Medium"
+                                        ? "bg-amber-100 text-amber-800"
+                                        : "bg-slate-100 text-slate-800"
+                                    }`}
                                   >
-                                    <button className="px-3 py-1 text-xs text-purple-600 rounded-md border border-purple-200 hover:bg-purple-50">
-                                      Process{" "}
-                                      <ArrowRightIcon className="inline ml-1 w-3 h-3" />
-                                    </button>
-                                  </Link>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Timestamp}
-                              </td>
-                              <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
-                                {tracker.lead_no}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Lead_Receiver_Name}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span
-                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                    tracker.priority === "High"
-                                      ? "bg-red-100 text-red-800"
-                                      : tracker.priority === "Medium"
-                                      ? "bg-amber-100 text-amber-800"
-                                      : "bg-slate-100 text-slate-800"
-                                  }`}
-                                >
-                                  {tracker.Lead_Source}
-                                </span>
-                              </td>
-                              <td className="px-4 py-4 text-sm text-gray-500">
-                                {tracker.Phone_Number}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.salesperson_Name}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                <div className="flex items-center">
-                                  <BuildingIcon className="mr-2 w-4 h-4 text-slate-400" />
-                                  {tracker.Company_Name}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Current_Stage}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {formatDateToDDMMYYYY(tracker.nextCallDate1)}
-                              </td>
-                              {isAdmin() && (
+                                    {tracker.Lead_Source}
+                                  </span>
+                                </td>
+                              )}
+                              {visiblePendingColumns.phoneNo && (
+                                <td className="px-4 py-4 text-sm text-gray-500">
+                                  {tracker.Phone_Number}
+                                </td>
+                              )}
+                              {visiblePendingColumns.salespersonName && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.salesperson_Name}
+                                </td>
+                              )}
+                              {visiblePendingColumns.companyName && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  <div className="flex items-center">
+                                    <BuildingIcon className="mr-2 w-4 h-4 text-slate-400" />
+                                    {tracker.Company_Name}
+                                  </div>
+                                </td>
+                              )}
+                              {visiblePendingColumns.currentStage && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Current_Stage}
+                                </td>
+                              )}
+                              {visiblePendingColumns.callingDate && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {formatDateToDDMMYYYY(tracker.nextCallDate1)}
+                                </td>
+                              )}
+                              {visiblePendingColumns.assignedTo && isAdmin() && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                                   {tracker.sc_name}
                                 </td>
                               )}
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                <div
-                                  className="min-w-[100px] break-words whitespace-normal"
-                                  title={tracker.itemQty}
-                                >
-                                  {tracker.itemQty}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.totalQty}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                <div className="max-w-[200px] truncate" title={tracker.What_Did_The_Customer_Say}>
-                                  {tracker.What_Did_The_Customer_Say}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Enquiry_Received_Status}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Enquiry_Received_Date}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Enquiry_for_State}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Project_Name}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Enquiry_Type}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Enquiry_Approach}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Project_Approximate_Value}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Item_Name1}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Quantity1}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Item_Name2}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Quantity2}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Item_Name3}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Quantity3}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Item_Name4}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Quantity4}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Item_Name5}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Quantity5}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Next_Action}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Next_Call_Date_Field}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                {tracker.Next_Call_Time}
-                              </td>
+                              {visiblePendingColumns.itemQty && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  <div
+                                    className="min-w-[100px] break-words whitespace-normal"
+                                    title={tracker.itemQty}
+                                  >
+                                    {tracker.itemQty}
+                                  </div>
+                                </td>
+                              )}
+                              {visiblePendingColumns.totalQty && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.totalQty}
+                                </td>
+                              )}
+                              {visiblePendingColumns.customerSay && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  <div className="max-w-[200px] truncate" title={tracker.What_Did_The_Customer_Say}>
+                                    {tracker.What_Did_The_Customer_Say}
+                                  </div>
+                                </td>
+                              )}
+                              {visiblePendingColumns.enquiryReceivedStatus && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Enquiry_Received_Status}
+                                </td>
+                              )}
+                              {visiblePendingColumns.enquiryReceivedDate && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Enquiry_Received_Date}
+                                </td>
+                              )}
+                              {visiblePendingColumns.enquiryForState && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Enquiry_for_State}
+                                </td>
+                              )}
+                              {visiblePendingColumns.projectName && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Project_Name}
+                                </td>
+                              )}
+                              {visiblePendingColumns.enquiryType && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Enquiry_Type}
+                                </td>
+                              )}
+                              {visiblePendingColumns.enquiryApproach && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Enquiry_Approach}
+                                </td>
+                              )}
+                              {visiblePendingColumns.projectApproximateValue && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Project_Approximate_Value}
+                                </td>
+                              )}
+                              {visiblePendingColumns.itemName1 && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Item_Name1}
+                                </td>
+                              )}
+                              {visiblePendingColumns.quantity1 && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Quantity1}
+                                </td>
+                              )}
+                              {visiblePendingColumns.itemName2 && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Item_Name2}
+                                </td>
+                              )}
+                              {visiblePendingColumns.quantity2 && (                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Quantity2}
+                                </td>
+                              )}
+                              {visiblePendingColumns.itemName3 && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Item_Name3}
+                                </td>
+                              )}
+                              {visiblePendingColumns.quantity3 && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Quantity3}
+                                </td>
+                              )}
+                              {visiblePendingColumns.itemName4 && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Item_Name4}
+                                </td>
+                              )}
+                              {visiblePendingColumns.quantity4 && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Quantity4}
+                                </td>
+                              )}
+                              {visiblePendingColumns.itemName5 && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Item_Name5}
+                                </td>
+                              )}
+                              {visiblePendingColumns.quantity5 && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Quantity5}
+                                </td>
+                              )}
+                              {visiblePendingColumns.nextAction && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Next_Action}
+                                </td>
+                              )}
+                              {visiblePendingColumns.nextCallDate && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Next_Call_Date_Field}
+                                </td>
+                              )}
+                              {visiblePendingColumns.nextCallTime && (
+                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                  {tracker.Next_Call_Time}
+                                </td>
+                              )}
                             </tr>
                           ))
                         ) : (
@@ -4856,249 +5394,389 @@ const handleSaveClick = async (index) => {
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-slate-50">
                         <tr>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                          >
-                            Actions
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                          >
-                            Timestamp
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                          >
-                            Lead No.
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                          >
-                            Lead Source
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                          >
-                            Company Name
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                          >
-                            Phone Number
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                          >
-                            Salesperson Name
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                          >
-                            Current Stage
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                          >
-                            Calling Days
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                          >
-                            Item/Qty
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                          >
-                            Total Qty
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Shipping Address
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Enquiry Receiver Name
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Enquiry Assign to Project
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            GST Number
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Enquiry Date
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Enquiry for State
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Project Name
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Sales Type
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Enquiry Approach
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Item Name 1
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quantity 1
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Item Name 2
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quantity 2
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Item Name 3
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quantity 3
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Item Name 4
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quantity 4
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Item Name 5
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quantity 5
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Item Name 6
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quantity 6
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Item Name 7
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quantity 7
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Item Name 8
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quantity 8
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Item Name 9
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quantity 9
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Item Name 10
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quantity 10
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Enquiry Status
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Customer Feedback
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Send Quotation No.
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quotation Shared By
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quotation Number
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quotation Value Without Tax
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quotation Value With Tax
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quotation Upload
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quotation Remarks
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quotation Validator Name
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quotation Send Status
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Quotation Validation Remark
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Send FAQ Video
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Send Product Video
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Send Offer Video
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Send Product Catalog
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Send Product Image
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Next Call Time
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Order Received Status
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            If No Reason Status
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            If No Reason Remark
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Customer Order Hold Reason Category
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Holding Date
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Hold Remark
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Transport Mode
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Conveyed For Registration Form
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Order No
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Amount With GST
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            Destination
-                          </th>
-                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
-                            PO Number
-                          </th>
+                          {visibleDirectEnquiryColumns.actions && (
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                            >
+                              Actions
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.timestamp && (
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                            >
+                              Timestamp
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.enquiryNo && (
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                            >
+                              Lead No.
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.leadSource && (
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                            >
+                              Lead Source
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.companyName && (
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                            >
+                              Company Name
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.phoneNo && (
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                            >
+                              Phone Number
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.salespersonName && (
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                            >
+                              Salesperson Name
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.currentStage && (
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                            >
+                              Current Stage
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.callingDate && (
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                            >
+                              Calling Days
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.itemQty && (
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                            >
+                              Item/Qty
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.totalQty && (
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                            >
+                              Total Qty
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.shippingAddress && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Shipping Address
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.leadReceiverName && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Enquiry Receiver Name
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.enquiryAssignToProject && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Enquiry Assign to Project
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.gstNumber && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              GST Number
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.enquiryDate && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Enquiry Date
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.enquiryForState && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Enquiry for State
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.projectName && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Project Name
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.salesType && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Sales Type
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.enquiryApproach && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Enquiry Approach
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.itemName1 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Item Name 1
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.quantity1 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quantity 1
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.itemName2 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Item Name 2
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.quantity2 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quantity 2
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.itemName3 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Item Name 3
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.quantity3 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quantity 3
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.itemName4 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Item Name 4
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.quantity4 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quantity 4
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.itemName5 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Item Name 5
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.quantity5 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quantity 5
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.itemName6 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Item Name 6
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.quantity6 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quantity 6
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.itemName7 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Item Name 7
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.quantity7 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quantity 7
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.itemName8 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Item Name 8
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.quantity8 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quantity 8
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.itemName9 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Item Name 9
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.quantity9 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quantity 9
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.itemName10 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Item Name 10
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.quantity10 && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quantity 10
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.enquiryStatus && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Enquiry Status
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.customerFeedback && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Customer Feedback
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.sendQuotationNo && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Send Quotation No.
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.quotationSharedBy && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quotation Shared By
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.quotationNumber && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quotation Number
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.quotationValueWithoutTax && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quotation Value Without Tax
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.quotationValueWithTax && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quotation Value With Tax
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.quotationUpload && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quotation Upload
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.quotationRemarks && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quotation Remarks
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.quotationValidatorName && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quotation Validator Name
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.quotationSendStatus && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quotation Send Status
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.quotationValidationRemark && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Quotation Validation Remark
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.sendFaqVideo && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Send FAQ Video
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.sendProductVideo && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Send Product Video
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.sendOfferVideo && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Send Offer Video
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.sendProductCatalog && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Send Product Catalog
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.sendProductImage && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Send Product Image
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.nextCallTime && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Next Call Time
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.isOrderReceivedStatus && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Order Received Status
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.ifNoReasonStatus && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              If No Reason Status
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.ifNoReasonRemark && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              If No Reason Remark
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.customerOrderHoldReasonCategory && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Customer Order Hold Reason Category
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.holdingDate && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Holding Date
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.holdRemark && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Hold Remark
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.transportMode && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Transport Mode
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.conveyedForRegistrationForm && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Conveyed For Registration Form
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.orderNo && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Order No
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.amountWithGst && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Amount With GST
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.destination && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              Destination
+                            </th>
+                          )}
+                          {visibleDirectEnquiryColumns.poNumber && (
+                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap">
+                              PO Number
+                            </th>
+                          )}
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -5116,274 +5794,414 @@ const handleSaveClick = async (index) => {
                                     : null
                                 }
                               >
-                                <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
-                                  <div className="flex space-x-2">
-                                    <Link
-                                      state={{
-                                        activeTab: activeTab,
-                                        sc_name: tracker.sc_name,
-                                      }}
-                                      to={`/call-tracker/new?leadId=${tracker.enquiry_no}`}
-                                    >
-                                      <button className="px-3 py-1 text-xs text-purple-600 rounded-md border border-purple-200 hover:bg-purple-50">
-                                        Process{" "}
-                                        <ArrowRightIcon className="inline ml-1 w-3 h-3" />
+                                {visibleDirectEnquiryColumns.actions && (
+                                  <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
+                                    <div className="flex space-x-2">
+                                      <Link
+                                        state={{
+                                          activeTab: activeTab,
+                                          sc_name: tracker.sc_name,
+                                        }}
+                                        to={`/call-tracker/new?leadId=${tracker.enquiry_no}`}
+                                      >
+                                        <button className="px-3 py-1 text-xs text-purple-600 rounded-md border border-purple-200 hover:bg-purple-50">
+                                          Process{" "}
+                                          <ArrowRightIcon className="inline ml-1 w-3 h-3" />
+                                        </button>
+                                      </Link>
+                                      <button
+                                        onClick={() => {
+                                          setSelectedTracker(tracker);
+                                          setShowPopup(true);
+                                        }}
+                                        className="px-3 py-1 text-xs rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50"
+                                      >
+                                        View
                                       </button>
-                                    </Link>
-                                    <button
-                                      onClick={() => {
-                                        setSelectedTracker(tracker);
-                                        setShowPopup(true);
-                                      }}
-                                      className="px-3 py-1 text-xs rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50"
+                                    </div>
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.timestamp && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.timestamp}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.enquiryNo && (
+                                  <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
+                                    {tracker.enquiry_no}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.leadSource && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.lead_source}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.companyName && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.company_name}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.phoneNo && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.phone_number}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.salespersonName && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.salesperson_name}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.currentStage && (
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <span
+                                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                        tracker.priority === "High"
+                                          ? "bg-red-100 text-red-800"
+                                          : tracker.priority === "Medium"
+                                          ? "bg-amber-100 text-amber-800"
+                                          : "bg-slate-100 text-slate-800"
+                                      }`}
                                     >
-                                      View
-                                    </button>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.timestamp}
-                                </td>
-                                <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
-                                  {tracker.enquiry_no}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.lead_source}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.company_name}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.phone_number}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.salesperson_name}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <span
-                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                      tracker.priority === "High"
-                                        ? "bg-red-100 text-red-800"
-                                        : tracker.priority === "Medium"
-                                        ? "bg-amber-100 text-amber-800"
-                                        : "bg-slate-100 text-slate-800"
-                                    }`}
-                                  >
-                                    {tracker.current_stage}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {formatDateToDDMMYYYY(tracker.nextCallDate)}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  <div
-                                    className="min-w-[100px] break-words whitespace-normal"
-                                    title={tracker.item_qty}
-                                  >
-                                    {tracker.item_qty}
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.total_qty}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  <div className="max-w-[200px] truncate" title={tracker.shipping_address}>
-                                    {tracker.shipping_address}
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.enquiry_receiver_name}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.enquiry_assign_to_project}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.gst_number}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.enquiry_date}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.enquiry_for_state}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.project_name}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.sales_type}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.enquiry_approach}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.item_name1}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.quantity1}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.item_name2}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.quantity2}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.item_name3}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.quantity3}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.item_name4}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.quantity4}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.item_name5}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.quantity5}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.item_name6}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.quantity6}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.item_name7}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.quantity7}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.item_name8}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.quantity8}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.item_name9}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.quantity9}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.item_name10}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.quantity10}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.enquiry_status}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  <div className="max-w-[200px] truncate" title={tracker.customer_feedback}>
-                                    {tracker.customer_feedback}
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.send_quotation_no}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.quotation_shared_by}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.quotation_number}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.quotation_value_without_tax}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.quotation_value_with_tax}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.quotation_upload && (
-                                    <a
-                                      href={tracker.quotation_upload}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-blue-600 hover:underline"
+                                      {tracker.current_stage}
+                                    </span>
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.callingDate && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {formatDateToDDMMYYYY(tracker.nextCallDate)}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.itemQty && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    <div
+                                      className="min-w-[100px] break-words whitespace-normal"
+                                      title={tracker.item_qty}
                                     >
-                                      View File
-                                    </a>
-                                  )}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  <div className="max-w-[200px] truncate" title={tracker.quotation_remarks}>
-                                    {tracker.quotation_remarks}
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.quotation_validator_name}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.quotation_send_status}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  <div className="max-w-[200px] truncate" title={tracker.quotation_validation_remark}>
-                                    {tracker.quotation_validation_remark}
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.send_faq_video ? 'Yes' : 'No'}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.send_product_video ? 'Yes' : 'No'}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.send_offer_video ? 'Yes' : 'No'}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.send_product_catalog ? 'Yes' : 'No'}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.send_product_image ? 'Yes' : 'No'}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.next_call_time}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.is_order_received_status}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.if_no_reason_status}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  <div className="max-w-[200px] truncate" title={tracker.if_no_reason_remark}>
-                                    {tracker.if_no_reason_remark}
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.customer_order_hold_reason_category}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.holding_date}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  <div className="max-w-[200px] truncate" title={tracker.hold_remark}>
-                                    {tracker.hold_remark}
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.transport_mode}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.conveyed_for_registration_form ? 'Yes' : 'No'}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.order_no}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.amount_with_gst}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.destination}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.po_number}
-                                </td>
+                                      {tracker.item_qty}
+                                    </div>
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.totalQty && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.total_qty}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.shippingAddress && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    <div className="max-w-[200px] truncate" title={tracker.shipping_address}>
+                                      {tracker.shipping_address}
+                                    </div>
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.leadReceiverName && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.enquiry_receiver_name}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.enquiryAssignToProject && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.enquiry_assign_to_project}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.gstNumber && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.gst_number}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.enquiryDate && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.enquiry_date}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.enquiryForState && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.enquiry_for_state}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.projectName && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.project_name}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.salesType && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.sales_type}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.enquiryApproach && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.enquiry_approach}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.itemName1 && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.item_name1}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.quantity1 && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.quantity1}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.itemName2 && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.item_name2}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.quantity2 && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.quantity2}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.itemName3 && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.item_name3}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.quantity3 && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.quantity3}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.itemName4 && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.item_name4}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.quantity4 && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.quantity4}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.itemName5 && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.item_name5}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.quantity5 && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.quantity5}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.itemName6 && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.item_name6}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.quantity6 && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.quantity6}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.itemName7 && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.item_name7}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.quantity7 && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.quantity7}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.itemName8 && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.item_name8}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.quantity8 && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.quantity8}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.itemName9 && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.item_name9}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.quantity9 && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.quantity9}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.itemName10 && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.item_name10}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.quantity10 && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.quantity10}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.enquiryStatus && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.enquiry_status}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.customerFeedback && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    <div className="max-w-[200px] truncate" title={tracker.customer_feedback}>
+                                      {tracker.customer_feedback}
+                                    </div>
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.sendQuotationNo && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.send_quotation_no}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.quotationSharedBy && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.quotation_shared_by}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.quotationNumber && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.quotation_number}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.quotationValueWithoutTax && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.quotation_value_without_tax}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.quotationValueWithTax && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.quotation_value_with_tax}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.quotationUpload && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.quotation_upload && (
+                                      <a
+                                        href={tracker.quotation_upload}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:underline"
+                                      >
+                                        View File
+                                      </a>
+                                    )}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.quotationRemarks && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    <div className="max-w-[200px] truncate" title={tracker.quotation_remarks}>
+                                      {tracker.quotation_remarks}
+                                    </div>
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.quotationValidatorName && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.quotation_validator_name}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.quotationSendStatus && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.quotation_send_status}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.quotationValidationRemark && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    <div className="max-w-[200px] truncate" title={tracker.quotation_validation_remark}>
+                                      {tracker.quotation_validation_remark}
+                                    </div>
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.sendFaqVideo && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.send_faq_video ? 'Yes' : 'No'}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.sendProductVideo && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.send_product_video ? 'Yes' : 'No'}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.sendOfferVideo && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.send_offer_video ? 'Yes' : 'No'}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.sendProductCatalog && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.send_product_catalog ? 'Yes' : 'No'}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.sendProductImage && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.send_product_image ? 'Yes' : 'No'}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.nextCallTime && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.next_call_time}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.isOrderReceivedStatus && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.is_order_received_status}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.ifNoReasonStatus && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.if_no_reason_status}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.ifNoReasonRemark && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    <div className="max-w-[200px] truncate" title={tracker.if_no_reason_remark}>
+                                      {tracker.if_no_reason_remark}
+                                    </div>
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.customerOrderHoldReasonCategory && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.customer_order_hold_reason_category}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.holdingDate && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.holding_date}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.holdRemark && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    <div className="max-w-[200px] truncate" title={tracker.hold_remark}>
+                                      {tracker.hold_remark}
+                                    </div>
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.transportMode && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.transport_mode}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.conveyedForRegistrationForm && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.conveyed_for_registration_form ? 'Yes' : 'No'}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.orderNo && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.order_no}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.amountWithGst && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.amount_with_gst}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.destination && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.destination}
+                                  </td>
+                                )}
+                                {visibleDirectEnquiryColumns.poNumber && (
+                                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {tracker.po_number}
+                                  </td>
+                                )}
                               </tr>
                             )
                           )
