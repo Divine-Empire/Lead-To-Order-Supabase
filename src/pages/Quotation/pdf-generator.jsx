@@ -637,7 +637,7 @@ const QuotationPDFComponent = ({
                 </tr>
               )}
 
-              {!hiddenColumns.hideSpecialDiscount && (
+              {!hiddenColumns.hideSpecialDiscount && (Number(specialDiscount) > 0) && (
                 <tr>
                   <td
                     colSpan={tableHeaders.length - 1}
@@ -648,7 +648,7 @@ const QuotationPDFComponent = ({
                       fontSize: "10px",
                     }}
                   >
-                    Total Discount
+                    Special Discount
                   </td>
                   <td
                     style={{
@@ -658,22 +658,7 @@ const QuotationPDFComponent = ({
                       fontSize: "10px",
                     }}
                   >
-                    ₹
-                    {(() => {
-                      const discountFromPercentage = quotationData.items
-                        ? quotationData.items.reduce((sum, item) => {
-                            const itemTotal = item.qty * item.rate;
-                            return (
-                              sum + itemTotal * ((item.discount || 0) / 100)
-                            );
-                          }, 0)
-                        : 0;
-                      const totalDiscount =
-                        discountFromPercentage +
-                        totalFlatDiscount +
-                        (Number(specialDiscount) || 0);
-                      return formatCurrency(totalDiscount);
-                    })()}
+                    ₹{formatCurrency(Number(specialDiscount) || 0)}
                   </td>
                 </tr>
               )}

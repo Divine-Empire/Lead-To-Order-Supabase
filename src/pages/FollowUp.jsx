@@ -43,8 +43,14 @@ function FollowUp() {
   const [companyFilter, setCompanyFilter] = useState("all");
   const [personFilter, setPersonFilter] = useState("all");
   const [phoneFilter, setPhoneFilter] = useState("all");
+  const [scNameFilter, setScNameFilter] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [uniqueScNames, setUniqueScNames] = useState({
+    pending: [],
+    history: [],
+  });
+  const [allCompanyNames, setAllCompanyNames] = useState([]); // State for all company names for filter
 
   // Fixed pagination state management
   const [pendingPage, setPendingPage] = useState(1);
@@ -62,6 +68,7 @@ function FollowUp() {
 
   const [visibleColumns, setVisibleColumns] = useState({
     timestamp: true,
+    callingCount: true,
     leadNo: true,
     companyName: true,
     customerSay: true,
@@ -268,6 +275,61 @@ function FollowUp() {
 
 const handleSaveClick = async (index) => {
   try {
+    if (activeTab === "pending") {
+      const pendingUpdateData = {
+        "Next_Call_Date": convertDateToYYYYMMDD(editedData.timestamp),
+        "LD-Lead-No": editedData.leadId,
+        "Company_Name": editedData.companyName,
+        "Salesperson_Name": editedData.personName,
+        "Phone_Number": editedData.phoneNumber,
+        "Lead_Source": editedData.leadSource,
+        "Location": editedData.location,
+        "What_Did_The_Customer say?": editedData.customerSay,
+        "Enquiry_Status": editedData.enquiryStatus,
+        "SC_Name": editedData.assignedTo,
+        "Email_Address": editedData.Email_Address,
+        "State": editedData.State,
+        "Address": editedData.Address,
+        "Person_name_1": editedData.Person_name_1,
+        "Designation_1": editedData.Designation_1,
+        "Phone_Number_1": editedData.Phone_Number_1,
+        "Person_Name_2": editedData.Person_Name_2,
+        "Designation_2": editedData.Designation_2,
+        "Phone_Number_2": editedData.Phone_Number_2,
+        "Person_Name_3": editedData.Person_Name_3,
+        "Designation_3": editedData.Designation_3,
+        "Phone_Number_3": editedData.Phone_Number_3,
+        "NOB": editedData.NOB,
+        "GST_Number": editedData.GST_Number,
+        "Customer_Registration Form": editedData.Customer_Registration_Form,
+        "Credit _Access": editedData.Credit_Access,
+        "Credit_Days": editedData.Credit_Days,
+        "Credit_Limit": editedData.Credit_Limit,
+        "Additional_Notes": editedData.Additional_Notes
+      };
+
+      // Remove undefined/null values
+      Object.keys(pendingUpdateData).forEach((key) => {
+        if (pendingUpdateData[key] === undefined || pendingUpdateData[key] === null) {
+          delete pendingUpdateData[key];
+        }
+      });
+
+      const { error } = await supabase
+        .from("leads_to_order")
+        .update(pendingUpdateData)
+        .eq("id", editedData.id);
+
+      if (error) throw error;
+
+      alert("Updated successfully!");
+      fetchFollowUpData(pendingPage, false, searchTerm);
+      setEditingRowId(null);
+      setEditedData({});
+      return;
+    }
+
+    // Existing logic for History tab
     // Map the JavaScript field names to actual database column names
     const updateData = {
       Company_Name: editedData.companyName,
@@ -381,7 +443,7 @@ const handleSaveClick = async (index) => {
     alert("Updated successfully in both tables!");
 
     // Refresh data
-    fetchFollowUpData(1, false, searchTerm);
+    fetchFollowUpData(historyPage, false, searchTerm);
     setEditingRowId(null);
     setEditedData({});
   } catch (error) {
@@ -536,6 +598,51 @@ const handleSaveClick = async (index) => {
     }
   }, [currentUser, isAdmin]);
 
+  // Function to fetch all unique SC names for the filter dropdown
+  const fetchUniqueScNames = useCallback(async () => {
+    if (!isAdmin()) return; // Only admins need to see all SC names
+
+    try {
+      // Fetch unique SC names from leads_to_order for pending tab
+      const { data: pendingScNames, error: pendingError } = await supabase
+        .from("leads_to_order")
+        .select("SC_Name")
+        .not("SC_Name", "is", null)
+        .not("SC_Name", "eq", "");
+
+      if (pendingError) {
+        console.error("Error fetching pending SC names:", pendingError);
+      }
+
+      // Fetch unique SC names from leads_tracker for history tab
+      const { data: historyScNames, error: historyError } = await supabase
+        .from("leads_tracker")
+        .select("SC_Name")
+        .not("SC_Name", "is", null)
+        .not("SC_Name", "eq", "");
+
+      if (historyError) {
+        console.error("Error fetching history SC names:", historyError);
+      }
+
+      // Extract and deduplicate SC names for each tab
+      const uniquePendingNames = Array.from(
+        new Set((pendingScNames || []).map(item => item.SC_Name).filter(Boolean))
+      ).sort();
+
+      const uniqueHistoryNames = Array.from(
+        new Set((historyScNames || []).map(item => item.SC_Name).filter(Boolean))
+      ).sort();
+
+      setUniqueScNames({
+        pending: uniquePendingNames,
+        history: uniqueHistoryNames
+      });
+    } catch (error) {
+      console.error("Error fetching unique SC names:", error);
+    }
+  }, [isAdmin]);
+
   // Fixed scroll detection function
   const isBottom = () => {
     return (
@@ -582,6 +689,11 @@ const handleSaveClick = async (index) => {
           if (!isAdmin() && currentUser && currentUser.username) {
             const usernamesToFilter = getUsernamesToFilter();
             pendingQuery = pendingQuery.in("SC_Name", usernamesToFilter);
+          }
+
+          // Apply SC name filter for admin
+          if (isAdmin() && scNameFilter !== "all") {
+            pendingQuery = pendingQuery.eq("SC_Name", scNameFilter);
           }
 
           // Add sorting by lead number (LD-Lead-No) in ascending order
@@ -679,6 +791,17 @@ const handleSaveClick = async (index) => {
             historyQuery = historyQuery.in("SC_Name", usernamesToFilter);
           }
 
+          // Apply SC name filter for admin
+          if (isAdmin() && scNameFilter !== "all") {
+            historyQuery = historyQuery.eq("SC_Name", scNameFilter);
+          }
+
+          // Apply Company Name Filter
+          if (companyFilter !== "all") {
+             // Handle precise matching or trim matching if necessary
+             historyQuery = historyQuery.eq("Company_Name", companyFilter);
+          }
+
           // Apply date filter at database level
           if (dateFilter === "today") {
             const today = new Date();
@@ -714,6 +837,62 @@ const handleSaveClick = async (index) => {
             setFilteredCount(count || 0);
           }
 
+          // Fetch Company Counts
+          const companyCountsMap = {};
+          if (data && data.length > 0) {
+            const uniqueCompanyNames = [...new Set(data.map(item => item["Company_Name"]).filter(Boolean))];
+            
+            if (uniqueCompanyNames.length > 0) {
+              try {
+                let countQuery = supabase
+                  .from("leads_tracker")
+                  .select('"Company_Name"');
+                
+                countQuery = countQuery.in('"Company_Name"', uniqueCompanyNames);
+
+                // Apply SC name filter if needed (to be consistent with what user sees)
+                 if (!isAdmin() && currentUser && currentUser.username) {
+                  const usernamesToFilter = getUsernamesToFilter();
+                  countQuery = countQuery.in("SC_Name", usernamesToFilter);
+                } 
+
+                if (isAdmin() && scNameFilter !== "all") {
+                   countQuery = countQuery.eq("SC_Name", scNameFilter);
+                }
+
+                // Apply Date Filters to Count Query
+                const today = new Date();
+                const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+                // Consolidate date filter logic matching the main query patterns
+                if (startDate) {
+                   countQuery = countQuery.gte("Timestamp", startDate);
+                }
+                if (endDate) {
+                   countQuery = countQuery.lte("Timestamp", endDate);
+                }
+                
+                if (dateFilter === "today" && !startDate && !endDate) {
+                   const formattedToday = `${today.getDate().toString().padStart(2, "0")}/${(today.getMonth() + 1).toString().padStart(2, "0")}/${today.getFullYear()}`;
+                   countQuery = countQuery.eq("Timestamp", todayStr);
+                } else if (dateFilter === "older" && !startDate && !endDate) {
+                   countQuery = countQuery.lt("Timestamp", todayStr);
+                }
+
+                const { data: countData, error: countError } = await countQuery;
+                
+                if (!countError && countData) {
+                  countData.forEach(item => {
+                    const name = (item["Company_Name"] || "").trim(); // Normalize name
+                    companyCountsMap[name] = (companyCountsMap[name] || 0) + 1;
+                  });
+                }
+              } catch (err) {
+                 console.error("Error fetching company counts:", err);
+              }
+            }
+          }
+
           const filteredHistory = (data || []).map((row) => ({
             id: row.id,
             timestamp: row["Timestamp"]
@@ -721,6 +900,7 @@ const handleSaveClick = async (index) => {
               : "",
             leadNo: row["LD-Lead-No"] || "",
             companyName: row["Company_Name"] || "",
+            companyCount: companyCountsMap[(row["Company_Name"] || "").trim()] || 0, // Use normalized lookup
             customerSay: row["What_Did_The_Customer_say?"] || "",
             status: row["Leads_Tracking_Status"] || "",
             enquiryStatus: row["Enquiry_Received_Status"] || "",
@@ -783,7 +963,7 @@ const handleSaveClick = async (index) => {
         setIsLoadingMore(false);
       }
     },
-    [currentUser, isAdmin, activeTab, dateFilter, startDate, endDate]
+    [currentUser, isAdmin, activeTab, dateFilter, startDate, endDate, scNameFilter, companyFilter]
   );
 
   // Remove or comment out these filter functions since filtering now happens at database level:
@@ -832,14 +1012,53 @@ const handleSaveClick = async (index) => {
     }
   }, [activeTab, calculateHistoryCounts, dateFilter, searchTerm, startDate, endDate]); // Add date range filters
 
+  // Fetch unique SC names on component mount
   useEffect(() => {
-    console.log(`Tab or dateFilter changed to: ${activeTab}, ${dateFilter}`);
+    fetchUniqueScNames();
+  }, [fetchUniqueScNames]);
+
+  // Fetch all unique company names for filter
+  useEffect(() => {
+    const fetchAllCompanyNames = async () => {
+      try {
+        // Fetch from leads_tracker (History)
+        const { data: historyData, error: historyError } = await supabase
+          .from("leads_tracker")
+          .select('"Company_Name"');
+        
+        let companies = [];
+        if (!historyError && historyData) {
+            companies = historyData.map(item => item["Company_Name"]).filter(Boolean);
+        }
+
+        // Optional: Fetch from leads_to_order (Pending) if needed to be comprehensive
+        const { data: pendingData, error: pendingError } = await supabase
+            .from("leads_to_order")
+            .select("Company_Name");
+        
+        if (!pendingError && pendingData) {
+            companies = [...companies, ...pendingData.map(item => item.Company_Name).filter(Boolean)];
+        }
+
+        const uniqueCompanies = [...new Set(companies)].sort();
+        setAllCompanyNames(uniqueCompanies);
+
+      } catch (error) {
+        console.error("Error fetching all company names:", error);
+      }
+    };
+
+    fetchAllCompanyNames();
+  }, []);
+
+  useEffect(() => {
+    console.log(`Tab or filter changed: ${activeTab}, ${dateFilter}, ${companyFilter}, ${scNameFilter}`);
     setPendingPage(1);
     setHistoryPage(1);
     setHasMorePending(true);
     setHasMoreHistory(true);
     fetchFollowUpData(1, false, searchTerm);
-  }, [activeTab, dateFilter, currentUser, fetchFollowUpData]);
+  }, [activeTab, dateFilter, companyFilter, scNameFilter, currentUser, fetchFollowUpData]);
 
   // Fixed scroll event listener for infinite scroll
   useEffect(() => {
@@ -1044,6 +1263,7 @@ const handleSaveClick = async (index) => {
 
   const columnOptions = [
     { key: "timestamp", label: "Timestamp" },
+    { key: "callingCount", label: "Calling Count" },
     { key: "leadNo", label: "Lead No." },
     { key: "companyName", label: "Company Name" },
     { key: "customerSay", label: "Customer Say" },
@@ -1395,25 +1615,36 @@ const handleSaveClick = async (index) => {
                 />
                 <datalist id="company-options">
                   <option value="all">All Companies</option>
-                  {activeTab === "pending" ? (
-                    Array.from(
-                      new Set(pendingFollowUps.map((item) => item.companyName))
-                    )
-                      .filter(Boolean)
-                      .map((company) => (
-                        <option key={company} value={company} />
-                      ))
-                  ) : (
-                    Array.from(
-                      new Set(historyFollowUps.map((item) => item.companyName))
-                    )
-                      .filter(Boolean)
-                      .map((company) => (
-                        <option key={company} value={company} />
-                      ))
-                  )}
+                  {allCompanyNames.map((company) => (
+                    <option key={company} value={company} />
+                  ))}
                 </datalist>
               </div>
+
+              {/* SC Name Filter - Only show for admin */}
+              {isAdmin() && (
+                <div className="min-w-0">
+                  <input
+                    list="sc-name-options"
+                    value={scNameFilter === "all" ? "" : scNameFilter}
+                    onChange={(e) => setScNameFilter(e.target.value || "all")}
+                    placeholder="Select or type SC name"
+                    className="w-full px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                  />
+                  <datalist id="sc-name-options">
+                    <option value="all">All SC Names</option>
+                    {activeTab === "pending" ? (
+                      uniqueScNames.pending.map((scName) => (
+                        <option key={scName} value={scName} />
+                      ))
+                    ) : (
+                      uniqueScNames.history.map((scName) => (
+                        <option key={scName} value={scName} />
+                      ))
+                    )}
+                  </datalist>
+                </div>
+              )}
 
               {/* Person Name Filter - Only show for pending tab */}
               {activeTab === "pending" && (
@@ -1709,6 +1940,12 @@ const handleSaveClick = async (index) => {
                                   scope="col"
                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
                                 >
+                                  Edit
+                                </th>
+                                <th
+                                  scope="col"
+                                  className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                >
                                   Call Date
                                 </th>
                                 <th
@@ -1904,130 +2141,416 @@ const handleSaveClick = async (index) => {
                                           </Link>
                                         </div>
                                       </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm font-medium border-r border-gray-200">
+                                        {editingRowId === index ? (
+                                          <div className="flex space-x-2">
+                                            <button
+                                              onClick={() => handleSaveClick(index)}
+                                              className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                                            >
+                                              Save
+                                            </button>
+                                            <button
+                                              onClick={handleCancelClick}
+                                              className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700"
+                                            >
+                                              Cancel
+                                            </button>
+                                          </div>
+                                        ) : (
+                                          <button
+                                            onClick={() => handleEditClick(followUp, index)}
+                                            className="px-3 py-1 text-xs border border-blue-600 text-blue-600 hover:bg-blue-50 rounded"
+                                          >
+                                            Edit
+                                          </button>
+                                        )}
+                                      </td>
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                        {followUp.timestamp}
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="date"
+                                            value={convertDateToYYYYMMDD(editedData.timestamp) || ""}
+                                            onChange={(e) => handleFieldChange("timestamp", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          followUp.timestamp
+                                        )}
                                       </td>
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
-                                        {followUp.leadId}
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.leadId || ""}
+                                            onChange={(e) => handleFieldChange("leadId", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          followUp.leadId
+                                        )}
                                       </td>
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
-                                        <div
-                                          className="max-w-[120px] sm:max-w-[150px] truncate"
-                                          title={followUp.companyName}
-                                        >
-                                          {followUp.companyName}
-                                        </div>
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.companyName || ""}
+                                            onChange={(e) => handleFieldChange("companyName", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          <div
+                                            className="max-w-[120px] sm:max-w-[150px] truncate"
+                                            title={followUp.companyName}
+                                          >
+                                            {followUp.companyName}
+                                          </div>
+                                        )}
                                       </td>
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
-                                        <div
-                                          className="max-w-[100px] sm:max-w-[120px] truncate"
-                                          title={followUp.personName}
-                                        >
-                                          {followUp.personName}
-                                        </div>
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.personName || ""}
+                                            onChange={(e) => handleFieldChange("personName", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          <div
+                                            className="max-w-[100px] sm:max-w-[120px] truncate"
+                                            title={followUp.personName}
+                                          >
+                                            {followUp.personName}
+                                          </div>
+                                        )}
                                       </td>
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                        {followUp.phoneNumber}
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.phoneNumber || ""}
+                                            onChange={(e) => handleFieldChange("phoneNumber", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          followUp.phoneNumber
+                                        )}
                                       </td>
                                       <td className="px-3 sm:px-4 py-3 sm:py-4">
-                                        <span
-                                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                            followUp.priority === "High"
-                                              ? "bg-red-100 text-red-800"
-                                              : followUp.priority === "Medium"
-                                              ? "bg-amber-100 text-amber-800"
-                                              : "bg-slate-100 text-slate-800"
-                                          }`}
-                                        >
-                                          {followUp.leadSource}
-                                        </span>
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.leadSource || ""}
+                                            onChange={(e) => handleFieldChange("leadSource", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          <span
+                                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                              followUp.priority === "High"
+                                                ? "bg-red-100 text-red-800"
+                                                : followUp.priority === "Medium"
+                                                ? "bg-amber-100 text-amber-800"
+                                                : "bg-slate-100 text-slate-800"
+                                            }`}
+                                          >
+                                            {followUp.leadSource}
+                                          </span>
+                                        )}
                                       </td>
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
-                                        <div
-                                          className="max-w-[100px] sm:max-w-[120px] truncate"
-                                          title={followUp.location}
-                                        >
-                                          {followUp.location}
-                                        </div>
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.location || ""}
+                                            onChange={(e) => handleFieldChange("location", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          <div
+                                            className="max-w-[100px] sm:max-w-[120px] truncate"
+                                            title={followUp.location}
+                                          >
+                                            {followUp.location}
+                                          </div>
+                                        )}
                                       </td>
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
-                                        <div
-                                          className="max-w-[150px] sm:max-w-[200px] whitespace-normal break-words"
-                                          title={followUp.customerSay}
-                                        >
-                                          {followUp.customerSay}
-                                        </div>
+                                        {editingRowId === index ? (
+                                          <textarea
+                                            value={editedData.customerSay || ""}
+                                            onChange={(e) => handleFieldChange("customerSay", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                            rows="2"
+                                          />
+                                        ) : (
+                                          <div
+                                            className="max-w-[150px] sm:max-w-[200px] whitespace-normal break-words"
+                                            title={followUp.customerSay}
+                                          >
+                                            {followUp.customerSay}
+                                          </div>
+                                        )}
                                       </td>
 
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
-                                        <div
-                                          className="max-w-[100px] sm:max-w-[120px] truncate"
-                                          title={followUp.enquiryStatus}
-                                        >
-                                          {followUp.enquiryStatus}
-                                        </div>
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.enquiryStatus || ""}
+                                            onChange={(e) => handleFieldChange("enquiryStatus", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          <div
+                                            className="max-w-[100px] sm:max-w-[120px] truncate"
+                                            title={followUp.enquiryStatus}
+                                          >
+                                            {followUp.enquiryStatus}
+                                          </div>
+                                        )}
                                       </td>
                                       {isAdmin() && (
                                         <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                          {followUp.assignedTo}
+                                          {editingRowId === index ? (
+                                            <input
+                                              type="text"
+                                              value={editedData.assignedTo || ""}
+                                              onChange={(e) => handleFieldChange("assignedTo", e.target.value)}
+                                              className="w-full px-2 py-1 border rounded"
+                                            />
+                                          ) : (
+                                            followUp.assignedTo
+                                          )}
                                         </td>
                                       )}
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                        {followUp.Email_Address}
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.Email_Address || ""}
+                                            onChange={(e) => handleFieldChange("Email_Address", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          followUp.Email_Address
+                                        )}
                                       </td>
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                        {followUp.State}
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.State || ""}
+                                            onChange={(e) => handleFieldChange("State", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          followUp.State
+                                        )}
                                       </td>
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                        {followUp.Address}
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.Address || ""}
+                                            onChange={(e) => handleFieldChange("Address", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          followUp.Address
+                                        )}
                                       </td>
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                        {followUp.Person_name_1}
-                                      </td>
-                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                        {followUp.Designation_1}
-                                      </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                        {followUp.Phone_Number_1}
-                                      </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                        {followUp.Person_Name_2}
-                                      </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                        {followUp.Designation_2}
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.Person_name_1 || ""}
+                                            onChange={(e) => handleFieldChange("Person_name_1", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          followUp.Person_name_1
+                                        )}
                                       </td>
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                        {followUp.Phone_Number_2}
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.Designation_1 || ""}
+                                            onChange={(e) => handleFieldChange("Designation_1", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          followUp.Designation_1
+                                        )}
                                       </td>
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                        {followUp.Person_Name_3}
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.Phone_Number_1 || ""}
+                                            onChange={(e) => handleFieldChange("Phone_Number_1", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          followUp.Phone_Number_1
+                                        )}
                                       </td>
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                        {followUp.Designation_3}
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.Person_Name_2 || ""}
+                                            onChange={(e) => handleFieldChange("Person_Name_2", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          followUp.Person_Name_2
+                                        )}
                                       </td>
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                        {followUp.Phone_Number_3}
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.Designation_2 || ""}
+                                            onChange={(e) => handleFieldChange("Designation_2", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          followUp.Designation_2
+                                        )}
                                       </td>
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                        {followUp.NOB}
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.Phone_Number_2 || ""}
+                                            onChange={(e) => handleFieldChange("Phone_Number_2", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          followUp.Phone_Number_2
+                                        )}
                                       </td>
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                        {followUp.GST_Number}
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.Person_Name_3 || ""}
+                                            onChange={(e) => handleFieldChange("Person_Name_3", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          followUp.Person_Name_3
+                                        )}
                                       </td>
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                        {followUp.Customer_Registration_Form}
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.Designation_3 || ""}
+                                            onChange={(e) => handleFieldChange("Designation_3", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          followUp.Designation_3
+                                        )}
                                       </td>
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                        {followUp.Credit_Access}
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.Phone_Number_3 || ""}
+                                            onChange={(e) => handleFieldChange("Phone_Number_3", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          followUp.Phone_Number_3
+                                        )}
                                       </td>
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                        {followUp.Credit_Days}
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.NOB || ""}
+                                            onChange={(e) => handleFieldChange("NOB", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          followUp.NOB
+                                        )}
                                       </td>
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                        {followUp.Credit_Limit}
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.GST_Number || ""}
+                                            onChange={(e) => handleFieldChange("GST_Number", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          followUp.GST_Number
+                                        )}
                                       </td>
                                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                        {followUp.Additional_Notes}
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.Customer_Registration_Form || ""}
+                                            onChange={(e) => handleFieldChange("Customer_Registration_Form", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          followUp.Customer_Registration_Form
+                                        )}
+                                      </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.Credit_Access || ""}
+                                            onChange={(e) => handleFieldChange("Credit_Access", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          followUp.Credit_Access
+                                        )}
+                                      </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.Credit_Days || ""}
+                                            onChange={(e) => handleFieldChange("Credit_Days", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          followUp.Credit_Days
+                                        )}
+                                      </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.Credit_Limit || ""}
+                                            onChange={(e) => handleFieldChange("Credit_Limit", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          followUp.Credit_Limit
+                                        )}
+                                      </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {editingRowId === index ? (
+                                          <textarea
+                                            value={editedData.Additional_Notes || ""}
+                                            onChange={(e) => handleFieldChange("Additional_Notes", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                            rows="2"
+                                          />
+                                        ) : (
+                                          followUp.Additional_Notes
+                                        )}
                                       </td>
                                     </tr>
                                   )
@@ -2088,6 +2611,11 @@ const handleSaveClick = async (index) => {
                                 {visibleColumns.timestamp && (
                                   <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                                     Timestamp
+                                  </th>
+                                )}
+                                {visibleColumns.callingCount && (
+                                  <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                    Calling Count
                                   </th>
                                 )}
                                 {visibleColumns.leadNo && (
@@ -2260,6 +2788,17 @@ const handleSaveClick = async (index) => {
                                           {followUp.timestamp}
                                         </td>
                                       )}
+                                      {visibleColumns.callingCount && (
+                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                          {followUp.companyCount > 0 ? (
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                                              {followUp.companyCount}
+                                            </span>
+                                          ) : (
+                                            "-"
+                                          )}
+                                        </td>
+                                      )}
                                       {visibleColumns.leadNo && (
                                         <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
                                           {followUp.leadNo}
@@ -2268,7 +2807,7 @@ const handleSaveClick = async (index) => {
                                       {visibleColumns.companyName && (
                                         <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
                                           <div
-                                            className="max-w-[120px] sm:max-w-[150px] truncate"
+                                            className="truncate max-w-[120px] sm:max-w-[150px]"
                                             title={followUp.companyName}
                                           >
                                             {followUp.companyName}
@@ -2533,6 +3072,17 @@ const handleSaveClick = async (index) => {
                                       {visibleColumns.timestamp && (
                                         <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
                                           {followUp.timestamp}
+                                        </td>
+                                      )}
+                                      {visibleColumns.callingCount && (
+                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                          {followUp.companyCount > 0 ? (
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                                              {followUp.companyCount}
+                                            </span>
+                                          ) : (
+                                            "-"
+                                          )}
                                         </td>
                                       )}
 

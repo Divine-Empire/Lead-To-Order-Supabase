@@ -57,8 +57,14 @@ function CallTracker() {
   const [callingDaysFilter, setCallingDaysFilter] = useState([]);
   const [enquiryNoFilter, setEnquiryNoFilter] = useState([]);
   const [currentStageFilter, setCurrentStageFilter] = useState([]);
+  const [scNameFilter, setScNameFilter] = useState("all");
   const [availableEnquiryNos, setAvailableEnquiryNos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [uniqueScNames, setUniqueScNames] = useState({
+    pending: [],
+    directEnquiry: [],
+    history: []
+  });
 
   const [pendingPage, setPendingPage] = useState(1);
   const [historyPage, setHistoryPage] = useState(1);
@@ -369,7 +375,177 @@ function CallTracker() {
 
 const handleSaveClick = async (index) => {
   try {
-    // Map the JavaScript field names to actual database column names for enquiry_tracker
+    // Handle Pending tab - update leads_to_order table
+    if (activeTab === "pending") {
+      // Validate that we have a valid ID
+      if (!editedData.id && !editedData.dbId) {
+        alert("Error: No valid ID found for this record. Please refresh the page and try again.");
+        console.error("Missing ID in editedData:", editedData);
+        return;
+      }
+
+      const updateId = editedData.id || editedData.dbId;
+      console.log("Updating record with ID:", updateId);
+
+      const pendingUpdateData = {
+        "LD-Lead-No": editedData.lead_no,
+        "Lead_Receiver_Name": editedData.Lead_Receiver_Name,
+        "Lead_Source": editedData.Lead_Source,
+        "Phone_Number": editedData.Phone_Number,
+        "Salesperson_Name": editedData.salesperson_Name,
+        "Company_Name": editedData.Company_Name,
+        "Current_Stage": editedData.Current_Stage,
+        "Calling_Days": editedData.Calling_Days,
+        "SC_Name": editedData.sc_name,
+        "What_Did_The_Customer say?": editedData.What_Did_The_Customer_Say,
+        "Enquiry_Received_Status": editedData.Enquiry_Received_Status,
+        "Enquiry_Received_Date": convertDateToYYYYMMDD(editedData.Enquiry_Received_Date),
+        "Enquiry_for_State": editedData.Enquiry_for_State,
+        "Project_Name": editedData.Project_Name,
+        "Enquiry_Type": editedData.Enquiry_Type,
+        "Enquiry_Approach": editedData.Enquiry_Approach,
+        "Project_Approximate_Value": editedData.Project_Approximate_Value,
+        "Item_Name1": editedData.Item_Name1,
+        "Quantity1": editedData.Quantity1,
+        "Item_Name2": editedData.Item_Name2,
+        "Quantity2": editedData.Quantity2,
+        "Item_Name3": editedData.Item_Name3,
+        "Quantity3": editedData.Quantity3,
+        "Item_Name4": editedData.Item_Name4,
+        "Quantity4": editedData.Quantity4,
+        "Item_Name5": editedData.Item_Name5,
+        "Quantity5": editedData.Quantity5,
+        "Next_Action": editedData.Next_Action,
+        "Next_Call_Date": convertDateToYYYYMMDD(editedData.Next_Call_Date_Field),
+        "Next_Call_Time": convertTimeTo24Hour(editedData.Next_Call_Time),
+      };
+
+      // Remove undefined/null values
+      Object.keys(pendingUpdateData).forEach((key) => {
+        if (pendingUpdateData[key] === undefined || pendingUpdateData[key] === null) {
+          delete pendingUpdateData[key];
+        }
+      });
+
+      console.log("Pending Update Data:", pendingUpdateData);
+      console.log("Updating record with ID:", updateId);
+
+      const { data: updatedData, error } = await supabase
+        .from("leads_to_order")
+        .update(pendingUpdateData)
+        .eq("id", updateId)
+        .select();
+
+      if (error) {
+        console.error("Pending update error:", error);
+        alert(`Error updating record: ${error.message}`);
+        throw error;
+      }
+
+      console.log("Successfully updated record:", updatedData);
+      alert("Updated successfully!");
+      fetchPendingData(pendingPage, searchTerm, false, getDateFiltersFromCallingDays());
+      setEditingRowId(null);
+      setEditedData({});
+      return;
+    }
+
+    // Handle Direct Enquiry tab - update enquiry_to_order table
+    if (activeTab === "directEnquiry") {
+      // Validate that we have a valid ID
+      if (!editedData.id && !editedData.dbId) {
+        alert("Error: No valid ID found for this record. Please refresh the page and try again.");
+        console.error("Missing ID in editedData:", editedData);
+        return;
+      }
+
+      const updateId = editedData.id || editedData.dbId;
+      console.log("Updating Direct Enquiry record with ID:", updateId);
+
+      // Helper function to parse integer or return null
+      const parseIntOrNull = (value) => {
+        if (value === null || value === undefined || value === "") return null;
+        const parsed = parseInt(value, 10);
+        return isNaN(parsed) ? null : parsed;
+      };
+
+      const directEnquiryUpdateData = {
+        enquiry_no: editedData.enquiry_no,
+        lead_source: editedData.lead_source,
+        company_name: editedData.company_name,
+        phone_number: editedData.phone_number,
+        sales_person_name: editedData.salesperson_name,
+        location: editedData.location,
+        email: editedData.email,
+        shipping_address: editedData.shipping_address,
+        enquiry_receiver_name: editedData.enquiry_receiver_name,
+        enquiry_assign_to_project: editedData.enquiry_assign_to_project,
+        gst_number: editedData.gst_number,
+        enquiry_date: editedData.enquiry_date,
+        enquiry_for_state: editedData.enquiry_for_state,
+        project_name: editedData.project_name,
+        sales_type: editedData.sales_type,
+        enquiry_approach: editedData.enquiry_approach,
+        item_name1: editedData.item_name1,
+        quantity1: parseIntOrNull(editedData.quantity1),
+        item_name2: editedData.item_name2,
+        quantity2: parseIntOrNull(editedData.quantity2),
+        item_name3: editedData.item_name3,
+        quantity3: parseIntOrNull(editedData.quantity3),
+        item_name4: editedData.item_name4,
+        quantity4: parseIntOrNull(editedData.quantity4),
+        item_name5: editedData.item_name5,
+        quantity5: parseIntOrNull(editedData.quantity5),
+        item_name6: editedData.item_name6,
+        quantity6: parseIntOrNull(editedData.quantity6),
+        item_name7: editedData.item_name7,
+        quantity7: parseIntOrNull(editedData.quantity7),
+        item_name8: editedData.item_name8,
+        quantity8: parseIntOrNull(editedData.quantity8),
+        item_name9: editedData.item_name9,
+        quantity9: parseIntOrNull(editedData.quantity9),
+        item_name10: editedData.item_name10,
+        quantity10: parseIntOrNull(editedData.quantity10),
+        enquiry_status: editedData.enquiry_status,
+        customer_feedback: editedData.customer_feedback,
+        current_stage: editedData.current_stage,
+        next_call_date: convertDateToYYYYMMDD(editedData.next_call_date),
+        next_call_time: convertTimeTo24Hour(editedData.next_call_time),
+        sales_coordinator_name: editedData.sc_name,
+        calling_days: editedData.calling_days,
+      };
+
+      // Remove undefined/null values
+      Object.keys(directEnquiryUpdateData).forEach((key) => {
+        if (directEnquiryUpdateData[key] === undefined || directEnquiryUpdateData[key] === null) {
+          delete directEnquiryUpdateData[key];
+        }
+      });
+
+      console.log("Direct Enquiry Update Data:", directEnquiryUpdateData);
+      console.log("Updating record with ID:", updateId);
+
+      const { data: updatedData, error } = await supabase
+        .from("enquiry_to_order")
+        .update(directEnquiryUpdateData)
+        .eq("id", updateId)
+        .select();
+
+      if (error) {
+        console.error("Direct Enquiry update error:", error);
+        alert(`Error updating record: ${error.message}`);
+        throw error;
+      }
+
+      console.log("Successfully updated Direct Enquiry record:", updatedData);
+      alert("Updated successfully!");
+      fetchDirectEnquiryData(directEnquiryPage, searchTerm, false, getDateFiltersFromCallingDays());
+      setEditingRowId(null);
+      setEditedData({});
+      return;
+    }
+
+    // Handle History tab - existing logic for enquiry_tracker
     const updateData = {
       "Enquiry Status": editedData.enquiryStatus,
       "What Did Customer Say": editedData.customerFeedback,
@@ -904,7 +1080,7 @@ const handleSaveClick = async (index) => {
     { key: "phoneNo", label: "Phone Number" },
     { key: "salespersonName", label: "Salesperson Name" },
     { key: "currentStage", label: "Current Stage" },
-    { key: "callingDate", label: "Calling Days" },
+    { key: "callingDate", label: "Calling Date" },
     { key: "itemQty", label: "Item/Qty" },
     { key: "totalQty", label: "Total Qty" },
     { key: "shippingAddress", label: "Shipping Address" },
@@ -1359,6 +1535,7 @@ const handleSaveClick = async (index) => {
     historyPage,
     directEnquiryPage,
     callingDaysFilter,
+    scNameFilter,
   ]);
 
   // 1. Update the fetchPendingData function to accept date filters
@@ -1411,6 +1588,11 @@ const handleSaveClick = async (index) => {
       query = query.in("SC_Name", usernamesToFilter);
     }
 
+    // Apply SC name filter for admin
+    if (isAdmin() && scNameFilter !== "all") {
+      query = query.eq("SC_Name", scNameFilter);
+    }
+
     const { data, error, count } = await query;
 
     if (error) {
@@ -1419,7 +1601,8 @@ const handleSaveClick = async (index) => {
       return [];
     } else {
       const transformedData = data.map((item, index) => ({
-        id: from + index + 1,
+        id: item.id, // Use actual database ID
+        dbId: item.id, // Store database ID separately for clarity
         serialNo: from + index + 1,
         Timestamp: formatDateToDDMMYYYY(item.Timestamp) || "",
         lead_no: item["LD-Lead-No"] || "",
@@ -1523,6 +1706,11 @@ const handleSaveClick = async (index) => {
     if (!isAdmin() && currentUser && currentUser.username) {
       const usernamesToFilter = getUsernamesToFilter();
       query = query.in("Sales Cordinator", usernamesToFilter);
+    }
+
+    // Apply SC name filter for admin
+    if (isAdmin() && scNameFilter !== "all") {
+      query = query.eq("Sales Cordinator", scNameFilter);
     }
 
     const { data, error, count } = await query;
@@ -1655,6 +1843,11 @@ const handleSaveClick = async (index) => {
       query = query.in("sales_coordinator_name", usernamesToFilter);
     }
 
+    // Apply SC name filter for admin
+    if (isAdmin() && scNameFilter !== "all") {
+      query = query.eq("sales_coordinator_name", scNameFilter);
+    }
+
     const { data, error, count } = await query;
 
     if (error) {
@@ -1664,7 +1857,8 @@ const handleSaveClick = async (index) => {
     } else {
       // ✅ Transform data first
       const transformedData = data.map((item, index) => ({
-        id: from + index + 1,
+        id: item.id, // Use actual database ID
+        dbId: item.id, // Store database ID separately for clarity
         serialNo: from + index + 1,
         timestamp: formatDateToDDMMYYYY(item.timestamp) || "",
         enquiry_no: item.enquiry_no || "",
@@ -1680,6 +1874,8 @@ const handleSaveClick = async (index) => {
         sc_name: item.sales_coordinator_name || "",
         nextCallDate: item.next_call_date || "",
         // New columns added
+        location: item.location || "",
+        email: item.email || "",
         shipping_address: item.shipping_address || "",
         enquiry_receiver_name: item.enquiry_receiver_name || "",
         enquiry_assign_to_project: item.enquiry_assign_to_project || "",
@@ -1972,6 +2168,7 @@ const handleSaveClick = async (index) => {
     historyPage,
     directEnquiryPage,
     callingDaysFilter,
+    scNameFilter,
   ]);
 
   // Handle search with debounce
@@ -2043,7 +2240,7 @@ const handleSaveClick = async (index) => {
     }, 500); // 500ms debounce
 
     return () => clearTimeout(handler);
-  }, [searchTerm, activeTab, callingDaysFilter]);
+  }, [searchTerm, activeTab, callingDaysFilter, scNameFilter]);
 
   // Handle checkbox selection - populate form fields with existing data
   useEffect(() => {
@@ -2086,6 +2283,69 @@ const handleSaveClick = async (index) => {
     );
   };
 
+  // Function to fetch all unique SC names for the filter dropdown
+  const fetchUniqueScNames = useCallback(async () => {
+    if (!isAdmin()) return; // Only admins need to see all SC names
+
+    try {
+      // Fetch unique SC names from leads_to_order for pending tab
+      const { data: pendingScNames, error: pendingError } = await supabase
+        .from("leads_to_order")
+        .select("SC_Name")
+        .not("SC_Name", "is", null)
+        .not("SC_Name", "eq", "");
+
+      if (pendingError) {
+        console.error("Error fetching pending SC names:", pendingError);
+      }
+
+      // Fetch unique SC names from enquiry_to_order for direct enquiry tab
+      const { data: directEnquiryScNames, error: directEnquiryError } = await supabase
+        .from("enquiry_to_order")
+        .select("sales_coordinator_name")
+        .not("sales_coordinator_name", "is", null)
+        .not("sales_coordinator_name", "eq", "");
+
+      if (directEnquiryError) {
+        console.error("Error fetching direct enquiry SC names:", directEnquiryError);
+      }
+
+      // Fetch unique SC names from enquiry_tracker for history tab
+      const { data: historyScNames, error: historyError } = await supabase
+        .from("enquiry_tracker")
+        .select(`"Sales Cordinator"`)
+        .not('"Sales Cordinator"', "is", null)
+        .not('"Sales Cordinator"', "eq", "");
+
+      if (historyError) {
+        console.error("Error fetching history SC names:", historyError);
+      }
+
+      // Extract and deduplicate SC names for each tab
+      const uniquePendingNames = Array.from(
+        new Set((pendingScNames || []).map(item => item.SC_Name).filter(Boolean))
+      ).sort();
+
+      const uniqueDirectEnquiryNames = Array.from(
+        new Set((directEnquiryScNames || []).map(item => item.sales_coordinator_name).filter(Boolean))
+      ).sort();
+
+      const uniqueHistoryNames = Array.from(
+        new Set((historyScNames || []).map(item => item["Sales Cordinator"]).filter(Boolean))
+      ).sort();
+
+      setUniqueScNames({
+        pending: uniquePendingNames,
+        directEnquiry: uniqueDirectEnquiryNames,
+        history: uniqueHistoryNames
+      });
+    } catch (error) {
+      console.error("Error fetching unique SC names:", error);
+    }
+  }, [isAdmin]);
+
+
+
   // Reset pagination when tab changes
   useEffect(() => {
     // Reset all pagination when active tab changes
@@ -2105,6 +2365,11 @@ const handleSaveClick = async (index) => {
       setDirectEnquiryData([]);
     }
   }, [activeTab]);
+
+  // Fetch unique SC names on component mount
+  useEffect(() => {
+    fetchUniqueScNames();
+  }, [fetchUniqueScNames]);
 
   useEffect(() => {
     if (
@@ -2316,6 +2581,7 @@ const handleSaveClick = async (index) => {
     historyPage,
     directEnquiryPage,
     callingDaysFilter,
+    scNameFilter,
   ]);
 
   const handleCurrentStageChange = (value) => {
@@ -2856,7 +3122,7 @@ const handleSaveClick = async (index) => {
               onClick={toggleCallingDaysDropdown}
             >
               <span>
-                Calling Days{" "}
+                Calling Date{" "}
                 {callingDaysFilter.length > 0 &&
                   `(${callingDaysFilter.length})`}
               </span>
@@ -3208,6 +3474,37 @@ const handleSaveClick = async (index) => {
               </div>
             )}
           </div>
+
+          {/* SC Name Filter - Only show for admin */}
+          {isAdmin() && (
+            <div className="relative">
+              <input
+                list="sc-name-filter-options"
+                value={scNameFilter === "all" ? "" : scNameFilter}
+                onChange={(e) => setScNameFilter(e.target.value || "all")}
+                placeholder="Select SC Name"
+                className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+              />
+              <datalist id="sc-name-filter-options">
+                <option value="all">All SC Names</option>
+                {activeTab === "pending" && (
+                  uniqueScNames.pending.map((scName) => (
+                    <option key={scName} value={scName} />
+                  ))
+                )}
+                {activeTab === "directEnquiry" && (
+                  uniqueScNames.directEnquiry.map((scName) => (
+                    <option key={scName} value={scName} />
+                  ))
+                )}
+                {activeTab === "history" && (
+                  uniqueScNames.history.map((scName) => (
+                    <option key={scName} value={scName} />
+                  ))
+                )}
+              </datalist>
+            </div>
+          )}
 
           {/* Column Selection Dropdown - Show for pending, direct enquiry, and history tabs */}
           {activeTab === "pending" && (
@@ -3742,20 +4039,43 @@ const handleSaveClick = async (index) => {
                             >
                               {visiblePendingColumns.actions && (
                                 <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
-                                  <div className="flex space-x-2">
-                                    <Link
-                                      state={{
-                                        activeTab: activeTab,
-                                        sc_name: tracker.sc_name,
-                                      }}
-                                      to={`/call-tracker/new?leadId=${tracker.lead_no}`}
-                                    >
-                                      <button className="px-3 py-1 text-xs text-purple-600 rounded-md border border-purple-200 hover:bg-purple-50">
-                                        Process{" "}
-                                        <ArrowRightIcon className="inline ml-1 w-3 h-3" />
+                                  {editingRowId === index ? (
+                                    <div className="flex space-x-2">
+                                      <button
+                                        onClick={() => handleSaveClick(index)}
+                                        className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                                      >
+                                        Save
                                       </button>
-                                    </Link>
-                                  </div>
+                                      <button
+                                        onClick={handleCancelClick}
+                                        className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex space-x-2">
+                                      <button
+                                        onClick={() => handleEditClick(tracker, index)}
+                                        className="px-3 py-1 text-xs border border-blue-600 text-blue-600 hover:bg-blue-50 rounded"
+                                      >
+                                        Edit
+                                      </button>
+                                      <Link
+                                        state={{
+                                          activeTab: activeTab,
+                                          sc_name: tracker.sc_name,
+                                        }}
+                                        to={`/call-tracker/new?leadId=${tracker.lead_no}`}
+                                      >
+                                        <button className="px-3 py-1 text-xs text-purple-600 rounded-md border border-purple-200 hover:bg-purple-50">
+                                          Process{" "}
+                                          <ArrowRightIcon className="inline ml-1 w-3 h-3" />
+                                        </button>
+                                      </Link>
+                                    </div>
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.timestamp && (
@@ -3770,45 +4090,99 @@ const handleSaveClick = async (index) => {
                               )}
                               {visiblePendingColumns.leadReceiverName && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.Lead_Receiver_Name}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.Lead_Receiver_Name || ""}
+                                      onChange={(e) => handleFieldChange("Lead_Receiver_Name", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Lead_Receiver_Name
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.leadSource && (
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                  <span
-                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                      tracker.priority === "High"
-                                        ? "bg-red-100 text-red-800"
-                                        : tracker.priority === "Medium"
-                                        ? "bg-amber-100 text-amber-800"
-                                        : "bg-slate-100 text-slate-800"
-                                    }`}
-                                  >
-                                    {tracker.Lead_Source}
-                                  </span>
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.Lead_Source || ""}
+                                      onChange={(e) => handleFieldChange("Lead_Source", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    <span
+                                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                        tracker.priority === "High"
+                                          ? "bg-red-100 text-red-800"
+                                          : tracker.priority === "Medium"
+                                          ? "bg-amber-100 text-amber-800"
+                                          : "bg-slate-100 text-slate-800"
+                                      }`}
+                                    >
+                                      {tracker.Lead_Source}
+                                    </span>
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.phoneNo && (
                                 <td className="px-4 py-4 text-sm text-gray-500">
-                                  {tracker.Phone_Number}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.Phone_Number || ""}
+                                      onChange={(e) => handleFieldChange("Phone_Number", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Phone_Number
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.salespersonName && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.salesperson_Name}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.salesperson_Name || ""}
+                                      onChange={(e) => handleFieldChange("salesperson_Name", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.salesperson_Name
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.companyName && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  <div className="flex items-center">
-                                    <BuildingIcon className="mr-2 w-4 h-4 text-slate-400" />
-                                    {tracker.Company_Name}
-                                  </div>
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.Company_Name || ""}
+                                      onChange={(e) => handleFieldChange("Company_Name", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    <div className="flex items-center">
+                                      <BuildingIcon className="mr-2 w-4 h-4 text-slate-400" />
+                                      {tracker.Company_Name}
+                                    </div>
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.currentStage && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.Current_Stage}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.Current_Stage || ""}
+                                      onChange={(e) => handleFieldChange("Current_Stage", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Current_Stage
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.callingDate && (
@@ -3838,108 +4212,297 @@ const handleSaveClick = async (index) => {
                               )}
                               {visiblePendingColumns.customerSay && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  <div className="max-w-[200px] truncate" title={tracker.What_Did_The_Customer_Say}>
-                                    {tracker.What_Did_The_Customer_Say}
-                                  </div>
+                                  {editingRowId === index ? (
+                                    <textarea
+                                      value={editedData.What_Did_The_Customer_Say || ""}
+                                      onChange={(e) => handleFieldChange("What_Did_The_Customer_Say", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                      rows="2"
+                                    />
+                                  ) : (
+                                    <div className="max-w-[200px] truncate" title={tracker.What_Did_The_Customer_Say}>
+                                      {tracker.What_Did_The_Customer_Say}
+                                    </div>
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.enquiryReceivedStatus && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.Enquiry_Received_Status}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.Enquiry_Received_Status || ""}
+                                      onChange={(e) => handleFieldChange("Enquiry_Received_Status", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Enquiry_Received_Status
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.enquiryReceivedDate && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.Enquiry_Received_Date}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="date"
+                                      value={convertDateToYYYYMMDD(editedData.Enquiry_Received_Date) || ""}
+                                      onChange={(e) => handleFieldChange("Enquiry_Received_Date", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Enquiry_Received_Date
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.enquiryForState && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.Enquiry_for_State}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.Enquiry_for_State || ""}
+                                      onChange={(e) => handleFieldChange("Enquiry_for_State", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Enquiry_for_State
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.projectName && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.Project_Name}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.Project_Name || ""}
+                                      onChange={(e) => handleFieldChange("Project_Name", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Project_Name
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.enquiryType && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.Enquiry_Type}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.Enquiry_Type || ""}
+                                      onChange={(e) => handleFieldChange("Enquiry_Type", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Enquiry_Type
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.enquiryApproach && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.Enquiry_Approach}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.Enquiry_Approach || ""}
+                                      onChange={(e) => handleFieldChange("Enquiry_Approach", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Enquiry_Approach
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.projectApproximateValue && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.Project_Approximate_Value}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.Project_Approximate_Value || ""}
+                                      onChange={(e) => handleFieldChange("Project_Approximate_Value", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Project_Approximate_Value
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.itemName1 && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.Item_Name1}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.Item_Name1 || ""}
+                                      onChange={(e) => handleFieldChange("Item_Name1", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Item_Name1
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.quantity1 && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.Quantity1}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.Quantity1 || ""}
+                                      onChange={(e) => handleFieldChange("Quantity1", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Quantity1
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.itemName2 && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.Item_Name2}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.Item_Name2 || ""}
+                                      onChange={(e) => handleFieldChange("Item_Name2", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Item_Name2
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.quantity2 && (                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.Quantity2}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.Quantity2 || ""}
+                                      onChange={(e) => handleFieldChange("Quantity2", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Quantity2
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.itemName3 && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.Item_Name3}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.Item_Name3 || ""}
+                                      onChange={(e) => handleFieldChange("Item_Name3", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Item_Name3
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.quantity3 && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.Quantity3}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.Quantity3 || ""}
+                                      onChange={(e) => handleFieldChange("Quantity3", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Quantity3
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.itemName4 && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.Item_Name4}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.Item_Name4 || ""}
+                                      onChange={(e) => handleFieldChange("Item_Name4", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Item_Name4
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.quantity4 && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.Quantity4}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.Quantity4 || ""}
+                                      onChange={(e) => handleFieldChange("Quantity4", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Quantity4
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.itemName5 && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.Item_Name5}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.Item_Name5 || ""}
+                                      onChange={(e) => handleFieldChange("Item_Name5", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Item_Name5
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.quantity5 && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.Quantity5}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.Quantity5 || ""}
+                                      onChange={(e) => handleFieldChange("Quantity5", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Quantity5
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.nextAction && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.Next_Action}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.Next_Action || ""}
+                                      onChange={(e) => handleFieldChange("Next_Action", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Next_Action
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.nextCallDate && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.Next_Call_Date_Field}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="date"
+                                      value={convertDateToYYYYMMDD(editedData.Next_Call_Date_Field) || ""}
+                                      onChange={(e) => handleFieldChange("Next_Call_Date_Field", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Next_Call_Date_Field
+                                  )}
                                 </td>
                               )}
                               {visiblePendingColumns.nextCallTime && (
                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                  {tracker.Next_Call_Time}
+                                  {editingRowId === index ? (
+                                    <input
+                                      type="time"
+                                      value={editedData.Next_Call_Time || ""}
+                                      onChange={(e) => handleFieldChange("Next_Call_Time", e.target.value)}
+                                      className="w-full px-2 py-1 border rounded"
+                                    />
+                                  ) : (
+                                    tracker.Next_Call_Time
+                                  )}
                                 </td>
                               )}
                             </tr>
@@ -5463,7 +6026,7 @@ const handleSaveClick = async (index) => {
                               scope="col"
                               className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
                             >
-                              Calling Days
+                              Calling Date
                             </th>
                           )}
                           {visibleDirectEnquiryColumns.itemQty && (
@@ -5796,29 +6359,43 @@ const handleSaveClick = async (index) => {
                               >
                                 {visibleDirectEnquiryColumns.actions && (
                                   <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
-                                    <div className="flex space-x-2">
-                                      <Link
-                                        state={{
-                                          activeTab: activeTab,
-                                          sc_name: tracker.sc_name,
-                                        }}
-                                        to={`/call-tracker/new?leadId=${tracker.enquiry_no}`}
-                                      >
-                                        <button className="px-3 py-1 text-xs text-purple-600 rounded-md border border-purple-200 hover:bg-purple-50">
-                                          Process{" "}
-                                          <ArrowRightIcon className="inline ml-1 w-3 h-3" />
+                                    {editingRowId === index ? (
+                                      <div className="flex space-x-2">
+                                        <button
+                                          onClick={() => handleSaveClick(index)}
+                                          className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                                        >
+                                          Save
                                         </button>
-                                      </Link>
-                                      <button
-                                        onClick={() => {
-                                          setSelectedTracker(tracker);
-                                          setShowPopup(true);
-                                        }}
-                                        className="px-3 py-1 text-xs rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50"
-                                      >
-                                        View
-                                      </button>
-                                    </div>
+                                        <button
+                                          onClick={handleCancelClick}
+                                          className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <div className="flex space-x-2">
+                                        <button
+                                          onClick={() => handleEditClick(tracker, index)}
+                                          className="px-3 py-1 text-xs border border-blue-600 text-blue-600 hover:bg-blue-50 rounded"
+                                        >
+                                          Edit
+                                        </button>
+                                        <Link
+                                          state={{
+                                            activeTab: activeTab,
+                                            sc_name: tracker.sc_name,
+                                          }}
+                                          to={`/call-tracker/new?leadId=${tracker.enquiry_no}`}
+                                        >
+                                          <button className="px-3 py-1 text-xs text-purple-600 rounded-md border border-purple-200 hover:bg-purple-50">
+                                            Process{" "}
+                                            <ArrowRightIcon className="inline ml-1 w-3 h-3" />
+                                          </button>
+                                        </Link>
+                                      </div>
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.timestamp && (
@@ -5833,37 +6410,82 @@ const handleSaveClick = async (index) => {
                                 )}
                                 {visibleDirectEnquiryColumns.leadSource && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.lead_source}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.lead_source || ""}
+                                        onChange={(e) => handleFieldChange("lead_source", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.lead_source
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.companyName && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.company_name}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.company_name || ""}
+                                        onChange={(e) => handleFieldChange("company_name", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.company_name
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.phoneNo && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.phone_number}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.phone_number || ""}
+                                        onChange={(e) => handleFieldChange("phone_number", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.phone_number
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.salespersonName && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.salesperson_name}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.salesperson_name || ""}
+                                        onChange={(e) => handleFieldChange("salesperson_name", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.salesperson_name
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.currentStage && (
                                   <td className="px-6 py-4 whitespace-nowrap">
-                                    <span
-                                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                        tracker.priority === "High"
-                                          ? "bg-red-100 text-red-800"
-                                          : tracker.priority === "Medium"
-                                          ? "bg-amber-100 text-amber-800"
-                                          : "bg-slate-100 text-slate-800"
-                                      }`}
-                                    >
-                                      {tracker.current_stage}
-                                    </span>
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.current_stage || ""}
+                                        onChange={(e) => handleFieldChange("current_stage", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      <span
+                                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                          tracker.priority === "High"
+                                            ? "bg-red-100 text-red-800"
+                                            : tracker.priority === "Medium"
+                                            ? "bg-amber-100 text-amber-800"
+                                            : "bg-slate-100 text-slate-800"
+                                        }`}
+                                      >
+                                        {tracker.current_stage}
+                                      </span>
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.callingDate && (
@@ -5888,186 +6510,510 @@ const handleSaveClick = async (index) => {
                                 )}
                                 {visibleDirectEnquiryColumns.shippingAddress && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    <div className="max-w-[200px] truncate" title={tracker.shipping_address}>
-                                      {tracker.shipping_address}
-                                    </div>
+                                    {editingRowId === index ? (
+                                      <textarea
+                                        value={editedData.shipping_address || ""}
+                                        onChange={(e) => handleFieldChange("shipping_address", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                        rows="2"
+                                      />
+                                    ) : (
+                                      <div className="max-w-[200px] truncate" title={tracker.shipping_address}>
+                                        {tracker.shipping_address}
+                                      </div>
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.leadReceiverName && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.enquiry_receiver_name}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.enquiry_receiver_name || ""}
+                                        onChange={(e) => handleFieldChange("enquiry_receiver_name", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.enquiry_receiver_name
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.enquiryAssignToProject && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.enquiry_assign_to_project}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.enquiry_assign_to_project || ""}
+                                        onChange={(e) => handleFieldChange("enquiry_assign_to_project", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.enquiry_assign_to_project
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.gstNumber && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.gst_number}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.gst_number || ""}
+                                        onChange={(e) => handleFieldChange("gst_number", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.gst_number
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.enquiryDate && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.enquiry_date}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="date"
+                                        value={editedData.enquiry_date || ""}
+                                        onChange={(e) => handleFieldChange("enquiry_date", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.enquiry_date
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.enquiryForState && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.enquiry_for_state}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.enquiry_for_state || ""}
+                                        onChange={(e) => handleFieldChange("enquiry_for_state", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.enquiry_for_state
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.projectName && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.project_name}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.project_name || ""}
+                                        onChange={(e) => handleFieldChange("project_name", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.project_name
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.salesType && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.sales_type}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.sales_type || ""}
+                                        onChange={(e) => handleFieldChange("sales_type", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.sales_type
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.enquiryApproach && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.enquiry_approach}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.enquiry_approach || ""}
+                                        onChange={(e) => handleFieldChange("enquiry_approach", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.enquiry_approach
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.itemName1 && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.item_name1}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.item_name1 || ""}
+                                        onChange={(e) => handleFieldChange("item_name1", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.item_name1
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.quantity1 && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.quantity1}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="number"
+                                        value={editedData.quantity1 || ""}
+                                        onChange={(e) => handleFieldChange("quantity1", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.quantity1
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.itemName2 && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.item_name2}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.item_name2 || ""}
+                                        onChange={(e) => handleFieldChange("item_name2", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.item_name2
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.quantity2 && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.quantity2}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="number"
+                                        value={editedData.quantity2 || ""}
+                                        onChange={(e) => handleFieldChange("quantity2", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.quantity2
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.itemName3 && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.item_name3}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.item_name3 || ""}
+                                        onChange={(e) => handleFieldChange("item_name3", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.item_name3
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.quantity3 && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.quantity3}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="number"
+                                        value={editedData.quantity3 || ""}
+                                        onChange={(e) => handleFieldChange("quantity3", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.quantity3
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.itemName4 && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.item_name4}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.item_name4 || ""}
+                                        onChange={(e) => handleFieldChange("item_name4", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.item_name4
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.quantity4 && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.quantity4}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="number"
+                                        value={editedData.quantity4 || ""}
+                                        onChange={(e) => handleFieldChange("quantity4", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.quantity4
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.itemName5 && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.item_name5}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.item_name5 || ""}
+                                        onChange={(e) => handleFieldChange("item_name5", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.item_name5
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.quantity5 && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.quantity5}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="number"
+                                        value={editedData.quantity5 || ""}
+                                        onChange={(e) => handleFieldChange("quantity5", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.quantity5
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.itemName6 && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.item_name6}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.item_name6 || ""}
+                                        onChange={(e) => handleFieldChange("item_name6", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.item_name6
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.quantity6 && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.quantity6}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="number"
+                                        value={editedData.quantity6 || ""}
+                                        onChange={(e) => handleFieldChange("quantity6", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.quantity6
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.itemName7 && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.item_name7}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.item_name7 || ""}
+                                        onChange={(e) => handleFieldChange("item_name7", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.item_name7
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.quantity7 && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.quantity7}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="number"
+                                        value={editedData.quantity7 || ""}
+                                        onChange={(e) => handleFieldChange("quantity7", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.quantity7
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.itemName8 && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.item_name8}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.item_name8 || ""}
+                                        onChange={(e) => handleFieldChange("item_name8", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.item_name8
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.quantity8 && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.quantity8}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="number"
+                                        value={editedData.quantity8 || ""}
+                                        onChange={(e) => handleFieldChange("quantity8", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.quantity8
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.itemName9 && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.item_name9}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.item_name9 || ""}
+                                        onChange={(e) => handleFieldChange("item_name9", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.item_name9
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.quantity9 && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.quantity9}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="number"
+                                        value={editedData.quantity9 || ""}
+                                        onChange={(e) => handleFieldChange("quantity9", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.quantity9
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.itemName10 && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.item_name10}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.item_name10 || ""}
+                                        onChange={(e) => handleFieldChange("item_name10", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.item_name10
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.quantity10 && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.quantity10}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="number"
+                                        value={editedData.quantity10 || ""}
+                                        onChange={(e) => handleFieldChange("quantity10", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.quantity10
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.enquiryStatus && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.enquiry_status}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.enquiry_status || ""}
+                                        onChange={(e) => handleFieldChange("enquiry_status", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.enquiry_status
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.customerFeedback && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    <div className="max-w-[200px] truncate" title={tracker.customer_feedback}>
-                                      {tracker.customer_feedback}
-                                    </div>
+                                    {editingRowId === index ? (
+                                      <textarea
+                                        value={editedData.customer_feedback || ""}
+                                        onChange={(e) => handleFieldChange("customer_feedback", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                        rows="2"
+                                      />
+                                    ) : (
+                                      <div className="max-w-[200px] truncate" title={tracker.customer_feedback}>
+                                        {tracker.customer_feedback}
+                                      </div>
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.sendQuotationNo && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.send_quotation_no}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.send_quotation_no || ""}
+                                        onChange={(e) => handleFieldChange("send_quotation_no", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.send_quotation_no
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.quotationSharedBy && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.quotation_shared_by}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.quotation_shared_by || ""}
+                                        onChange={(e) => handleFieldChange("quotation_shared_by", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.quotation_shared_by
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.quotationNumber && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.quotation_number}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.quotation_number || ""}
+                                        onChange={(e) => handleFieldChange("quotation_number", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.quotation_number
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.quotationValueWithoutTax && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.quotation_value_without_tax}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.quotation_value_without_tax || ""}
+                                        onChange={(e) => handleFieldChange("quotation_value_without_tax", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.quotation_value_without_tax
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.quotationValueWithTax && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.quotation_value_with_tax}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.quotation_value_with_tax || ""}
+                                        onChange={(e) => handleFieldChange("quotation_value_with_tax", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.quotation_value_with_tax
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.quotationUpload && (
@@ -6086,26 +7032,62 @@ const handleSaveClick = async (index) => {
                                 )}
                                 {visibleDirectEnquiryColumns.quotationRemarks && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    <div className="max-w-[200px] truncate" title={tracker.quotation_remarks}>
-                                      {tracker.quotation_remarks}
-                                    </div>
+                                    {editingRowId === index ? (
+                                      <textarea
+                                        value={editedData.quotation_remarks || ""}
+                                        onChange={(e) => handleFieldChange("quotation_remarks", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                        rows="2"
+                                      />
+                                    ) : (
+                                      <div className="max-w-[200px] truncate" title={tracker.quotation_remarks}>
+                                        {tracker.quotation_remarks}
+                                      </div>
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.quotationValidatorName && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.quotation_validator_name}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.quotation_validator_name || ""}
+                                        onChange={(e) => handleFieldChange("quotation_validator_name", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.quotation_validator_name
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.quotationSendStatus && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.quotation_send_status}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.quotation_send_status || ""}
+                                        onChange={(e) => handleFieldChange("quotation_send_status", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.quotation_send_status
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.quotationValidationRemark && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    <div className="max-w-[200px] truncate" title={tracker.quotation_validation_remark}>
-                                      {tracker.quotation_validation_remark}
-                                    </div>
+                                    {editingRowId === index ? (
+                                      <textarea
+                                        value={editedData.quotation_validation_remark || ""}
+                                        onChange={(e) => handleFieldChange("quotation_validation_remark", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                        rows="2"
+                                      />
+                                    ) : (
+                                      <div className="max-w-[200px] truncate" title={tracker.quotation_validation_remark}>
+                                        {tracker.quotation_validation_remark}
+                                      </div>
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.sendFaqVideo && (
@@ -6135,46 +7117,118 @@ const handleSaveClick = async (index) => {
                                 )}
                                 {visibleDirectEnquiryColumns.nextCallTime && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.next_call_time}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="time"
+                                        value={editedData.next_call_time || ""}
+                                        onChange={(e) => handleFieldChange("next_call_time", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.next_call_time
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.isOrderReceivedStatus && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.is_order_received_status}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.is_order_received_status || ""}
+                                        onChange={(e) => handleFieldChange("is_order_received_status", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.is_order_received_status
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.ifNoReasonStatus && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.if_no_reason_status}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.if_no_reason_status || ""}
+                                        onChange={(e) => handleFieldChange("if_no_reason_status", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.if_no_reason_status
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.ifNoReasonRemark && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    <div className="max-w-[200px] truncate" title={tracker.if_no_reason_remark}>
-                                      {tracker.if_no_reason_remark}
-                                    </div>
+                                    {editingRowId === index ? (
+                                      <textarea
+                                        value={editedData.if_no_reason_remark || ""}
+                                        onChange={(e) => handleFieldChange("if_no_reason_remark", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                        rows="2"
+                                      />
+                                    ) : (
+                                      <div className="max-w-[200px] truncate" title={tracker.if_no_reason_remark}>
+                                        {tracker.if_no_reason_remark}
+                                      </div>
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.customerOrderHoldReasonCategory && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.customer_order_hold_reason_category}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.customer_order_hold_reason_category || ""}
+                                        onChange={(e) => handleFieldChange("customer_order_hold_reason_category", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.customer_order_hold_reason_category
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.holdingDate && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.holding_date}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="date"
+                                        value={convertDateToYYYYMMDD(editedData.holding_date) || ""}
+                                        onChange={(e) => handleFieldChange("holding_date", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.holding_date
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.holdRemark && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    <div className="max-w-[200px] truncate" title={tracker.hold_remark}>
-                                      {tracker.hold_remark}
-                                    </div>
+                                    {editingRowId === index ? (
+                                      <textarea
+                                        value={editedData.hold_remark || ""}
+                                        onChange={(e) => handleFieldChange("hold_remark", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                        rows="2"
+                                      />
+                                    ) : (
+                                      <div className="max-w-[200px] truncate" title={tracker.hold_remark}>
+                                        {tracker.hold_remark}
+                                      </div>
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.transportMode && (
                                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {tracker.transport_mode}
+                                    {editingRowId === index ? (
+                                      <input
+                                        type="text"
+                                        value={editedData.transport_mode || ""}
+                                        onChange={(e) => handleFieldChange("transport_mode", e.target.value)}
+                                        className="w-full px-2 py-1 border rounded"
+                                      />
+                                    ) : (
+                                      tracker.transport_mode
+                                    )}
                                   </td>
                                 )}
                                 {visibleDirectEnquiryColumns.conveyedForRegistrationForm && (
