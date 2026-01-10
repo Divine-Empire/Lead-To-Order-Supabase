@@ -10,6 +10,7 @@ import NewFollowUp from "./pages/NewFollowUp"
 import CallTracker from "./pages/CallTracker"
 import NewCallTracker from "./pages/NewCallTracker"
 import Quotation from "./pages/Quotation/Quotation"
+import Report from "./pages/Report"
 import MainNav from "./components/MainNav"
 import Footer from "./components/Footer"
 import Notification from "./components/Notification"
@@ -322,6 +323,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Quotation key="quotation" />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/report"
+                  element={
+                    <ProtectedRoute adminOnly={true}>
+                      <Report />
                     </ProtectedRoute>
                   }
                 />

@@ -51,14 +51,14 @@ function MainNav({ logout }) {
   ]
 
   // Add admin-only route if user is admin
-  // if (isAdmin && isAdmin()) {
-  //   routes.push({
-  //     href: "/admin",
-  //     label: "Admin",
-  //     icon: <ShieldIcon className="h-5 w-5 mr-2" />,
-  //     active: location.pathname.startsWith("/admin"),
-  //   });
-  // }
+  if (isAdmin && isAdmin()) {
+    routes.push({
+      href: "/report",
+      label: "Report",
+      icon: <FileTextIcon className="h-5 w-5 mr-2" />, // Reusing FileTextIcon or can add specific one
+      active: location.pathname.startsWith("/report"),
+    });
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white shadow-sm">
