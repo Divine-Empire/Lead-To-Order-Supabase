@@ -50,6 +50,7 @@ function FollowUp() {
     pending: [],
     history: [],
   });
+  const [filterTypeCounts, setFilterTypeCounts] = useState({ all: 0, first: 0, multi: 0 });
   const [allCompanyNames, setAllCompanyNames] = useState([]); // State for all company names for filter
 
   // Fixed pagination state management
@@ -67,12 +68,15 @@ function FollowUp() {
   const [filteredCount, setFilteredCount] = useState(0);
 
   const [visibleColumns, setVisibleColumns] = useState({
+    actions: false, // Hidden by default for history as per request
+    edit: true,
     timestamp: true,
     callingCount: true,
+    enquiryCallingCount: true, // New column
     leadNo: true,
     companyName: true,
-    customerSay: true,
-    status: true,
+    personName: true,
+    phoneNumber: true,
     enquiryStatus: true,
     receivedDate: true,
     state: true,
@@ -643,6 +647,67 @@ const handleSaveClick = async (index) => {
     }
   }, [isAdmin]);
 
+// Implement DB counts for filter dropdown
+// Add 'Enquiry Calling Count' column to FollowUp.jsx
+const fetchFilterTypeCounts = useCallback(async () => {
+    try {
+      let allQuery, firstQuery, multiQuery;
+
+      if (activeTab === "pending") {
+        const baseQuery = () => supabase
+          .from("leads_to_order")
+          .select("*", { count: "exact", head: true })
+          .not("Planned", "is", null)
+          .is("Actual", null);
+
+        allQuery = baseQuery();
+        firstQuery = baseQuery().or('Enquiry_Received_Status.is.null,Enquiry_Received_Status.eq.""');
+        multiQuery = baseQuery().ilike("Enquiry_Received_Status", "%expected%");
+      } else {
+        const baseQuery = () => supabase
+          .from("leads_tracker")
+          .select("*", { count: "exact", head: true });
+
+        allQuery = baseQuery();
+        firstQuery = baseQuery().or('Enquiry_Received_Status.is.null,Enquiry_Received_Status.eq."",Enquiry_Received_Status.eq."New"');
+        multiQuery = baseQuery().ilike("Enquiry_Received_Status", "%expected%");
+        
+        // Apply Company Filter to history counts for consistency
+        if (companyFilter !== "all") {
+            allQuery = allQuery.eq("Company_Name", companyFilter);
+            firstQuery = firstQuery.eq("Company_Name", companyFilter);
+            multiQuery = multiQuery.eq("Company_Name", companyFilter);
+        }
+      }
+
+      // Apply SC Name Filter
+      if (isAdmin() && scNameFilter !== "all") {
+        allQuery = allQuery.eq("SC_Name", scNameFilter);
+        firstQuery = firstQuery.eq("SC_Name", scNameFilter);
+        multiQuery = multiQuery.eq("SC_Name", scNameFilter);
+      } else if (!isAdmin() && currentUser && currentUser.username) {
+        const usernamesToFilter = getUsernamesToFilter();
+        allQuery = allQuery.in("SC_Name", usernamesToFilter);
+        firstQuery = firstQuery.in("SC_Name", usernamesToFilter);
+        multiQuery = multiQuery.in("SC_Name", usernamesToFilter);
+      }
+
+      const [allRes, firstRes, multiRes] = await Promise.all([
+        allQuery,
+        firstQuery,
+        multiQuery,
+      ]);
+
+      setFilterTypeCounts({
+        all: allRes.count || 0,
+        first: firstRes.count || 0,
+        multi: multiRes.count || 0,
+      });
+    } catch (error) {
+      console.error("Error fetching filter type counts:", error);
+    }
+  }, [activeTab, isAdmin, scNameFilter, currentUser, companyFilter]);
+
   // Fixed scroll detection function
   const isBottom = () => {
     return (
@@ -678,11 +743,19 @@ const handleSaveClick = async (index) => {
             .not("Planned", "is", null)
             .is("Actual", null);
 
+
           // Apply search filter to the query BEFORE pagination
           if (searchTerm) {
             pendingQuery = pendingQuery.or(
               `Company_Name.ilike.%${searchTerm}%,"LD-Lead-No".ilike.%${searchTerm}%,Salesperson_Name.ilike.%${searchTerm}%,Phone_Number.ilike.%${searchTerm}%,Lead_Source.ilike.%${searchTerm}%,Location.ilike.%${searchTerm}%,"What_Did_The_Customer say?".ilike.%${searchTerm}%,Enquiry_Received_Status.ilike.%${searchTerm}%,SC_Name.ilike.%${searchTerm}%`
             );
+          }
+
+          // Apply Filter Type (First Followup / Expected)
+          if (filterType === "first") {
+            pendingQuery = pendingQuery.or('Enquiry_Received_Status.is.null,Enquiry_Received_Status.eq.""');
+          } else if (filterType === "multi") {
+            pendingQuery = pendingQuery.ilike("Enquiry_Received_Status", "%expected%");
           }
 
           // Apply user filter if not admin
@@ -796,11 +869,19 @@ const handleSaveClick = async (index) => {
             historyQuery = historyQuery.eq("SC_Name", scNameFilter);
           }
 
+
           // Apply Company Name Filter
           if (companyFilter !== "all") {
              // Handle precise matching or trim matching if necessary
              historyQuery = historyQuery.eq("Company_Name", companyFilter);
           }
+
+          // Apply Filter Type (First Followup / Expected)
+            if (filterType === "first") {
+              historyQuery = historyQuery.or('Enquiry_Received_Status.is.null,Enquiry_Received_Status.eq."",Enquiry_Received_Status.eq."New"');
+            } else if (filterType === "multi") {
+              historyQuery = historyQuery.ilike("Enquiry_Received_Status", "%expected%");
+            }
 
           // Apply date filter at database level
           if (dateFilter === "today") {
@@ -856,8 +937,16 @@ const handleSaveClick = async (index) => {
                   countQuery = countQuery.in("SC_Name", usernamesToFilter);
                 } 
 
+
                 if (isAdmin() && scNameFilter !== "all") {
                    countQuery = countQuery.eq("SC_Name", scNameFilter);
+                }
+
+                // Apply Filter Type to Count Query
+                if (filterType === "first") {
+                  countQuery = countQuery.or('Enquiry_Received_Status.is.null,Enquiry_Received_Status.eq."",Enquiry_Received_Status.eq."New"');
+                } else if (filterType === "multi") {
+                  countQuery = countQuery.ilike("Enquiry_Received_Status", "%expected%");
                 }
 
                 // Apply Date Filters to Count Query
@@ -893,6 +982,50 @@ const handleSaveClick = async (index) => {
             }
           }
 
+          // Fetch Enquiry Calling Counts (New Logic)
+          const enquiryCountsMap = {};
+          if (data && data.length > 0) {
+            const uniqueLeadNos = [...new Set(data.map(item => item["LD-Lead-No"]).filter(Boolean))];
+            
+            if (uniqueLeadNos.length > 0) {
+              try {
+                let enquiryCountQuery = supabase
+                  .from("enquiry_tracker")
+                  .select('"Enquiry No."');
+                
+                enquiryCountQuery = enquiryCountQuery.in('"Enquiry No."', uniqueLeadNos);
+
+                // Apply Date Filters to Enquiry Count Query (matching historyQuery logic)
+                const today = new Date();
+                const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+                if (startDate) {
+                    enquiryCountQuery = enquiryCountQuery.gte("Timestamp", startDate);
+                }
+                if (endDate) {
+                    enquiryCountQuery = enquiryCountQuery.lte("Timestamp", endDate);
+                }
+                
+                if (dateFilter === "today" && !startDate && !endDate) {
+                    enquiryCountQuery = enquiryCountQuery.eq("Timestamp", todayStr);
+                } else if (dateFilter === "older" && !startDate && !endDate) {
+                    enquiryCountQuery = enquiryCountQuery.lt("Timestamp", todayStr);
+                }
+
+                const { data: enquiryCountData, error: enquiryCountError } = await enquiryCountQuery;
+                
+                if (!enquiryCountError && enquiryCountData) {
+                  enquiryCountData.forEach(item => {
+                    const leadNo = item["Enquiry No."];
+                    enquiryCountsMap[leadNo] = (enquiryCountsMap[leadNo] || 0) + 1;
+                  });
+                }
+              } catch (err) {
+                 console.error("Error fetching enquiry counts:", err);
+              }
+            }
+          }
+
           const filteredHistory = (data || []).map((row) => ({
             id: row.id,
             timestamp: row["Timestamp"]
@@ -900,7 +1033,8 @@ const handleSaveClick = async (index) => {
               : "",
             leadNo: row["LD-Lead-No"] || "",
             companyName: row["Company_Name"] || "",
-            companyCount: companyCountsMap[(row["Company_Name"] || "").trim()] || 0, // Use normalized lookup
+            companyCount: companyCountsMap[(row["Company_Name"] || "").trim()] || 0,
+            enquiryCallingCount: enquiryCountsMap[row["LD-Lead-No"]] || 0, // Map the new count
             customerSay: row["What_Did_The_Customer_say?"] || "",
             status: row["Leads_Tracking_Status"] || "",
             enquiryStatus: row["Enquiry_Received_Status"] || "",
@@ -963,7 +1097,7 @@ const handleSaveClick = async (index) => {
         setIsLoadingMore(false);
       }
     },
-    [currentUser, isAdmin, activeTab, dateFilter, startDate, endDate, scNameFilter, companyFilter]
+    [currentUser, isAdmin, activeTab, dateFilter, startDate, endDate, scNameFilter, companyFilter, filterType]
   );
 
   // Remove or comment out these filter functions since filtering now happens at database level:
@@ -1017,6 +1151,11 @@ const handleSaveClick = async (index) => {
     fetchUniqueScNames();
   }, [fetchUniqueScNames]);
 
+  // Fetch filter type counts when context changes
+  useEffect(() => {
+    fetchFilterTypeCounts();
+  }, [fetchFilterTypeCounts]);
+
   // Fetch all unique company names for filter
   useEffect(() => {
     const fetchAllCompanyNames = async () => {
@@ -1052,13 +1191,13 @@ const handleSaveClick = async (index) => {
   }, []);
 
   useEffect(() => {
-    console.log(`Tab or filter changed: ${activeTab}, ${dateFilter}, ${companyFilter}, ${scNameFilter}`);
+    console.log(`Tab or filter changed: ${activeTab}, ${dateFilter}, ${companyFilter}, ${scNameFilter}, ${filterType}`);
     setPendingPage(1);
     setHistoryPage(1);
     setHasMorePending(true);
     setHasMoreHistory(true);
     fetchFollowUpData(1, false, searchTerm);
-  }, [activeTab, dateFilter, companyFilter, scNameFilter, currentUser, fetchFollowUpData]);
+  }, [activeTab, dateFilter, companyFilter, scNameFilter, filterType, currentUser, fetchFollowUpData]);
 
   // Fixed scroll event listener for infinite scroll
   useEffect(() => {
@@ -1142,18 +1281,7 @@ const handleSaveClick = async (index) => {
       (followUp.assignedTo &&
         followUp.assignedTo.toLowerCase().includes(searchLower));
 
-    const matchesFilterType = (() => {
-      if (filterType === "first") {
-        return (
-          followUp.enquiryReceivedStatus === "" ||
-          followUp.enquiryReceivedStatus === null
-        );
-      } else if (filterType === "multi") {
-        return followUp.enquiryReceivedStatus === "expected";
-      } else {
-        return true;
-      }
-    })();
+    const matchesFilterType = true; // Filter handled at DB level
 
     const matchesDateFilter = checkDateFilter(followUp, dateFilter);
     const matchesCompanyFilter =
@@ -1223,22 +1351,7 @@ const handleSaveClick = async (index) => {
 
   const filteredHistoryFollowUps = historyFollowUps.filter((followUp) => {
     // Only keep filterType filter on client side since search and date are handled at DB level
-    const matchesFilterType = (() => {
-      if (filterType === "first") {
-        return (
-          followUp.enquiryReceivedStatus === "" ||
-          followUp.enquiryReceivedStatus === null ||
-          followUp.enquiryReceivedStatus === "New"
-        );
-      } else if (filterType === "multi") {
-        return (
-          followUp.enquiryReceivedStatus === "Expected" ||
-          followUp.enquiryReceivedStatus === "expected"
-        );
-      } else {
-        return true;
-      }
-    })();
+    const matchesFilterType = true; // Filter handled at DB level
 
     const matchesCompanyFilter =
       companyFilter === "all" || followUp.companyName === companyFilter;
@@ -1262,10 +1375,15 @@ const handleSaveClick = async (index) => {
   };
 
   const columnOptions = [
+    { key: "actions", label: "Actions" },
+    { key: "edit", label: "Edit" },
     { key: "timestamp", label: "Timestamp" },
     { key: "callingCount", label: "Calling Count" },
+    { key: "enquiryCallingCount", label: "Enquiry Calling Count" }, // New column
     { key: "leadNo", label: "Lead No." },
     { key: "companyName", label: "Company Name" },
+    { key: "personName", label: "Person Name" },
+    { key: "phoneNumber", label: "Phone Number" },
     { key: "customerSay", label: "Customer Say" },
     { key: "status", label: "Status" },
     { key: "enquiryStatus", label: "Enquiry Status" },
@@ -1838,9 +1956,9 @@ const handleSaveClick = async (index) => {
                   onChange={(e) => setFilterType(e.target.value)}
                   className="w-full px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
                 >
-                  <option value="all">All</option>
-                  <option value="first">First Followup</option>
-                  <option value="multi">Expected</option>
+                  <option value="all">All ({filterTypeCounts.all})</option>
+                  <option value="first">First Followup ({filterTypeCounts.first})</option>
+                  <option value="multi">Expected ({filterTypeCounts.multi})</option>
                 </select>
               </div>
             </div>
@@ -1871,7 +1989,7 @@ const handleSaveClick = async (index) => {
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-600">Showing:</span>
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-amber-100 text-amber-800">
-                    {filteredHistoryFollowUps.length} {filteredHistoryFollowUps.length === 1 ? 'record' : 'records'}
+                    {filteredCount} {filteredCount === 1 ? 'record' : 'records'}
                   </span>
                 </div>
               )}
@@ -2604,10 +2722,19 @@ const handleSaveClick = async (index) => {
                           <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-slate-50 sticky top-0">
                               <tr>
-                                <th className="sticky left-0 z-10 bg-slate-50 px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">
-                                  Actions
-                                </th>
-
+                                {visibleColumns.actions && (
+                                  <th className="sticky left-0 z-10 bg-slate-50 px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">
+                                    Actions
+                                  </th>
+                                )}
+                                {visibleColumns.edit && (
+                                  <th
+                                    scope="col"
+                                    className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                  >
+                                    Edit
+                                  </th>
+                                )}
                                 {visibleColumns.timestamp && (
                                   <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                                     Timestamp
@@ -2616,6 +2743,14 @@ const handleSaveClick = async (index) => {
                                 {visibleColumns.callingCount && (
                                   <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                                     Calling Count
+                                  </th>
+                                )}
+                                {visibleColumns.enquiryCallingCount && (
+                                  <th
+                                    scope="col"
+                                    className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                  >
+                                    Enquiry Calling Count
                                   </th>
                                 )}
                                 {visibleColumns.leadNo && (
@@ -2745,7 +2880,9 @@ const handleSaveClick = async (index) => {
                                 )}
                               </tr>
                             </thead>
-                            {/* <tbody className="bg-white divide-y divide-gray-200">
+
+
+                            <tbody className="bg-white divide-y divide-gray-200">
                               {filteredHistoryFollowUps.length > 0 ? (
                                 filteredHistoryFollowUps.map(
                                   (followUp, index) => (
@@ -2753,35 +2890,42 @@ const handleSaveClick = async (index) => {
                                       key={index}
                                       className="hover:bg-slate-50 transition-colors"
                                     >
-                                      <td className="sticky left-0 z-10 bg-white px-3 sm:px-4 py-3 sm:py-4 text-sm font-medium border-r border-gray-200">
-                                        {editingRowId === index ? (
-                                          <div className="flex space-x-2">
+                                      {visibleColumns.actions && (
+                                        <td className="sticky left-0 z-10 bg-white px-3 sm:px-4 py-3 sm:py-4 text-sm font-medium border-r border-gray-200">
+                                          {/* Action column content removed as per user request */}
+                                        </td>
+                                      )}
+                                      {visibleColumns.edit && (
+                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm font-medium border-r border-gray-200">
+                                          {editingRowId === index ? (
+                                            <div className="flex space-x-2">
+                                              <button
+                                                onClick={() =>
+                                                  handleSaveClick(index)
+                                                }
+                                                className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                                              >
+                                                Save
+                                              </button>
+                                              <button
+                                                onClick={handleCancelClick}
+                                                className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700"
+                                              >
+                                                Cancel
+                                              </button>
+                                            </div>
+                                          ) : (
                                             <button
                                               onClick={() =>
-                                                handleSaveClick(index)
+                                                handleEditClick(followUp, index)
                                               }
-                                              className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                                              className="px-3 py-1 text-xs border border-blue-600 text-blue-600 hover:bg-blue-50 rounded"
                                             >
-                                              Save
+                                              Edit
                                             </button>
-                                            <button
-                                              onClick={handleCancelClick}
-                                              className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700"
-                                            >
-                                              Cancel
-                                            </button>
-                                          </div>
-                                        ) : (
-                                          <button
-                                            onClick={() =>
-                                              handleEditClick(followUp, index)
-                                            }
-                                            className="px-3 py-1 text-xs border border-blue-600 text-blue-600 hover:bg-blue-50 rounded"
-                                          >
-                                            Edit
-                                          </button>
-                                        )}
-                                      </td>
+                                          )}
+                                        </td>
+                                      )}
 
                                       {visibleColumns.timestamp && (
                                         <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
@@ -2799,286 +2943,12 @@ const handleSaveClick = async (index) => {
                                           )}
                                         </td>
                                       )}
-                                      {visibleColumns.leadNo && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
-                                          {followUp.leadNo}
-                                        </td>
-                                      )}
-                                      {visibleColumns.companyName && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
-                                          <div
-                                            className="truncate max-w-[120px] sm:max-w-[150px]"
-                                            title={followUp.companyName}
-                                          >
-                                            {followUp.companyName}
-                                          </div>
-                                        </td>
-                                      )}
-                                      {visibleColumns.customerSay && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
-                                          <div
-                                            className="max-w-[150px] sm:max-w-[200px] whitespace-normal break-words"
-                                            title={followUp.customerSay}
-                                          >
-                                            {followUp.customerSay}
-                                          </div>
-                                        </td>
-                                      )}
 
-                                      {visibleColumns.status && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4">
-                                          <span
-                                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                              followUp.status === "Completed"
-                                                ? "bg-green-100 text-green-800"
-                                                : followUp.status === "Pending"
-                                                ? "bg-amber-100 text-amber-800"
-                                                : "bg-red-100 text-red-800"
-                                            }`}
-                                          >
-                                            {followUp.status}
-                                          </span>
-                                        </td>
-                                      )}
-                                      {visibleColumns.enquiryStatus && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
-                                          <div
-                                            className="max-w-[100px] sm:max-w-[120px] truncate"
-                                            title={followUp.enquiryStatus}
-                                          >
-                                            {followUp.enquiryStatus}
-                                          </div>
-                                        </td>
-                                      )}
-                                      {visibleColumns.receivedDate && (
+                                      {visibleColumns.enquiryCallingCount && (
                                         <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                          {followUp.enquiryReceivedDate}
-                                        </td>
-                                      )}
-                                      {visibleColumns.state && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
-                                          <div
-                                            className="max-w-[80px] sm:max-w-[100px] truncate"
-                                            title={followUp.enquiryState}
-                                          >
-                                            {followUp.enquiryState}
-                                          </div>
-                                        </td>
-                                      )}
-                                      {visibleColumns.projectName && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
-                                          <div
-                                            className="max-w-[100px] sm:max-w-[120px] truncate"
-                                            title={followUp.projectName}
-                                          >
-                                            {followUp.projectName}
-                                          </div>
-                                        </td>
-                                      )}
-                                      {visibleColumns.salesType && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                          {followUp.salesType}
-                                        </td>
-                                      )}
-                                      {visibleColumns.productDate && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                          {followUp.requiredProductDate}
-                                        </td>
-                                      )}
-                                      {visibleColumns.projectValue && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                          {followUp.projectApproxValue}
-                                        </td>
-                                      )}
-                                      {visibleColumns.item1 && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
-                                          <div
-                                            className="max-w-[100px] sm:max-w-[120px] truncate"
-                                            title={followUp.itemName1}
-                                          >
-                                            {followUp.itemName1}
-                                          </div>
-                                        </td>
-                                      )}
-                                      {visibleColumns.qty1 && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                          {followUp.quantity1}
-                                        </td>
-                                      )}
-                                      {visibleColumns.item2 && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
-                                          <div
-                                            className="max-w-[100px] sm:max-w-[120px] truncate"
-                                            title={followUp.itemName2}
-                                          >
-                                            {followUp.itemName2}
-                                          </div>
-                                        </td>
-                                      )}
-                                      {visibleColumns.qty2 && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                          {followUp.quantity2}
-                                        </td>
-                                      )}
-                                      {visibleColumns.item3 && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
-                                          <div
-                                            className="max-w-[100px] sm:max-w-[120px] truncate"
-                                            title={followUp.itemName3}
-                                          >
-                                            {followUp.itemName3}
-                                          </div>
-                                        </td>
-                                      )}
-                                      {visibleColumns.qty3 && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                          {followUp.quantity3}
-                                        </td>
-                                      )}
-                                      {visibleColumns.item4 && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
-                                          <div
-                                            className="max-w-[100px] sm:max-w-[120px] truncate"
-                                            title={followUp.itemName4}
-                                          >
-                                            {followUp.itemName4}
-                                          </div>
-                                        </td>
-                                      )}
-                                      {visibleColumns.qty4 && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                          {followUp.quantity4}
-                                        </td>
-                                      )}
-                                      {visibleColumns.item5 && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
-                                          <div
-                                            className="max-w-[100px] sm:max-w-[120px] truncate"
-                                            title={followUp.itemName5}
-                                          >
-                                            {followUp.itemName5}
-                                          </div>
-                                        </td>
-                                      )}
-                                      {visibleColumns.qty5 && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                          {followUp.quantity5}
-                                        </td>
-                                      )}
-                                      {visibleColumns.nextAction && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
-                                          <div
-                                            className="max-w-[100px] sm:max-w-[120px] truncate"
-                                            title={followUp.nextAction}
-                                          >
-                                            {followUp.nextAction}
-                                          </div>
-                                        </td>
-                                      )}
-                                      {visibleColumns.callDate && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                          {followUp.nextCallDate}
-                                        </td>
-                                      )}
-                                      {visibleColumns.callTime && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                          {followUp.nextCallTime}
-                                        </td>
-                                      )}
-                                      {visibleColumns.itemQty && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
-                                          <div
-                                            className="min-w-[300px] break-words whitespace-normal"
-                                            title={formatItemQty(
-                                              followUp.itemQty
-                                            )}
-                                          >
-                                            {formatItemQty(followUp.itemQty)}
-                                          </div>
-                                        </td>
-                                      )}
-                                    </tr>
-                                  )
-                                )
-                              ) : (
-                                <tr>
-                                  <td
-                                    colSpan={
-                                      Object.values(visibleColumns).filter(
-                                        Boolean
-                                      ).length
-                                    }
-                                    className="px-4 py-8 text-center text-sm text-slate-500"
-                                  >
-                                    <div className="flex flex-col items-center space-y-2">
-                                      <svg
-                                        className="h-12 w-12 text-gray-300"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                      >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={1}
-                                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                        />
-                                      </svg>
-                                      <p>No history found</p>
-                                    </div>
-                                  </td>
-                                </tr>
-                              )}
-                            </tbody> */}
-
-                            <tbody className="bg-white divide-y divide-gray-200">
-                              {filteredHistoryFollowUps.length > 0 ? (
-                                filteredHistoryFollowUps.map(
-                                  (followUp, index) => (
-                                    <tr
-                                      key={index}
-                                      className="hover:bg-slate-50 transition-colors"
-                                    >
-                                      <td className="sticky left-0 z-10 bg-white px-3 sm:px-4 py-3 sm:py-4 text-sm font-medium border-r border-gray-200">
-                                        {editingRowId === index ? (
-                                          <div className="flex space-x-2">
-                                            <button
-                                              onClick={() =>
-                                                handleSaveClick(index)
-                                              }
-                                              className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
-                                            >
-                                              Save
-                                            </button>
-                                            <button
-                                              onClick={handleCancelClick}
-                                              className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700"
-                                            >
-                                              Cancel
-                                            </button>
-                                          </div>
-                                        ) : (
-                                          <button
-                                            onClick={() =>
-                                              handleEditClick(followUp, index)
-                                            }
-                                            className="px-3 py-1 text-xs border border-blue-600 text-blue-600 hover:bg-blue-50 rounded"
-                                          >
-                                            Edit
-                                          </button>
-                                        )}
-                                      </td>
-
-                                      {visibleColumns.timestamp && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                          {followUp.timestamp}
-                                        </td>
-                                      )}
-                                      {visibleColumns.callingCount && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
-                                          {followUp.companyCount > 0 ? (
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
-                                              {followUp.companyCount}
+                                          {followUp.enquiryCallingCount > 0 ? (
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                              {followUp.enquiryCallingCount}
                                             </span>
                                           ) : (
                                             "-"

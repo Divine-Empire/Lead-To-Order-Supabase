@@ -5,7 +5,7 @@ import { UsersIcon, PhoneCallIcon, FileTextIcon, ShoppingCartIcon, TrendingUpIco
 import { AuthContext } from "../../App" // Import AuthContext
 import supabase from "../../utils/supabase" // Import your Supabase client
 
-function DashboardMetrics() {
+function DashboardMetrics({ scNameFilter = "all", startDate, endDate }) {
   const { currentUser, userType, isAdmin, getUsernamesToFilter } = useContext(AuthContext) // Get user info and admin function
   const [metrics, setMetrics] = useState({
     totalLeads: "0",
@@ -29,16 +29,34 @@ function DashboardMetrics() {
         let ordersReceived = 0
         let totalEnquiry = 0
         let pendingEnquiry = 0
+
+        // Helper for date filtering
+        const getEndDateWithTime = (date) => {
+          if (!date) return null
+          return `${date}T23:59:59`
+        }
         
-        // Fetch COUNT from leads_to_order table for total leads
+        // --- 1. Total Leads (leads_to_order) ---
         let leadsCountQuery = supabase
           .from('leads_to_order')
           .select('*', { count: 'exact', head: true })
         
-        // Apply user filter if not admin - use SC_Name field like in FollowUp component
-        if (!isAdmin() && currentUser?.username) {
+        // Apply SC Name Filter
+        if (isAdmin()) {
+          if (scNameFilter !== "all") {
+            leadsCountQuery = leadsCountQuery.eq('SC_Name', scNameFilter)
+          }
+        } else if (currentUser?.username) {
           const usernamesToFilter = getUsernamesToFilter()
           leadsCountQuery = leadsCountQuery.in('SC_Name', usernamesToFilter)
+        }
+
+        // Apply Date Filter
+        if (startDate) {
+          leadsCountQuery = leadsCountQuery.gte('Created_At', startDate)
+        }
+        if (endDate) {
+          leadsCountQuery = leadsCountQuery.lte('Created_At', getEndDateWithTime(endDate))
         }
         
         const { count: leadsCount, error: leadsCountError } = await leadsCountQuery
@@ -49,17 +67,27 @@ function DashboardMetrics() {
           totalLeads = leadsCount || 0
         }
         
-        // Fetch COUNT from leads_to_order table for pending follow-ups (Planned not null and Actual is null)
+        // --- 2. Pending Follow-ups (leads_to_order) ---
         let pendingFollowupsQuery = supabase
           .from('leads_to_order')
           .select('*', { count: 'exact', head: true })
           .not('Planned', 'is', null)
           .is('Actual', null)
         
-        // Apply user filter if not admin
-        if (!isAdmin() && currentUser?.username) {
+        if (isAdmin()) {
+          if (scNameFilter !== "all") {
+            pendingFollowupsQuery = pendingFollowupsQuery.eq('SC_Name', scNameFilter)
+          }
+        } else if (currentUser?.username) {
           const usernamesToFilter = getUsernamesToFilter()
           pendingFollowupsQuery = pendingFollowupsQuery.in('SC_Name', usernamesToFilter)
+        }
+
+        if (startDate) {
+          pendingFollowupsQuery = pendingFollowupsQuery.gte('Created_At', startDate)
+        }
+        if (endDate) {
+          pendingFollowupsQuery = pendingFollowupsQuery.lte('Created_At', getEndDateWithTime(endDate))
         }
         
         const { count: pendingCount, error: pendingCountError } = await pendingFollowupsQuery
@@ -70,17 +98,34 @@ function DashboardMetrics() {
           pendingFollowups = pendingCount || 0
         }
         
-        // Fetch COUNT from enquiry_tracker table for quotations sent (rows with Quotation Number)
+        // --- 3. Quotations Sent (enquiry_tracker) ---
         let quotationsQuery = supabase
           .from('enquiry_tracker')
           .select('*', { count: 'exact', head: true })
           .not('Quotation Number', 'is', null)
           .neq('Quotation Number', '')
         
-        // No user filtering for quotations - show all data
-          if (!isAdmin() && currentUser?.username) {
+        // SC Filter for enquiry_tracker
+        if (isAdmin()) {
+          if (scNameFilter !== "all") {
+            // Using "SC_Name" as per other components, but wait, original code used "Sales Cordinator" for non-admins?
+            // "quotationsQuery.in('Sales Cordinator', usernamesToFilter)" (line 83 of original)
+            // Let's stick to "Sales Cordinator" if that's what the schema likely has, OR check consistently.
+            // DashboardCharts uses SC_Name.
+            // Let's check line 83 original: .in('Sales Cordinator', usernamesToFilter)
+            // So column is likely "Sales Cordinator".
+            quotationsQuery = quotationsQuery.eq('Sales Cordinator', scNameFilter)
+          }
+        } else if (currentUser?.username) {
           const usernamesToFilter = getUsernamesToFilter()
           quotationsQuery = quotationsQuery.in('Sales Cordinator', usernamesToFilter)
+        }
+
+        if (startDate) {
+          quotationsQuery = quotationsQuery.gte('created_at', startDate)
+        }
+        if (endDate) {
+          quotationsQuery = quotationsQuery.lte('created_at', getEndDateWithTime(endDate))
         }
         
         const { count: quotationsCount, error: quotationsError } = await quotationsQuery
@@ -91,16 +136,26 @@ function DashboardMetrics() {
           quotationsSent = quotationsCount || 0
         }
         
-        // Fetch COUNT from enquiry_tracker table for orders received (where "Is Order Received? Status" = "yes")
+        // --- 4. Orders Received (enquiry_tracker) ---
         let ordersQuery = supabase
           .from('enquiry_tracker')
           .select('*', { count: 'exact', head: true })
           .eq('"Is Order Received? Status"', 'yes')
         
-        // No user filtering for orders - show all data
-          if (!isAdmin() && currentUser?.username) {
+        if (isAdmin()) {
+           if (scNameFilter !== "all") {
+             ordersQuery = ordersQuery.eq('Sales Cordinator', scNameFilter)
+           }
+        } else if (currentUser?.username) {
           const usernamesToFilter = getUsernamesToFilter()
           ordersQuery = ordersQuery.in('Sales Cordinator', usernamesToFilter)
+        }
+
+        if (startDate) {
+          ordersQuery = ordersQuery.gte('created_at', startDate)
+        }
+        if (endDate) {
+          ordersQuery = ordersQuery.lte('created_at', getEndDateWithTime(endDate))
         }
         
         const { count: ordersCount, error: ordersError } = await ordersQuery
@@ -111,15 +166,28 @@ function DashboardMetrics() {
           ordersReceived = ordersCount || 0
         }
         
-        // Fetch COUNT from enquiry_to_order table for total enquiry
+        // --- 5. Total Enquiry (enquiry_to_order) ---
         let totalEnquiryQuery = supabase
           .from('enquiry_to_order')
           .select('*', { count: 'exact', head: true })
         
-        // No user filtering - show all enquiries for everyone
-          if (!isAdmin() && currentUser?.username) {
+        // SC Filter (original used 'sales_coordinator_name')
+        if (isAdmin()) {
+           if (scNameFilter !== "all") {
+             totalEnquiryQuery = totalEnquiryQuery.eq('sales_coordinator_name', scNameFilter)
+           }
+        } else if (currentUser?.username) {
           const usernamesToFilter = getUsernamesToFilter()
           totalEnquiryQuery = totalEnquiryQuery.in('sales_coordinator_name', usernamesToFilter)
+        }
+
+        if (startDate) {
+           // Using 'created_at' or 'enquiry_date'? 'created_at' is safer for "record creation".
+           // If user means "enquiry date", that's different. Usually dashboard filters by creation/activity.
+           totalEnquiryQuery = totalEnquiryQuery.gte('created_at', startDate)
+        }
+        if (endDate) {
+           totalEnquiryQuery = totalEnquiryQuery.lte('created_at', getEndDateWithTime(endDate))
         }
         
         const { count: totalEnquiryCount, error: totalEnquiryError } = await totalEnquiryQuery
@@ -130,17 +198,27 @@ function DashboardMetrics() {
           totalEnquiry = totalEnquiryCount || 0
         }
         
-        // Fetch COUNT from enquiry_to_order table for pending enquiry (where planned1 is not null and actual1 is null)
+        // --- 6. Pending Enquiry (enquiry_to_order) ---
         let pendingEnquiryQuery = supabase
           .from('enquiry_to_order')
           .select('*', { count: 'exact', head: true })
           .not('planned1', 'is', null)
           .is('actual1', null)
         
-        // No user filtering - show all data
-          if (!isAdmin() && currentUser?.username) {
+        if (isAdmin()) {
+           if (scNameFilter !== "all") {
+             pendingEnquiryQuery = pendingEnquiryQuery.eq('sales_coordinator_name', scNameFilter)
+           }
+        } else if (currentUser?.username) {
           const usernamesToFilter = getUsernamesToFilter()
           pendingEnquiryQuery = pendingEnquiryQuery.in('sales_coordinator_name', usernamesToFilter)
+        }
+
+        if (startDate) {
+           pendingEnquiryQuery = pendingEnquiryQuery.gte('created_at', startDate)
+        }
+        if (endDate) {
+           pendingEnquiryQuery = pendingEnquiryQuery.lte('created_at', getEndDateWithTime(endDate))
         }
         
         const { count: pendingEnquiryCount, error: pendingEnquiryError } = await pendingEnquiryQuery
@@ -188,7 +266,7 @@ function DashboardMetrics() {
     }
     
     fetchMetrics()
-  }, [currentUser, isAdmin]) // Add dependencies for user context
+  }, [currentUser, isAdmin, scNameFilter, startDate, endDate]) // Add dependencies
 
   return (
     <div className="space-y-8">

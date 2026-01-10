@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useContext } from "react"
+import { useState, useEffect, useContext, useCallback } from "react"
 import { AuthContext } from "../../App" // Import AuthContext
 import supabase from "../../utils/supabase" // Import your Supabase client
 import {
@@ -42,7 +42,7 @@ const fallbackSourceData = [
   { name: "Referrals", value: 12, color: "#8b5cf6" },
 ]
 
-function DashboardCharts() {
+function DashboardCharts({ scNameFilter = "all", startDate, endDate }) {
   const { currentUser, userType, isAdmin, getUsernamesToFilter } = useContext(AuthContext) // Get user info and admin function
   const [activeTab, setActiveTab] = useState("overview")
   const [leadData, setLeadData] = useState(fallbackLeadData)
@@ -50,6 +50,13 @@ function DashboardCharts() {
   const [sourceData, setSourceData] = useState(fallbackSourceData)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  // Helper to format date for database query (YYYY-MM-DD)
+  // Assuming database uses standard date format or validation requires it
+  const formatDateForDb = (dateString) => {
+    if (!dateString) return null
+    return dateString
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -62,15 +69,35 @@ function DashboardCharts() {
         let totalQuotations = 0
         let totalOrders = 0
         
-        // Get total leads count
+        // --- 1. LEADS COUNT ---
         let leadsCountQuery = supabase
           .from('leads_to_order')
           .select('*', { count: 'exact', head: true })
         
-        // Apply user filter if not admin - use SC_Name field
-        if (!isAdmin() && currentUser?.username) {
+        // Apply SC Name Filter
+        if (isAdmin()) {
+          if (scNameFilter !== "all") {
+            leadsCountQuery = leadsCountQuery.eq('SC_Name', scNameFilter)
+          }
+        } else if (currentUser?.username) {
+          // Standard user filter
           const usernamesToFilter = getUsernamesToFilter()
           leadsCountQuery = leadsCountQuery.in('SC_Name', usernamesToFilter)
+        }
+
+        // Apply Date Filter
+        // Helper to adjust end date to cover the full day
+        const getEndDateWithTime = (date) => {
+          if (!date) return null
+          return `${date}T23:59:59`
+        }
+
+        // Apply Date Filter (using Created_At for leads)
+        if (startDate) {
+          leadsCountQuery = leadsCountQuery.gte('Created_At', startDate)
+        }
+        if (endDate) {
+          leadsCountQuery = leadsCountQuery.lte('Created_At', getEndDateWithTime(endDate))
         }
         
         const { count: leadsCount, error: leadsCountError } = await leadsCountQuery
@@ -78,16 +105,29 @@ function DashboardCharts() {
           totalLeads = leadsCount || 0
         }
         
-        // Get total enquiries count (where Enquiry_Received_Status = "yes")
+        // --- 2. ENQUIRIES COUNT ---
+        // (where Enquiry_Received_Status = "yes")
         let enquiriesCountQuery = supabase
           .from('leads_tracker')
           .select('*', { count: 'exact', head: true })
           .eq('Enquiry_Received_Status', 'yes')
         
-        // Apply user filter if not admin - use SC_Name field
-        if (!isAdmin() && currentUser?.username) {
+        if (isAdmin()) {
+          if (scNameFilter !== "all") {
+            enquiriesCountQuery = enquiriesCountQuery.eq('SC_Name', scNameFilter)
+          }
+        } else if (currentUser?.username) {
           const usernamesToFilter = getUsernamesToFilter()
           enquiriesCountQuery = enquiriesCountQuery.in('SC_Name', usernamesToFilter)
+        }
+
+        if (startDate) {
+           // Providing fallback to Timestamp if Created_At fails (though we can't easily try-catch query build)
+           // We'll stick to Created_At as it's standard. If issues arise, we change to Timestamp.
+           enquiriesCountQuery = enquiriesCountQuery.gte('created_at', startDate)
+        }
+        if (endDate) {
+           enquiriesCountQuery = enquiriesCountQuery.lte('created_at', getEndDateWithTime(endDate))
         }
         
         const { count: enquiriesCount, error: enquiriesCountError } = await enquiriesCountQuery
@@ -95,22 +135,60 @@ function DashboardCharts() {
           totalEnquiries = enquiriesCount || 0
         }
         
-        // Get total quotations count (rows with Quotation Number not null)
-        const { count: quotationsCount, error: quotationsCountError } = await supabase
+        // --- 3. QUOTATIONS COUNT ---
+        // (rows with Quotation Number not null)
+        let quotationsCountQuery = supabase
           .from('enquiry_tracker')
           .select('*', { count: 'exact', head: true })
           .not('Quotation Number', 'is', null)
           .neq('Quotation Number', '')
+
+        if (isAdmin()) {
+          if (scNameFilter !== "all") {
+             quotationsCountQuery = quotationsCountQuery.eq('SC_Name', scNameFilter)
+          }
+        } else if (currentUser?.username) {
+           const usernamesToFilter = getUsernamesToFilter()
+           quotationsCountQuery = quotationsCountQuery.in('SC_Name', usernamesToFilter)
+        }
+
+        if (startDate) {
+           quotationsCountQuery = quotationsCountQuery.gte('created_at', startDate)
+        }
+        if (endDate) {
+           quotationsCountQuery = quotationsCountQuery.lte('created_at', getEndDateWithTime(endDate))
+        }
+        
+        const { count: quotationsCount, error: quotationsCountError } = await quotationsCountQuery
         
         if (!quotationsCountError) {
           totalQuotations = quotationsCount || 0
         }
         
-        // Get total orders count (where "Is Order Received? Status" = "yes")
-        const { count: ordersCount, error: ordersCountError } = await supabase
+        // --- 4. ORDERS COUNT ---
+        // (where "Is Order Received? Status" = "yes")
+        let ordersCountQuery = supabase
           .from('enquiry_tracker')
           .select('*', { count: 'exact', head: true })
           .eq('"Is Order Received? Status"', 'yes')
+        
+        if (isAdmin()) {
+          if (scNameFilter !== "all") {
+            ordersCountQuery = ordersCountQuery.eq('SC_Name', scNameFilter)
+          }
+        } else if (currentUser?.username) {
+           const usernamesToFilter = getUsernamesToFilter()
+           ordersCountQuery = ordersCountQuery.in('SC_Name', usernamesToFilter)
+        }
+
+        if (startDate) {
+           ordersCountQuery = ordersCountQuery.gte('created_at', startDate)
+        }
+        if (endDate) {
+           ordersCountQuery = ordersCountQuery.lte('created_at', getEndDateWithTime(endDate))
+        }
+        
+        const { count: ordersCount, error: ordersCountError } = await ordersCountQuery
         
         if (!ordersCountError) {
           totalOrders = ordersCount || 0
@@ -126,15 +204,25 @@ function DashboardCharts() {
         
         setConversionData(newConversionData)
         
-        // For lead sources, we need to fetch the Lead_Source field to count by source
+        // --- LEADS SOURCES ---
         let leadSourcesQuery = supabase
           .from('leads_to_order')
           .select('Lead_Source')
         
-        // Apply user filter if not admin
-        if (!isAdmin() && currentUser?.username) {
+        if (isAdmin()) {
+          if (scNameFilter !== "all") {
+            leadSourcesQuery = leadSourcesQuery.eq('SC_Name', scNameFilter)
+          }
+        } else if (currentUser?.username) {
           const usernamesToFilter = getUsernamesToFilter()
           leadSourcesQuery = leadSourcesQuery.in('SC_Name', usernamesToFilter)
+        }
+
+        if (startDate) {
+          leadSourcesQuery = leadSourcesQuery.gte('Created_At', startDate)
+        }
+        if (endDate) {
+          leadSourcesQuery = leadSourcesQuery.lte('Created_At', getEndDateWithTime(endDate))
         }
         
         const { data: leadSourcesData, error: leadSourcesError } = await leadSourcesQuery
@@ -171,6 +259,9 @@ function DashboardCharts() {
           
           if (newSourceData.length > 0) {
             setSourceData(newSourceData)
+          } else {
+             // If filter yields no results, maybe empty? or keep previous/empty
+             setSourceData([]) 
           }
         }
         
@@ -203,15 +294,15 @@ function DashboardCharts() {
     }
     
     fetchData()
-  }, [currentUser, isAdmin]) // Add dependencies for user context
+  }, [currentUser, isAdmin, scNameFilter, startDate, endDate]) // Add dependencies
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
         <h3 className="text-xl font-bold">Sales Analytics ( Lead To Order )</h3>
-        {/* Display admin view indicator similar to FollowUp page */}
-        {isAdmin() && <p className="text-green-600 font-semibold">Admin View: Showing all data</p>}
       </div>
+      
+      {isAdmin() && <p className="text-green-600 font-semibold mb-2">Admin View: Showing all data</p>}
 
       <div className="mb-4">
         <div className="inline-flex rounded-md shadow-sm">
