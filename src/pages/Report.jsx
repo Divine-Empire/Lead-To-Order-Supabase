@@ -13,6 +13,7 @@ function Report() {
     enquiries: 0,
     quotations: 0,
     orders: 0,
+    quotationValue: 0,
   });
   const [filters, setFilters] = useState({
     scName: "all",
@@ -100,7 +101,7 @@ function Report() {
         // Updated to include "Timestamp" for Total Leads count
         let leadsQuery = supabase
             .from("leads_to_order")
-            .select("Planned1, Actual1, SC_Name, Quotation_Number, Timestamp")
+            .select("Planned1, Actual1, SC_Name, Quotation_Number, Timestamp, Quotation_Value_Without_Tax")
             // Removed .not("Planned1", "is", null) constraint because Total Leads relies on Timestamp, which might exist even if Planned1 is null
         
         // If SC Name is selected, we CAN filter that in DB to reduce data
@@ -114,6 +115,7 @@ function Report() {
         let enquiryCount = 0;
         let orderCount = 0;
         let quotationCount = 0;
+        let totalQuotationValue = 0;
 
         if (leadsError) {
              console.error("Error fetching leads_to_order:", leadsError);
@@ -151,6 +153,13 @@ function Report() {
                 if (row.Planned1 && row.Quotation_Number) {
                      if (isDateInRange(pDate, filters.startDate, filters.endDate)) {
                         quotationCount++;
+                         // Handle Quotation Value
+                         if (row.Quotation_Value_Without_Tax) {
+                             const value = parseFloat(String(row.Quotation_Value_Without_Tax).replace(/,/g, '').replace(/[^\d.-]/g, ''));
+                             if (!isNaN(value)) {
+                                 totalQuotationValue += value;
+                             }
+                         }
                     }
                 }
             });
@@ -162,6 +171,7 @@ function Report() {
             enquiries: enquiryCount,
             quotations: quotationCount,
             orders: orderCount,
+            quotationValue: totalQuotationValue,
         });
 
     } catch (error) {
@@ -238,7 +248,7 @@ function Report() {
         </div>
 
         {/* Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
             {/* Card 0: Total Leads */}
             <div className="bg-white rounded-lg shadow px-4 py-6 flex items-center">
                  <div className="p-3 rounded-full bg-indigo-100 text-indigo-600 mr-3">
@@ -291,6 +301,19 @@ function Report() {
                 <div>
                     <p className="text-sm font-medium text-gray-500">Total Orders</p>
                     <p className="text-2xl font-semibold text-gray-900">{isLoading ? "..." : metrics.orders}</p>
+                </div>
+            </div>
+
+            {/* Card 5: Total Quotation Value */}
+             <div className="bg-white rounded-lg shadow px-6 py-6 flex items-center">
+                <div className="p-3 rounded-full bg-teal-100 text-teal-600 mr-4">
+                    <span className="text-2xl font-bold">₹</span>
+                </div>
+                <div>
+                    <p className="text-sm font-medium text-gray-500">Total Quotation Value</p>
+                    <p className="text-xl font-semibold text-gray-900">
+                        {isLoading ? "..." : (metrics.quotationValue || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                    </p>
                 </div>
             </div>
         </div>
