@@ -91,7 +91,7 @@ function Dashboard() {
               )}
               
               {/* Date Range Filters */}
-              <div className="flex flex-col">
+              {/* <div className="flex flex-col">
                 <label className="text-xs font-semibold text-gray-500 mb-1">Start Date</label>
                 <input 
                   type="date" 
@@ -109,15 +109,15 @@ function Dashboard() {
                   onChange={handleEndDateChange}
                   className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-indigo-500"
                 />
-              </div>
+              </div> */}
               
               {/* Reset Button */}
-              <button 
+              {/* <button 
                 onClick={handleResetFilters}
                 className="px-4 py-2 bg-slate-100 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-200 transition-colors"
               >
                 Reset
-              </button>
+              </button> */}
           </div>
         </div>
 
