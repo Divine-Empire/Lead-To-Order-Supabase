@@ -219,7 +219,7 @@ function Report() {
         try {
             let query = supabase
                 .from("enquiry_to_order")
-                .select("id, amount_with_gst, order_no, is_order_received_status, created_at, enquiry_receiver_name, actual1");
+                .select("id, quotation_value_without_tax, order_no, is_order_received_status, created_at, enquiry_receiver_name, actual1");
 
             if (fosFilters.receiverName !== "all") {
                 query = query.eq("enquiry_receiver_name", fosFilters.receiverName);
@@ -253,20 +253,42 @@ function Report() {
                 // Check for Order Conversion (either order_no exists or status says yes)
                 const hasOrder = row.order_no || (row.is_order_received_status && row.is_order_received_status.toLowerCase() === 'yes');
 
-                if (hasOrder) {
-                    orderConvert++;
-                    if (row.amount_with_gst) {
-                        fosTotalValue += Number(row.amount_with_gst) || 0;
+
+
+
+                orderConvert++;
+
+                if (row.quotation_value_without_tax) {
+                    const value = parseFloat(
+                        String(row.quotation_value_without_tax)
+                            .replace(/,/g, "")
+                            .replace(/[^\d.-]/g, "")
+                    );
+
+                    if (!isNaN(value)) {
+                        fosTotalValue += value;
                     }
                 }
 
-                // Pipeline: Count only enquiries where actual1 is null (not converted)
-                if (!row.actual1) {
+
+
+
+                if (row.actual1 === null) {
                     pipelineEnquiryCount++;
-                    if (row.amount_with_gst) {
-                        pipelineTotalValue += Number(row.amount_with_gst) || 0;
+
+                    if (row.quotation_value_without_tax) {
+                        const value = parseFloat(
+                            String(row.quotation_value_without_tax)
+                                .replace(/,/g, "")
+                                .replace(/[^\d.-]/g, "")
+                        );
+
+                        if (!isNaN(value)) {
+                            pipelineTotalValue += value;
+                        }
                     }
                 }
+
             });
 
             setFosMetrics({
