@@ -3,7 +3,7 @@ import ReactDOMServer from "react-dom/server";
 import logo from "../../assests/WhatsApp Image 2025-05-14 at 4.11.43 PM.jpeg";
 import maniquipLogo from "../../assests/banner.jpeg";
 import qr from "../../assests/qrlogo.png";
-import maniquipLogo1 from "../../assests/Screenshot 2025-09-25 at 2.48.03 PM.png";
+import maniquipLogo1 from "../../assests/maniquip-logo-screenshot.png";
 
 // React PDF Component that matches your preview interface exactly
 // Function to convert number to words for Indian Rupees
@@ -137,64 +137,64 @@ const QuotationPDFComponent = ({
   // Build items data - FIXED QUANTITY DISPLAY ISSUE
   const itemsData = quotationData.items
     ? quotationData.items.map((item, index) => {
-        const row = [String(index + 1)];
+      const row = [String(index + 1)];
 
-        // Code
-        if (!hiddenColumns?.hideCode) row.push(String(item.code || " "));
+      // Code
+      if (!hiddenColumns?.hideCode) row.push(String(item.code || " "));
 
-        // Product Name
-        if (!hiddenColumns?.hideProductName) row.push(String(item.name || " "));
+      // Product Name
+      if (!hiddenColumns?.hideProductName) row.push(String(item.name || " "));
 
-        // Description
-        if (!hiddenColumns?.hideDescription)
-          row.push(String(item.description || " "));
+      // Description
+      if (!hiddenColumns?.hideDescription)
+        row.push(String(item.description || " "));
 
-        // GST %
-        if (!hiddenColumns?.hideGST) row.push(String(`${item.gst || 18}%`));
+      // GST %
+      if (!hiddenColumns?.hideGST) row.push(String(`${item.gst || 18}%`));
 
-        // Qty
-        if (!hiddenColumns?.hideQty) {
-          const quantity = Number(item.qty) || 1;
-          row.push(String(quantity));
-        }
+      // Qty
+      if (!hiddenColumns?.hideQty) {
+        const quantity = Number(item.qty) || 1;
+        row.push(String(quantity));
+      }
 
-        // Units
-        if (!hiddenColumns?.hideUnits) row.push(String(item.units || "Nos"));
+      // Units
+      if (!hiddenColumns?.hideUnits) row.push(String(item.units || "Nos"));
 
-        // Rate
-        if (!hiddenColumns?.hideRate)
-          row.push(`₹${formatCurrency(item.rate || 0)}`);
+      // Rate
+      if (!hiddenColumns?.hideRate)
+        row.push(`₹${formatCurrency(item.rate || 0)}`);
 
-        // Disc %
-        if (!hiddenColumns?.hideDisc)
-          row.push(String(`${item.discount || 0}%`));
+      // Disc %
+      if (!hiddenColumns?.hideDisc)
+        row.push(String(`${item.discount || 0}%`));
 
-        // Flat Disc
-        if (!hiddenColumns?.hideFlatDisc)
-          row.push(`₹${formatCurrency(item.flatDiscount || 0)}`);
+      // Flat Disc
+      if (!hiddenColumns?.hideFlatDisc)
+        row.push(`₹${formatCurrency(item.flatDiscount || 0)}`);
 
-        // Amount
-        if (!hiddenColumns?.hideAmount)
-          row.push(`₹${formatCurrency(item.amount || 0)}`);
+      // Amount
+      if (!hiddenColumns?.hideAmount)
+        row.push(`₹${formatCurrency(item.amount || 0)}`);
 
-        return row;
-      })
+      return row;
+    })
     : [
-        (() => {
-          const defaultRow = ["1"];
-          if (!hiddenColumns?.hideCode) defaultRow.push(" ");
-          if (!hiddenColumns?.hideProductName) defaultRow.push(" ");
-          if (!hiddenColumns?.hideDescription) defaultRow.push(" ");
-          if (!hiddenColumns?.hideGST) defaultRow.push("18%");
-          if (!hiddenColumns?.hideQty) defaultRow.push("1");
-          if (!hiddenColumns?.hideUnits) defaultRow.push("Nos");
-          if (!hiddenColumns?.hideRate) defaultRow.push("₹0.00");
-          if (!hiddenColumns?.hideDisc) defaultRow.push("0%");
-          if (!hiddenColumns?.hideFlatDisc) defaultRow.push("₹0.00");
-          if (!hiddenColumns?.hideAmount) defaultRow.push("₹0.00");
-          return defaultRow;
-        })(),
-      ];
+      (() => {
+        const defaultRow = ["1"];
+        if (!hiddenColumns?.hideCode) defaultRow.push(" ");
+        if (!hiddenColumns?.hideProductName) defaultRow.push(" ");
+        if (!hiddenColumns?.hideDescription) defaultRow.push(" ");
+        if (!hiddenColumns?.hideGST) defaultRow.push("18%");
+        if (!hiddenColumns?.hideQty) defaultRow.push("1");
+        if (!hiddenColumns?.hideUnits) defaultRow.push("Nos");
+        if (!hiddenColumns?.hideRate) defaultRow.push("₹0.00");
+        if (!hiddenColumns?.hideDisc) defaultRow.push("0%");
+        if (!hiddenColumns?.hideFlatDisc) defaultRow.push("₹0.00");
+        if (!hiddenColumns?.hideAmount) defaultRow.push("₹0.00");
+        return defaultRow;
+      })(),
+    ];
   // Financial calculations - updated to use breakdown objects
   const subtotal = quotationData.subtotal || 0;
   const totalFlatDiscount = quotationData.totalFlatDiscount || 0;
@@ -514,34 +514,34 @@ const QuotationPDFComponent = ({
                         padding: "8px 4px",
                         textAlign:
                           tableHeaders[cellIndex] === "S No." ||
-                          tableHeaders[cellIndex] === "GST %" ||
-                          tableHeaders[cellIndex] === "Qty" ||
-                          tableHeaders[cellIndex] === "Units" ||
-                          tableHeaders[cellIndex] === "Disc %" ||
-                          tableHeaders[cellIndex] === "Flat Disc"
+                            tableHeaders[cellIndex] === "GST %" ||
+                            tableHeaders[cellIndex] === "Qty" ||
+                            tableHeaders[cellIndex] === "Units" ||
+                            tableHeaders[cellIndex] === "Disc %" ||
+                            tableHeaders[cellIndex] === "Flat Disc"
                             ? "center"
                             : tableHeaders[cellIndex] === "Product Name" ||
                               tableHeaders[cellIndex] === "Description" ||
                               tableHeaders[cellIndex] === "Code"
-                            ? "left"
-                            : "right",
+                              ? "left"
+                              : "right",
                         fontSize: "10px",
                         verticalAlign: "top",
                         width:
                           tableHeaders[cellIndex] === "Product Name"
                             ? "150px"
                             : tableHeaders[cellIndex] === "Description"
-                            ? "300px"
-                            : "auto",
+                              ? "300px"
+                              : "auto",
                         whiteSpace:
                           tableHeaders[cellIndex] === "Description"
                             ? "pre-line"
                             : tableHeaders[cellIndex] === "Product Name"
-                            ? "normal"
-                            : "nowrap",
+                              ? "normal"
+                              : "nowrap",
                         wordBreak:
                           tableHeaders[cellIndex] === "Product Name" ||
-                          tableHeaders[cellIndex] === "Description"
+                            tableHeaders[cellIndex] === "Description"
                             ? "break-word"
                             : "normal",
                       }}
@@ -665,29 +665,29 @@ const QuotationPDFComponent = ({
 
               {!hiddenColumns?.hideGrandTotal && (
 
-              <tr style={{ backgroundColor: "#e6f3ff", fontWeight: "bold" }}>
-                <td
-                  colSpan={tableHeaders.length - 1}
-                  style={{
-                    border: "1px solid #ddd",
-                    padding: "8px 4px",
-                    textAlign: "right",
-                    fontSize: "10px",
-                  }}
-                >
-                  Grand Total
-                </td>
-                <td
-                  style={{
-                    border: "1px solid #ddd",
-                    padding: "8px 4px",
-                    textAlign: "right",
-                    fontSize: "10px",
-                  }}
-                >
-                  ₹{formatCurrency(grandTotal)}
-                </td>
-              </tr>
+                <tr style={{ backgroundColor: "#e6f3ff", fontWeight: "bold" }}>
+                  <td
+                    colSpan={tableHeaders.length - 1}
+                    style={{
+                      border: "1px solid #ddd",
+                      padding: "8px 4px",
+                      textAlign: "right",
+                      fontSize: "10px",
+                    }}
+                  >
+                    Grand Total
+                  </td>
+                  <td
+                    style={{
+                      border: "1px solid #ddd",
+                      padding: "8px 4px",
+                      textAlign: "right",
+                      fontSize: "10px",
+                    }}
+                  >
+                    ₹{formatCurrency(grandTotal)}
+                  </td>
+                </tr>
 
 
               )}
@@ -1255,7 +1255,7 @@ const QuotationPDFComponent = ({
               {/* Notes */}
               {quotationData.notes &&
                 quotationData.notes.filter((note) => note.trim()).length >
-                  0 && (
+                0 && (
                   <div style={{ marginTop: "16px" }}>
                     <h4
                       style={{
