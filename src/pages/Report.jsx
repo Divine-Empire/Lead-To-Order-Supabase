@@ -722,7 +722,8 @@ function Report() {
                                         <div>
                                             <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Value</p>
                                             <p className="text-3xl font-bold text-gray-900 mt-2">
-                                                {isLoading ? "..." : (fosMetrics.totalValue || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                                {/* {isLoading ? "..." : (fosMetrics.totalValue || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })} */}
+                                                {isLoading ? "..." : (fosMetrics.convertedValue || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
                                             </p>
                                         </div>
                                         <div className="p-3 rounded-full bg-green-50 text-green-600">
