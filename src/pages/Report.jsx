@@ -17,7 +17,7 @@ const FOS_RECEIVERS = [
     "ROSHAN DEWANGAN",
     "TUSHAR ATRAM",
     "SUBHRAJIT BEHERA",
-    "MANOSH ROY",
+    "MANOSH ROY CHOUDHURY",
     "AMAN JHA"
 ];
 
@@ -56,6 +56,9 @@ function Report() {
         enquiryCount: 0,
         totalValue: 0,
     });
+
+    // Conversion Metrics Table (per enquiry receiver)
+    const [conversionMetrics, setConversionMetrics] = useState([]);
 
     const [fosFilters, setFosFilters] = useState({
         receiverName: "all",
@@ -243,6 +246,7 @@ function Report() {
             // FOS Team metrics (all enquiries)
             let fosEnquiryCount = data.length;
             let fosTotalValue = 0;
+            let fosConvertedValue = 0; // NEW: Track sum of converted orders only
             let orderConvert = 0;
 
             // Pipeline metrics (only non-converted: actual1 is null)
@@ -250,14 +254,7 @@ function Report() {
             let pipelineTotalValue = 0;
 
             data.forEach(row => {
-                // Check for Order Conversion (either order_no exists or status says yes)
-                const hasOrder = row.order_no || (row.is_order_received_status && row.is_order_received_status.toLowerCase() === 'yes');
-
-
-
-
-                orderConvert++;
-
+                // Count total value for all enquiries
                 if (row.quotation_value_without_tax) {
                     const value = parseFloat(
                         String(row.quotation_value_without_tax)
@@ -267,12 +264,20 @@ function Report() {
 
                     if (!isNaN(value)) {
                         fosTotalValue += value;
+
+                        // NEW: If converted to order, add to converted value
+                        if (row.actual1 !== null) {
+                            fosConvertedValue += value;
+                        }
                     }
                 }
 
+                // Check if this enquiry was converted to order (actual1 is not null)
+                if (row.actual1 !== null) {
+                    orderConvert++;
+                }
 
-
-
+                // Pipeline metrics (only non-converted: actual1 is null)
                 if (row.actual1 === null) {
                     pipelineEnquiryCount++;
 
@@ -294,6 +299,7 @@ function Report() {
             setFosMetrics({
                 enquiryCount: fosEnquiryCount,
                 totalValue: fosTotalValue,
+                convertedValue: fosConvertedValue, // Added
                 orderConvert
             });
 
@@ -301,6 +307,67 @@ function Report() {
                 enquiryCount: pipelineEnquiryCount,
                 totalValue: pipelineTotalValue
             });
+
+            // Calculate per-person conversion metrics
+            // Initialize with all FOS team members
+            const personMetrics = {};
+            FOS_RECEIVERS.forEach(name => {
+                personMetrics[name] = {
+                    name: name,
+                    totalEnquiries: 0,
+                    orderConversions: 0,
+                    totalOrderValue: 0
+                };
+            });
+
+            data.forEach(row => {
+                const receiverName = row.enquiry_receiver_name;
+
+                // Only process if receiver name exists in FOS_RECEIVERS
+                if (receiverName && personMetrics[receiverName]) {
+                    // Count every enquiry
+                    personMetrics[receiverName].totalEnquiries++;
+
+                    // Check if this enquiry was converted to order
+                    const hasOrder = row.actual1 !== null;
+
+                    if (hasOrder) {
+                        personMetrics[receiverName].orderConversions++;
+
+                        if (row.quotation_value_without_tax) {
+                            const value = parseFloat(
+                                String(row.quotation_value_without_tax)
+                                    .replace(/,/g, "")
+                                    .replace(/[^\d.-]/g, "")
+                            );
+
+                            if (!isNaN(value)) {
+                                personMetrics[receiverName].totalOrderValue += value;
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Convert to array and calculate conversion percentage and average ticket size (preserve FOS_RECEIVERS order)
+            let metricsArray = FOS_RECEIVERS.map(name => ({
+                name: name,
+                totalEnquiries: personMetrics[name].totalEnquiries,
+                orderConversions: personMetrics[name].orderConversions,
+                conversionPercentage: personMetrics[name].totalEnquiries > 0
+                    ? (personMetrics[name].orderConversions / personMetrics[name].totalEnquiries) * 100
+                    : 0,
+                avgTicketSize: personMetrics[name].orderConversions > 0
+                    ? personMetrics[name].totalOrderValue / personMetrics[name].orderConversions
+                    : 0
+            }));
+
+            // If a specific receiver is selected, filter the table to show only that row
+            if (fosFilters.receiverName !== "all") {
+                metricsArray = metricsArray.filter(met => met.name === fosFilters.receiverName);
+            }
+
+            setConversionMetrics(metricsArray);
 
         } catch (err) {
             console.error("FOS fetch error:", err);
@@ -680,7 +747,7 @@ function Report() {
                                             <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Avg Ticket Size</p>
                                             <p className="text-3xl font-bold text-gray-900 mt-2">
                                                 {isLoading ? "..." : fosMetrics.orderConvert > 0
-                                                    ? (fosMetrics.totalValue / fosMetrics.orderConvert).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })
+                                                    ? (fosMetrics.convertedValue / fosMetrics.orderConvert).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })
                                                     : '₹0.00'}
                                             </p>
                                         </div>
@@ -717,6 +784,62 @@ function Report() {
                                         <div className="p-3 rounded-full bg-green-50 text-green-600">
                                             <span className="text-2xl font-bold">₹</span>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Section 3: Conversion Metrics Table */}
+                            <div>
+                                <h2 className="text-xl font-semibold text-gray-800 mb-4">Enquiry to Order Conversion Metrics</h2>
+                                <div className="bg-white rounded-lg shadow overflow-hidden">
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-full divide-y divide-gray-200">
+                                            <thead className="bg-gray-50">
+                                                <tr>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Enquiry Receiver Name
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Enquiry to Order Conversion
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Enquiry to Order (Avg Ticket Size)
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="bg-white divide-y divide-gray-200">
+                                                {isLoading ? (
+                                                    <tr>
+                                                        <td colSpan="3" className="px-6 py-4 text-center text-sm text-gray-500">
+                                                            Loading...
+                                                        </td>
+                                                    </tr>
+                                                ) : conversionMetrics.length === 0 ? (
+                                                    <tr>
+                                                        <td colSpan="3" className="px-6 py-4 text-center text-sm text-gray-500">
+                                                            No data available
+                                                        </td>
+                                                    </tr>
+                                                ) : (
+                                                    conversionMetrics.map((person, index) => (
+                                                        <tr key={index} className="hover:bg-gray-50">
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                                {person.name}
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                                                {person.conversionPercentage.toFixed(2)}%
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                                                {person.avgTicketSize > 0
+                                                                    ? person.avgTicketSize.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })
+                                                                    : '₹0.00'
+                                                                }
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                )}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>
