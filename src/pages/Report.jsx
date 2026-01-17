@@ -717,19 +717,7 @@ function Report() {
                                         </div>
                                     </div>
 
-                                    {/* Value */}
-                                    <div className="bg-white rounded-lg shadow px-6 py-8 flex items-center justify-between border-l-4 border-green-500">
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Value</p>
-                                            <p className="text-3xl font-bold text-gray-900 mt-2">
-                                                {/* {isLoading ? "..." : (fosMetrics.totalValue || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })} */}
-                                                {isLoading ? "..." : (fosMetrics.convertedValue || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
-                                            </p>
-                                        </div>
-                                        <div className="p-3 rounded-full bg-green-50 text-green-600">
-                                            <span className="text-2xl font-bold">₹</span>
-                                        </div>
-                                    </div>
+
 
                                     {/* Order Convert */}
                                     <div className="bg-white rounded-lg shadow px-6 py-8 flex items-center justify-between border-l-4 border-purple-500">
@@ -756,6 +744,33 @@ function Report() {
                                             <span className="text-2xl font-bold">₹</span>
                                         </div>
                                     </div>
+                                    <div className="bg-white rounded-lg shadow px-6 py-8 flex items-center justify-between border-l-4 border-green-500">
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Value </p>
+                                            <p className="text-3xl font-bold text-gray-900 mt-2">
+                                                {isLoading ? "..." : (fosMetrics.totalValue || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                            </p>
+                                        </div>
+                                        <div className="p-3 rounded-full bg-green-50 text-green-600">
+                                            <span className="text-2xl font-bold">₹</span>
+                                        </div>
+                                    </div>
+                                    {/* Value */}
+                                    <div className="bg-white rounded-lg shadow px-6 py-8 flex items-center justify-between border-l-4 border-green-500">
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Order Converted Total Value </p>
+                                            <p className="text-3xl font-bold text-gray-900 mt-2">
+                                                {/* {isLoading ? "..." : (fosMetrics.totalValue || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })} */}
+                                                {isLoading ? "..." : (fosMetrics.convertedValue || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                            </p>
+                                        </div>
+                                        <div className="p-3 rounded-full bg-green-50 text-green-600">
+                                            <span className="text-2xl font-bold">₹</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Value */}
+
                                 </div>
                             </div>
 
