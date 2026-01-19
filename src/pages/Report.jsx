@@ -33,6 +33,7 @@ function Report() {
         quotations: 0,
         orders: 0,
         quotationValue: 0,
+        orderQuotationValue: 0,
     });
     const [filters, setFilters] = useState({
         scName: "all",
@@ -101,19 +102,23 @@ function Report() {
             // Helper to parse dates strictly
             const parseDate = (dateStr) => {
                 if (!dateStr) return null;
-                // Handle ISO format
-                const isoDate = new Date(dateStr);
-                if (!isNaN(isoDate.getTime()) && dateStr.includes("-")) {
-                    return isoDate;
-                }
-                // Handle DD/MM/YYYY format
-                const parts = dateStr.split(" ")[0].split("/");
+                const datePart = String(dateStr).split(" ")[0]; // Get only date part
+
+                // 1. Handle DD/MM/YYYY or DD-MM-YYYY (Very common in user's backend)
+                const parts = datePart.split(/[/|-]/);
                 if (parts.length === 3) {
-                    // components: [DD, MM, YYYY]
-                    // new Date(YYYY, MM-1, DD)
-                    return new Date(parts[2], parts[1] - 1, parts[0]);
+                    if (parts[0].length === 4) {
+                        // format looks like YYYY-MM-DD
+                        return new Date(parts[0], parts[1] - 1, parts[2]);
+                    } else {
+                        // format looks like DD/MM/YYYY or DD-MM-YYYY
+                        return new Date(parts[2], parts[1] - 1, parts[0]);
+                    }
                 }
-                return null;
+
+                // 2. Fallback to standard Date parser
+                const isoDate = new Date(dateStr);
+                return isNaN(isoDate.getTime()) ? null : isoDate;
             };
 
             const isDateInRange = (date, start, end) => {
@@ -128,13 +133,22 @@ function Report() {
             };
 
             // 1. Fetch Calls (leads_tracker)
-            let callsQuery = supabase.from("leads_tracker").select("*", { count: "exact", head: true });
+            // Modified to client-side filter to support "d/m/y" text formats in backend
+            let callsQuery = supabase.from("leads_tracker").select("Timestamp");
             if (filters.scName !== "all") callsQuery = callsQuery.eq("SC_Name", filters.scName);
-            if (filters.startDate) callsQuery = callsQuery.gte("Timestamp", filters.startDate);
-            if (filters.endDate) callsQuery = callsQuery.lte("Timestamp", filters.endDate);
 
-            const { count: callsCount, error: callsError } = await callsQuery;
+            const { data: callsData, error: callsError } = await callsQuery;
             if (callsError) console.error("Error fetching calls:", callsError);
+
+            let callsCount = 0;
+            if (callsData) {
+                callsData.forEach(row => {
+                    const tDate = parseDate(row.Timestamp);
+                    if (isDateInRange(tDate, filters.startDate, filters.endDate)) {
+                        callsCount++;
+                    }
+                });
+            }
 
 
             // 2, 3, 4 & 5. Fetch Total Leads, Enquiries, Quotations & Orders (leads_to_order)
@@ -153,6 +167,7 @@ function Report() {
             let orderCount = 0;
             let quotationCount = 0;
             let totalQuotationValue = 0;
+            let totalOrderQuotationValue = 0; // The quotation value of ONLY converted orders
 
             if (leadsError) {
                 console.error("Error fetching leads_to_order:", leadsError);
@@ -180,6 +195,13 @@ function Report() {
                     if (row.Planned1 && row.Actual1) {
                         if (isDateInRange(aDate, filters.startDate, filters.endDate)) {
                             orderCount++;
+                            // Track the quotation value for this converted order
+                            if (row.Quotation_Value_Without_Tax) {
+                                const value = parseFloat(String(row.Quotation_Value_Without_Tax).replace(/,/g, '').replace(/[^\d.-]/g, ''));
+                                if (!isNaN(value)) {
+                                    totalOrderQuotationValue += value;
+                                }
+                            }
                         }
                     }
 
@@ -206,6 +228,7 @@ function Report() {
                 quotations: quotationCount,
                 orders: orderCount,
                 quotationValue: totalQuotationValue,
+                orderQuotationValue: totalOrderQuotationValue,
             });
 
         } catch (error) {
@@ -633,6 +656,19 @@ function Report() {
                                     </p>
                                 </div>
                             </div>
+
+                            {/* Card 6: Total Order Quotation Value */}
+                            <div className="bg-white rounded-lg shadow px-6 py-6 flex items-center">
+                                <div className="p-3 rounded-full bg-orange-100 text-orange-600 mr-4">
+                                    <span className="text-2xl font-bold">₹</span>
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500">Total Order Quotation Value</p>
+                                    <p className="text-xl font-semibold text-gray-900">
+                                        {isLoading ? "..." : (metrics.orderQuotationValue || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </>
                 )}
@@ -718,6 +754,20 @@ function Report() {
                                     </div>
 
 
+                                    {/* Total Enquiry Value */}
+
+                                    <div className="bg-white rounded-lg shadow px-6 py-8 flex items-center justify-between border-l-4 border-green-500">
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Enquiry Value </p>
+                                            <p className="text-3xl font-bold text-gray-900 mt-2">
+                                                {isLoading ? "..." : (fosMetrics.totalValue || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                            </p>
+                                        </div>
+                                        <div className="p-3 rounded-full bg-green-50 text-green-600">
+                                            <span className="text-2xl font-bold">₹</span>
+                                        </div>
+                                    </div>
+
 
                                     {/* Order Convert */}
                                     <div className="bg-white rounded-lg shadow px-6 py-8 flex items-center justify-between border-l-4 border-purple-500">
@@ -729,6 +779,22 @@ function Report() {
                                             <ShoppingCartIcon className="h-8 w-8" />
                                         </div>
                                     </div>
+
+
+                                    {/*Order Converted Total Value */}
+                                    <div className="bg-white rounded-lg shadow px-6 py-8 flex items-center justify-between border-l-4 border-green-500">
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Order Converted Total Value </p>
+                                            <p className="text-3xl font-bold text-gray-900 mt-2">
+                                                {/* {isLoading ? "..." : (fosMetrics.totalValue || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })} */}
+                                                {isLoading ? "..." : (fosMetrics.convertedValue || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                            </p>
+                                        </div>
+                                        <div className="p-3 rounded-full bg-green-50 text-green-600">
+                                            <span className="text-2xl font-bold">₹</span>
+                                        </div>
+                                    </div>
+
 
                                     {/* Avg Ticket Size */}
                                     <div className="bg-white rounded-lg shadow px-6 py-8 flex items-center justify-between border-l-4 border-amber-500">
@@ -744,32 +810,7 @@ function Report() {
                                             <span className="text-2xl font-bold">₹</span>
                                         </div>
                                     </div>
-                                    <div className="bg-white rounded-lg shadow px-6 py-8 flex items-center justify-between border-l-4 border-green-500">
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Value </p>
-                                            <p className="text-3xl font-bold text-gray-900 mt-2">
-                                                {isLoading ? "..." : (fosMetrics.totalValue || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
-                                            </p>
-                                        </div>
-                                        <div className="p-3 rounded-full bg-green-50 text-green-600">
-                                            <span className="text-2xl font-bold">₹</span>
-                                        </div>
-                                    </div>
-                                    {/* Value */}
-                                    <div className="bg-white rounded-lg shadow px-6 py-8 flex items-center justify-between border-l-4 border-green-500">
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Order Converted Total Value </p>
-                                            <p className="text-3xl font-bold text-gray-900 mt-2">
-                                                {/* {isLoading ? "..." : (fosMetrics.totalValue || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })} */}
-                                                {isLoading ? "..." : (fosMetrics.convertedValue || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
-                                            </p>
-                                        </div>
-                                        <div className="p-3 rounded-full bg-green-50 text-green-600">
-                                            <span className="text-2xl font-bold">₹</span>
-                                        </div>
-                                    </div>
 
-                                    {/* Value */}
 
                                 </div>
                             </div>
