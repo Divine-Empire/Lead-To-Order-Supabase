@@ -154,7 +154,7 @@ function Report() {
             // 2, 3, 4 & 5. Fetch Total Leads, Enquiries, Quotations & Orders (leads_to_order)
             let leadsQuery = supabase
                 .from("leads_to_order")
-                .select("Planned1, Actual1, SC_Name, Quotation_Number, Timestamp, Quotation_Value_Without_Tax")
+                .select("Planned1, Actual1, SC_Name, Quotation_Number, Timestamp, Quotation_Value_Without_Tax, \"Is_Order_Received?_Status\"")
 
             if (filters.scName !== "all") {
                 leadsQuery = leadsQuery.eq("SC_Name", filters.scName);
@@ -185,17 +185,22 @@ function Report() {
                     }
 
                     // Enquiries
-                    if (row.Planned1) {
-                        if (isDateInRange(pDate, filters.startDate, filters.endDate)) {
+                    if (row.Planned1 && aDate !== null) {
+                        if (isDateInRange(aDate, filters.startDate, filters.endDate)) {
                             enquiryCount++;
                         }
                     }
 
                     // Orders
-                    if (row.Planned1 && row.Actual1) {
-                        if (isDateInRange(aDate, filters.startDate, filters.endDate)) {
+                    if (row.Actual1) {
+                        // if (row.Planned1 && row.Actual1) {
+                        // Check if Is_Order_Received?_Status is Yes (case-insensitive for safety)
+                        const isOrderReceived = row["Is_Order_Received?_Status"] &&
+                            String(row["Is_Order_Received?_Status"]).toLowerCase() === "yes";
+
+                        if (isOrderReceived && isDateInRange(aDate, filters.startDate, filters.endDate)) {
                             orderCount++;
-                            // Track the quotation value for this converted order
+                            // Track the quotation value for this converted order (Status=Yes)
                             if (row.Quotation_Value_Without_Tax) {
                                 const value = parseFloat(String(row.Quotation_Value_Without_Tax).replace(/,/g, '').replace(/[^\d.-]/g, ''));
                                 if (!isNaN(value)) {
@@ -289,7 +294,10 @@ function Report() {
                         fosTotalValue += value;
 
                         // NEW: If converted to order, add to converted value
-                        if (row.actual1 !== null) {
+                        const isOrderReceived = row.is_order_received_status &&
+                            String(row.is_order_received_status).toLowerCase() === "yes";
+
+                        if (row.actual1 !== null && isOrderReceived) {
                             fosConvertedValue += value;
                         }
                     }
