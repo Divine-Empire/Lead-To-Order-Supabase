@@ -76,6 +76,47 @@ export const getNextQuotationNumber = async (prefix = "NBD") => {
     const financialYear = getCurrentFinancialYear();
     const yearPrefix = `${prefix}-${financialYear.start}-${financialYear.end}`;
 
+    // Special handling for "NBD CRR" prefix - fetch all and find max numerically
+    // String ordering doesn't work: "999" > "1014" alphabetically because '9' > '1'
+    if (prefix === "NBD CRR" || prefix.includes("NBD CRR")) {
+      const { data, error } = await supabase
+        .from("Make_Quotation")
+        .select("Quotation_No")
+        .like("Quotation_No", `${yearPrefix}-%`);
+
+      if (error) {
+        console.error("Error fetching quotations:", error);
+        return `${yearPrefix}-1001`; // Start from 1001 for NBD CRR
+      }
+
+      let maxNumber = 1000; // Start from 1000 for NBD CRR
+
+      if (data && data.length > 0) {
+        console.log(`Found ${data.length} quotations with prefix "${yearPrefix}"`);
+
+        // Extract the base serial number from each quotation (ignore revision suffixes)
+        data.forEach((item) => {
+          const quotationNo = item.Quotation_No;
+          const parts = quotationNo.split("-");
+
+          // Format: NBD CRR-25-26-1014 (4 parts) or NBD CRR-25-26-1014-1 (5 parts revision)
+          if (parts.length >= 4) {
+            const serialNumber = parseInt(parts[3]);
+            if (!isNaN(serialNumber) && serialNumber > maxNumber) {
+              maxNumber = serialNumber;
+            }
+          }
+        });
+
+        console.log("Highest base quotation number found:", maxNumber);
+      }
+
+      const nextNumber = maxNumber + 1;
+      console.log("Next quotation number will be:", nextNumber);
+      return `${yearPrefix}-${nextNumber}`;
+    }
+
+    // Default behavior for other prefixes (NBD, etc.)
     const { data, error } = await supabase
       .from("Make_Quotation")
       .select("Quotation_No")
@@ -94,24 +135,15 @@ export const getNextQuotationNumber = async (prefix = "NBD") => {
       const latestQuotation = data[0].Quotation_No;
       console.log("Latest quotation found:", latestQuotation);
 
-      // Handle different formats:
-      // CRR-25-26-2001 (base quotation)
-      // CRR-25-26-2001-01 (first revision)
-      // CRR-25-26-2001-02 (second revision)
-      // CRR-25-26-2002 (next base quotation)
-
       const parts = latestQuotation.split("-");
       console.log("Parts:", parts);
 
       if (parts.length === 4) {
-        // Format: CRR-25-26-2001 (base quotation without revision)
         const lastNumber = parseInt(parts[3]);
         if (!isNaN(lastNumber)) {
           nextNumber = lastNumber + 1;
         }
       } else if (parts.length === 5) {
-        // Format: CRR-25-26-2001-01 (quotation with revision)
-        // For new base quotations, we want to increment the main number, not the revision
         const mainNumber = parseInt(parts[3]);
         if (!isNaN(mainNumber)) {
           nextNumber = mainNumber + 1;
@@ -760,22 +792,20 @@ function Quotation() {
         <div className="border-b">
           <div className="flex">
             <button
-              className={`px-4 py-2 font-medium ${
-                activeTab === "edit"
-                  ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-tl-lg"
-                  : "text-gray-600"
-              }`}
+              className={`px-4 py-2 font-medium ${activeTab === "edit"
+                ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-tl-lg"
+                : "text-gray-600"
+                }`}
               onClick={() => setActiveTab("edit")}
               disabled={isViewMode}
             >
               Edit Quotation
             </button>
             <button
-              className={`px-4 py-2 font-medium ${
-                activeTab === "preview"
-                  ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
-                  : "text-gray-600"
-              }`}
+              className={`px-4 py-2 font-medium ${activeTab === "preview"
+                ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
+                : "text-gray-600"
+                }`}
               onClick={() => setActiveTab("preview")}
             >
               Preview
@@ -810,7 +840,7 @@ function Quotation() {
               addSpecialOffer={addSpecialOffer}
               removeSpecialOffer={removeSpecialOffer}
               handleSpecialOfferChange={handleSpecialOfferChange}
-              //   handleSpecialDiscountChange={handleSpecialDiscountChangeWrapper}
+            //   handleSpecialDiscountChange={handleSpecialDiscountChangeWrapper}
             />
           ) : (
             <QuotationPreview
