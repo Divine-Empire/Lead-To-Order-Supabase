@@ -319,7 +319,6 @@ const QuotationPDFComponent = ({
           padding: "24px",
           borderRadius: "8px",
           backgroundColor: "#fff",
-          pageBreakInside: "avoid",
         }}
       >
         {/* Header Section - Simplified without contact details */}
@@ -505,7 +504,7 @@ const QuotationPDFComponent = ({
 
             <tbody>
               {itemsData.map((row, rowIndex) => (
-                <tr key={rowIndex} style={{ borderBottom: "1px solid #ddd" }}>
+                <tr key={rowIndex} style={{ borderBottom: "1px solid #ddd", pageBreakInside: "avoid", breakInside: "avoid" }}>
                   {row.map((cell, cellIndex) => (
                     <td
                       key={cellIndex}
@@ -555,6 +554,7 @@ const QuotationPDFComponent = ({
               {/* Summary Rows */}
 
               {!hiddenColumns?.hideSubtotal && (
+                /* Summary rows section - keep together */
                 <tr style={{ borderTop: "2px solid #000" }}>
                   <td
                     colSpan={tableHeaders.length - 1}
@@ -1033,8 +1033,6 @@ const QuotationPDFComponent = ({
             marginTop: "20px",
             borderTop: "1px solid #ddd",
             paddingTop: "16px",
-            pageBreakInside: "avoid",
-            breakInside: "avoid",
           }}
         >
           <div style={{ display: "flex", gap: "32px" }}>
@@ -1289,6 +1287,7 @@ const QuotationPDFComponent = ({
 
         {/* Bank Details and QR Code */}
         <div
+          className="keep-together"
           style={{
             display: "flex",
             gap: "16px",
@@ -1380,6 +1379,7 @@ const QuotationPDFComponent = ({
 
         {/* Declaration */}
         <div
+          className="keep-together"
           style={{
             marginTop: "20px",
             borderTop: "1px solid #ddd",
@@ -1505,6 +1505,18 @@ export const generateHTMLFromData = (
       tbody tr:last-child {
         page-break-after: avoid !important;
       }
+      /* Keep sections together */
+      .keep-together {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      /* Prevent section headers from being orphaned */
+      h4, h3 {
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+        orphans: 3;
+        widows: 3;
+      }
     }
     @media screen {
       tr {
@@ -1523,6 +1535,16 @@ export const generateHTMLFromData = (
     }
     /* Force keep table rows together */
     table tr {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+    /* Keep sections together - inline style backup */
+    [style*="pageBreakInside"] {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+    /* Ensure table cells don't break */
+    td, th {
       page-break-inside: avoid !important;
       break-inside: avoid !important;
     }
@@ -1627,7 +1649,7 @@ export const generatePDFFromData = async (
       "NBD-002";
 
     const options = {
-      margin: [5, 0, 0, 0],
+      margin: [5, 3, 5, 3],
       filename: `Quotation_${preferredNo}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: {
@@ -1650,6 +1672,10 @@ export const generatePDFFromData = async (
         unit: "mm",
         format: "a4",
         orientation: "portrait",
+      },
+      pagebreak: {
+        mode: "css",
+        avoid: "tr",
       },
     };
 
