@@ -57,7 +57,7 @@ const QuotationForm = ({
   const [showLeadNoDropdown, setShowLeadNoDropdown] = useState(false);
   const [leadNoOptions, setLeadNoOptions] = useState(["Select Lead No."]);
   const [leadNoData, setLeadNoData] = useState({});
-  
+
 
   // Fetch dropdown data from Supabase dropdown table
   useEffect(() => {
@@ -395,28 +395,16 @@ const QuotationForm = ({
     const leadData = leadNoData[selectedLeadNo];
     console.log("Selected lead data:", leadData);
 
-    // Fill consignee details only if fields are empty
+    // Fill consignee details
     const companyName = leadData.companyName;
-    if (!quotationData.consigneeName) {
-      handleInputChange("consigneeName", companyName);
-    }
-    if (!quotationData.consigneeAddress) {
-      handleInputChange("consigneeAddress", leadData.address);
-    }
-    if (!quotationData.consigneeState) {
-      handleInputChange("consigneeState", leadData.state);
-    }
-    if (!quotationData.consigneeContactName) {
-      handleInputChange("consigneeContactName", leadData.contactName);
-    }
-    if (!quotationData.consigneeContactNo) {
-      handleInputChange("consigneeContactNo", leadData.contactNo);
-    }
-    if (!quotationData.consigneeGSTIN) {
-      handleInputChange("consigneeGSTIN", leadData.gstin);
-    }
+    handleInputChange("consigneeName", companyName);
+    handleInputChange("consigneeAddress", leadData.address);
+    handleInputChange("consigneeState", leadData.state);
+    handleInputChange("consigneeContactName", leadData.contactName);
+    handleInputChange("consigneeContactNo", leadData.contactNo);
+    handleInputChange("consigneeGSTIN", leadData.gstin);
 
-    if (leadData.shipTo && !quotationData.shipTo) {
+    if (leadData.shipTo) {
       handleInputChange("shipTo", leadData.shipTo);
     }
 
@@ -428,22 +416,22 @@ const QuotationForm = ({
     ) {
       const companyDetails = dropdownData.companies[companyName];
 
-      if (!quotationData.consigneeAddress && companyDetails.address) {
+      if (companyDetails.address) {
         handleInputChange("consigneeAddress", companyDetails.address);
       }
-      if (!quotationData.consigneeState && companyDetails.state) {
+      if (companyDetails.state) {
         handleInputChange("consigneeState", companyDetails.state);
       }
-      if (!quotationData.consigneeContactName && companyDetails.contactName) {
+      if (companyDetails.contactName) {
         handleInputChange("consigneeContactName", companyDetails.contactName);
       }
-      if (!quotationData.consigneeContactNo && companyDetails.contactNo) {
+      if (companyDetails.contactNo) {
         handleInputChange("consigneeContactNo", companyDetails.contactNo);
       }
-      if (!quotationData.consigneeGSTIN && companyDetails.gstin) {
+      if (companyDetails.gstin) {
         handleInputChange("consigneeGSTIN", companyDetails.gstin);
       }
-      if (companyDetails.stateCode && !quotationData.consigneeStateCode) {
+      if (companyDetails.stateCode) {
         handleInputChange("consigneeStateCode", companyDetails.stateCode);
       }
     }
@@ -603,62 +591,53 @@ const QuotationForm = ({
       }
     }
 
-    // Update items if found from lead data, but only if no items exist or only default item exists
+    // Update items if found from lead data
     if (autoItems.length > 0) {
-      // Check if there are only default/empty items
-      const hasOnlyDefaultItems = quotationData.items.length === 1 &&
-        (!quotationData.items[0].name || quotationData.items[0].name.trim() === "") &&
-        quotationData.items[0].qty === 1;
+      console.log(`Creating ${autoItems.length} items from lead data...`);
 
-      if (hasOnlyDefaultItems || quotationData.items.length === 0) {
-        console.log(`Creating ${autoItems.length} items from lead data...`);
+      const newItems = autoItems.map((item, index) => {
+        // Auto-fill product code from productData
+        let productInfo = null;
+        let productCode = "";
+        let productDescription = "";
+        let productRate = 0;
 
-        const newItems = autoItems.map((item, index) => {
-          // Auto-fill product code from productData
-          let productInfo = null;
-          let productCode = "";
-          let productDescription = "";
-          let productRate = 0;
-
-          // Try exact match first
-          if (productData[item.name]) {
-            productInfo = productData[item.name];
-          } else {
-            // Try case-insensitive match
-            const matchingKey = Object.keys(productData).find(
-              (key) => key.toLowerCase().trim() === item.name.toLowerCase().trim()
-            );
-            if (matchingKey) {
-              productInfo = productData[matchingKey];
-            }
+        // Try exact match first
+        if (productData[item.name]) {
+          productInfo = productData[item.name];
+        } else {
+          // Try case-insensitive match
+          const matchingKey = Object.keys(productData).find(
+            (key) => key.toLowerCase().trim() === item.name.toLowerCase().trim()
+          );
+          if (matchingKey) {
+            productInfo = productData[matchingKey];
           }
+        }
 
-          if (productInfo) {
-            productCode = productInfo.code || "";
-            productDescription = productInfo.description || "";
-            productRate = productInfo.rate || 0;
-          }
+        if (productInfo) {
+          productCode = productInfo.code || "";
+          productDescription = productInfo.description || "";
+          productRate = productInfo.rate || 0;
+        }
 
-          return {
-            id: index + 1,
-            code: productCode,
-            name: item.name,
-            description: productDescription,
-            gst: 18,
-            qty: item.qty,
-            units: "Nos",
-            rate: productRate,
-            discount: 0,
-            flatDiscount: 0,
-            amount: item.qty * productRate,
-          };
-        });
+        return {
+          id: index + 1,
+          code: productCode,
+          name: item.name,
+          description: productDescription,
+          gst: 18,
+          qty: item.qty,
+          units: "Nos",
+          rate: productRate,
+          discount: 0,
+          flatDiscount: 0,
+          amount: item.qty * productRate,
+        };
+      });
 
-        handleInputChange("items", newItems);
-        console.log("Items auto-filled from lead selection:", newItems);
-      } else {
-        console.log("Items already exist in quotation, skipping auto-fill from lead selection to prevent data loss");
-      }
+      handleInputChange("items", newItems);
+      console.log("Items auto-filled from lead selection:", newItems);
     }
 
     setIsItemsLoading(false);

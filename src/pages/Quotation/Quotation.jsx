@@ -151,22 +151,22 @@ function Quotation() {
   }, [isRevising]);
 
   // Initialize quotation number
-// Initialize quotation number - RUN ONLY ONCE
-useEffect(() => {
-  const initializeQuotationNumber = async () => {
-    try {
-      const nextQuotationNumber = await getNextQuotationNumber();
-      setQuotationData((prev) => ({
-        ...prev,
-        quotationNo: nextQuotationNumber,
-      }));
-    } catch (error) {
-      console.error("Error initializing quotation number:", error);
-    }
-  };
+  // Initialize quotation number - RUN ONLY ONCE
+  useEffect(() => {
+    const initializeQuotationNumber = async () => {
+      try {
+        const nextQuotationNumber = await getNextQuotationNumber();
+        setQuotationData((prev) => ({
+          ...prev,
+          quotationNo: nextQuotationNumber,
+        }));
+      } catch (error) {
+        console.error("Error initializing quotation number:", error);
+      }
+    };
 
-  initializeQuotationNumber();
-}, []); // ← Empty dependency array to run only once
+    initializeQuotationNumber();
+  }, []); // ← Empty dependency array to run only once
 
   // Load quotation data from URL if in view mode
   useEffect(() => {
@@ -220,8 +220,8 @@ useEffect(() => {
 
         const references = loadedData.Reference_Name
           ? loadedData.Reference_Name.split(",")
-              .map((r) => r.trim())
-              .filter((r) => r)
+            .map((r) => r.trim())
+            .filter((r) => r)
           : [];
         setSelectedReferences(references);
 
@@ -468,9 +468,9 @@ useEffect(() => {
         : "";
 
       // Try insert with retries on unique constraint (concurrent save)
-   let authoritativeQuotationNo = null;
+      let authoritativeQuotationNo = null;
       let lastError = null;
-      
+
       // Extract prefix from current quotation number to maintain consistency
       const extractPrefix = (quotationNo) => {
         const parts = quotationNo.split("-");
@@ -479,11 +479,11 @@ useEffect(() => {
         }
         return quotationNo.split("-")[0]; // fallback to first part
       };
-      
+
       // Initialize candidate number
       let candidateNo = quotationData.quotationNo;
       const currentPrefix = extractPrefix(candidateNo);
-      
+
       if (isRevising && selectedQuotation) {
         // If already a revision, keep it, else start with -01
         const partsInit = candidateNo.split("-");
@@ -492,7 +492,7 @@ useEffect(() => {
         }
       }
       // No else block - use existing quotationNo as is
-      
+
       for (let attempt = 0; attempt < 5; attempt++) {
         // On attempts > 0, adjust candidate number
         if (attempt > 0) {
@@ -712,22 +712,20 @@ useEffect(() => {
         <div className="border-b">
           <div className="flex">
             <button
-              className={`px-4 py-2 font-medium ${
-                activeTab === "edit"
+              className={`px-4 py-2 font-medium ${activeTab === "edit"
                   ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-tl-lg"
                   : "text-gray-600"
-              }`}
+                }`}
               onClick={() => setActiveTab("edit")}
               disabled={isViewMode}
             >
               Edit Quotation
             </button>
             <button
-              className={`px-4 py-2 font-medium ${
-                activeTab === "preview"
+              className={`px-4 py-2 font-medium ${activeTab === "preview"
                   ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
                   : "text-gray-600"
-              }`}
+                }`}
               onClick={() => setActiveTab("preview")}
             >
               Preview
@@ -765,7 +763,7 @@ useEffect(() => {
               setQuotationData={setQuotationData}
               hiddenColumns={hiddenColumns}
               setHiddenColumns={setHiddenColumns}
-              
+
             />
           ) : (
             <QuotationPreview

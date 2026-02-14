@@ -185,7 +185,7 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
       consignorState &&
       consigneeState &&
       consignorState.toLowerCase().trim() ===
-        consigneeState.toLowerCase().trim();
+      consigneeState.toLowerCase().trim();
     return !statesMatch;
   };
 
@@ -194,7 +194,7 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
     setQuotationData((prev) => {
       // Create a deep copy of previous state to avoid mutations
       const newData = JSON.parse(JSON.stringify(prev));
-      
+
       // Update the specific field
       newData[field] = value;
 
@@ -230,7 +230,7 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
           (sum, item) => sum + Number(item.flatDiscount || 0),
           0
         );
-        
+
         const totals = recalculateTotals(newData.items, shouldUseIGST);
 
         return {
@@ -250,7 +250,7 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
     setQuotationData((prev) => {
       // Create a deep copy of previous state
       const prevCopy = JSON.parse(JSON.stringify(prev));
-      
+
       const newItems = prevCopy.items.map((item) => {
         if (item.id === id) {
           const updatedItem = { ...item, [field]: value };
