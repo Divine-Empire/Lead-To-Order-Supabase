@@ -309,7 +309,8 @@ const handleSaveClick = async (index) => {
         "Credit _Access": editedData.Credit_Access,
         "Credit_Days": editedData.Credit_Days,
         "Credit_Limit": editedData.Credit_Limit,
-        "Additional_Notes": editedData.Additional_Notes
+        "Additional_Notes": editedData.Additional_Notes,
+        "Next_Action": editedData.nextAction
       };
 
       // Remove undefined/null values
@@ -802,6 +803,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
             callingDays: row["Calling_Days"] || "",
             priority: determinePriority(row["Lead_Source"] || ""),
             assignedTo: row["SC_Name"] || row["assigned_user"] || "",
+            nextAction: row["Next_Action"] || "",
             // New customer detail columns
             Email_Address: row["Email_Address"] || "",
             State: row["State"] || "",
@@ -2082,6 +2084,12 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                   scope="col"
                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
                                 >
+                                  Next Action
+                                </th>
+                                <th
+                                  scope="col"
+                                  className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                >
                                   Person Name
                                 </th>
                                 <th
@@ -2318,10 +2326,27 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           />
                                         ) : (
                                           <div
-                                            className="max-w-[120px] sm:max-w-[150px] truncate"
+                                            className="max-w-[150px] sm:max-w-[200px] whitespace-normal break-words"
                                             title={followUp.companyName}
                                           >
                                             {followUp.companyName}
+                                          </div>
+                                        )}
+                                      </td>
+                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
+                                        {editingRowId === index ? (
+                                          <input
+                                            type="text"
+                                            value={editedData.nextAction || ""}
+                                            onChange={(e) => handleFieldChange("nextAction", e.target.value)}
+                                            className="w-full px-2 py-1 border rounded"
+                                          />
+                                        ) : (
+                                          <div
+                                            className="max-w-[150px] sm:max-w-[200px] whitespace-normal break-words"
+                                            title={followUp.nextAction}
+                                          >
+                                            {followUp.nextAction}
                                           </div>
                                         )}
                                       </td>
@@ -2335,7 +2360,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           />
                                         ) : (
                                           <div
-                                            className="max-w-[100px] sm:max-w-[120px] truncate"
+                                            className="max-w-[150px] sm:max-w-[200px] whitespace-normal break-words"
                                             title={followUp.personName}
                                           >
                                             {followUp.personName}
@@ -2386,7 +2411,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           />
                                         ) : (
                                           <div
-                                            className="max-w-[100px] sm:max-w-[120px] truncate"
+                                            className="max-w-[150px] sm:max-w-[200px] whitespace-normal break-words"
                                             title={followUp.location}
                                           >
                                             {followUp.location}
