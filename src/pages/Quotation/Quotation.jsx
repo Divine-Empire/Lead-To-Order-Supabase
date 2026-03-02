@@ -677,7 +677,7 @@ function Quotation() {
         paymentTerms:
           "100% advance payment in the mode of NEFT, RTGS & DD.Payment only accepted in company's account - DIVINE EMPIRE INDIA PVT LTD.",
         delivery:
-          "Material will be dispatched after receipt of advance payment and upon confirmation of complete purchase order (PO) from the buyer.",
+          "Within 7-10 working days after received purchase order and 100% advance payment",
         freight: "Extra as per actual.",
         insurance: "Transit insurance for all shipment is at Buyer's scope.",
         taxes: "Extra mentioned in the quotation.",
@@ -713,8 +713,8 @@ function Quotation() {
           <div className="flex">
             <button
               className={`px-4 py-2 font-medium ${activeTab === "edit"
-                  ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-tl-lg"
-                  : "text-gray-600"
+                ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-tl-lg"
+                : "text-gray-600"
                 }`}
               onClick={() => setActiveTab("edit")}
               disabled={isViewMode}
@@ -723,8 +723,8 @@ function Quotation() {
             </button>
             <button
               className={`px-4 py-2 font-medium ${activeTab === "preview"
-                  ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
-                  : "text-gray-600"
+                ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
+                : "text-gray-600"
                 }`}
               onClick={() => setActiveTab("preview")}
             >

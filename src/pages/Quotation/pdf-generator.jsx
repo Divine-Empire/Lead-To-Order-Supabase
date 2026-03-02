@@ -1101,7 +1101,7 @@ const QuotationPDFComponent = ({
                       </td>
                       <td style={{ padding: "4px 0" }}>
                         {quotationData.delivery ||
-                          "Material will be dispatched after receipt of advance payment and upon confirmation of complete purchase order (PO) from the buyer."}
+                          "Within 7-10 working days after received purchase order and 100% advance payment"}
                       </td>
                     </tr>
                   )}

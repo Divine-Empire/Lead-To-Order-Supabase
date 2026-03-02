@@ -758,7 +758,7 @@ function Quotation() {
   //       total: 0,
   //       validity: "The above quoted prices are valid up to 10 days from date of offer.",
   //       paymentTerms: "100% advance payment in the mode of NEFT, RTGS & DD",
-  //       delivery: "Material will be dispatched after receipt of advance payment and upon confirmation of complete purchase order (PO) from the buyer.",
+  //       delivery: "Within 7-10 working days after received purchase order and 100% advance payment",
   //       freight: "Extra mentioned in the quotation.",
   //       insurance: "Transit insurance for all shipment is at Buyer's scope.",
   //       taxes: "Extra mentioned in the quotation.",
