@@ -58,6 +58,19 @@ function Report() {
         totalValue: 0,
     });
 
+    // SC Pipeline state
+    const [scPipelineMetrics, setScPipelineMetrics] = useState({
+        leadsCount: 0,
+        leadsValue: 0,
+        enquiryCount: 0,
+        enquiryValue: 0,
+    });
+    const [scPipelineFilters, setScPipelineFilters] = useState({
+        scName: "all",
+        startDate: "",
+        endDate: "",
+    });
+
     // Conversion Metrics Table (per enquiry receiver)
     const [conversionMetrics, setConversionMetrics] = useState([]);
 
@@ -88,7 +101,10 @@ function Report() {
                 return;
             }
 
-            const uniqueNames = (data || []).map(item => item.username).filter(Boolean);
+            const uniqueNames = (data || [])
+                .map(item => item.username)
+                .filter(Boolean)
+                .filter(name => name.toLowerCase() !== 'admin');
             setScNames(uniqueNames);
         } catch (error) {
             console.error("Error fetching SC names:", error);
@@ -407,6 +423,125 @@ function Report() {
         }
     }, [fosFilters, activeTab, isAdmin]);
 
+    // Fetch SC Pipeline Metrics
+    const fetchScPipelineMetrics = useCallback(async () => {
+        if (!isAdmin() || activeTab !== "sc_pipeline") return;
+        setIsLoading(true);
+        try {
+            const parseDate = (dateStr) => {
+                if (!dateStr) return null;
+                const datePart = String(dateStr).split(" ")[0];
+
+                const parts = datePart.split(/[/|-]/);
+                if (parts.length === 3) {
+                    if (parts[0].length === 4) {
+                        return new Date(parts[0], parts[1] - 1, parts[2]);
+                    } else {
+                        return new Date(parts[2], parts[1] - 1, parts[0]);
+                    }
+                }
+
+                const isoDate = new Date(dateStr);
+                return isNaN(isoDate.getTime()) ? null : isoDate;
+            };
+
+            const isDateInRange = (date, start, end) => {
+                if (!date) return false;
+                const target = new Date(date).getTime();
+                const s = start ? new Date(start).setHours(0, 0, 0, 0) : null;
+                const e = end ? new Date(end).setHours(23, 59, 59, 999) : null;
+
+                if (s && target < s) return false;
+                if (e && target > e) return false;
+                return true;
+            };
+
+            let leadsQuery = supabase
+                .from("leads_to_order")
+                .select("Planned1, Actual1, SC_Name, Timestamp, Quotation_Value_Without_Tax, Quotation_Value_With_Tax");
+
+            if (scPipelineFilters.scName !== "all") {
+                leadsQuery = leadsQuery.eq("SC_Name", scPipelineFilters.scName);
+            }
+
+            const { data: leadsData, error: leadsError } = await leadsQuery;
+
+            let leadsCount = 0;
+            let leadsValue = 0;
+            let enquiryCount = 0;
+            let enquiryValue = 0;
+
+            if (leadsError) {
+                console.error("Error fetching SC Pipeline data:", leadsError);
+            } else if (leadsData) {
+                leadsData.forEach(row => {
+                    const tDate = parseDate(row.Timestamp);
+
+                    // Total Leads + Total Value logic (date-filtered by Timestamp)
+                    if (tDate) {
+                        if (isDateInRange(tDate, scPipelineFilters.startDate, scPipelineFilters.endDate)) {
+                            leadsCount++;
+                            // Total Value: sum Quotation_Value_With_Tax for matching rows
+                            if (row.Quotation_Value_With_Tax) {
+                                const parsed = parseFloat(String(row.Quotation_Value_With_Tax).replace(/,/g, '').replace(/[^\d.-]/g, ''));
+                                if (!isNaN(parsed)) leadsValue += parsed;
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Fetch No. of Enquiry from enquiry_to_order table
+            const { data: enquiryData, error: enquiryError } = await supabase
+                .from("enquiry_to_order")
+                .select("enquiry_assign_to_project, timestamp, quotation_value_with_tax");
+
+            if (enquiryError) {
+                console.error("Error fetching enquiry_to_order data:", enquiryError);
+            } else if (enquiryData) {
+                // Extract first word of a string, lowercased for partial name matching
+                const firstWord = (str) => String(str || '').trim().toLowerCase().split(/\s+/)[0];
+
+                const selectedFirstWord = scPipelineFilters.scName !== "all"
+                    ? firstWord(scPipelineFilters.scName)
+                    : null;
+
+                enquiryData.forEach(row => {
+                    const eDate = parseDate(row.timestamp);
+
+                    // Name matching: compare first word of enquiry_assign_to_project with selected SC's first word
+                    const nameMatches = selectedFirstWord === null
+                        ? true // "All" selected — count every record
+                        : firstWord(row.enquiry_assign_to_project) === selectedFirstWord;
+
+                    if (!nameMatches) return;
+
+                    // Date filter using timestamp column of enquiry_to_order
+                    if (isDateInRange(eDate, scPipelineFilters.startDate, scPipelineFilters.endDate)) {
+                        enquiryCount++;
+                        // Sum quotation_value_with_tax for Total Value of Enquiries
+                        if (row.quotation_value_with_tax) {
+                            const parsed = parseFloat(String(row.quotation_value_with_tax).replace(/,/g, '').replace(/[^\d.-]/g, ''));
+                            if (!isNaN(parsed)) enquiryValue += parsed;
+                        }
+                    }
+                });
+            }
+
+            setScPipelineMetrics({
+                leadsCount,
+                leadsValue,
+                enquiryCount,
+                enquiryValue
+            });
+
+        } catch (error) {
+            console.error("Error fetching SC Pipeline metrics:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [scPipelineFilters, activeTab, isAdmin]);
+
 
     useEffect(() => {
         fetchSCNames();
@@ -495,11 +630,13 @@ function Report() {
     useEffect(() => {
         if (activeTab === "calling") {
             fetchMetrics();
-        } else {
+        } else if (activeTab === "fos") {
             fetchFosMetrics();
             fetchFilteredVisitCount();
+        } else if (activeTab === "sc_pipeline") {
+            fetchScPipelineMetrics();
         }
-    }, [fetchMetrics, fetchFosMetrics, fetchFilteredVisitCount, activeTab]);
+    }, [fetchMetrics, fetchFosMetrics, fetchFilteredVisitCount, fetchScPipelineMetrics, activeTab]);
 
     if (!isAdmin()) {
         return <div className="p-8 text-center text-red-600">Access Denied</div>;
@@ -545,6 +682,15 @@ function Report() {
                                 } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
                         >
                             FOS Report
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("sc_pipeline")}
+                            className={`${activeTab === "sc_pipeline"
+                                ? "border-blue-500 text-blue-600"
+                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                        >
+                            SC Pipeline
                         </button>
                     </nav>
                 </div>
@@ -906,6 +1052,112 @@ function Report() {
                                             </tbody>
                                         </table>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                )}
+
+                {/* SC PIPELINE TAB CONTENT */}
+                {activeTab === "sc_pipeline" && (
+                    <>
+                        {/* Filters */}
+                        <div className="bg-white p-4 rounded-lg shadow mb-8 flex flex-col md:flex-row gap-4 items-end md:items-center">
+                            <div className="w-full md:w-1/4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">SC Name</label>
+                                <select
+                                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border"
+                                    value={scPipelineFilters.scName}
+                                    onChange={(e) => setScPipelineFilters(prev => ({ ...prev, scName: e.target.value }))}
+                                >
+                                    <option value="all">All Sales Coordinators</option>
+                                    {scNames.map(name => (
+                                        <option key={name} value={name}>{name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="w-full md:w-1/4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                                <input
+                                    type="date"
+                                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border"
+                                    value={scPipelineFilters.startDate}
+                                    onChange={(e) => setScPipelineFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                                />
+                            </div>
+                            <div className="w-full md:w-1/4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                                <input
+                                    type="date"
+                                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border"
+                                    value={scPipelineFilters.endDate}
+                                    onChange={(e) => setScPipelineFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                                />
+                            </div>
+                            <div className="w-full md:w-1/4">
+                                <button
+                                    onClick={() => setScPipelineFilters({ scName: "all", startDate: "", endDate: "" })}
+                                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-md transition-colors"
+                                >
+                                    Reset
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Pipeline Section */}
+                        <div className="space-y-12">
+                            <div>
+                                <h2 className="text-xl font-semibold text-gray-800 mb-4">SC Pipeline</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+                                    {/* No. of Leads */}
+                                    <div className="bg-white rounded-lg shadow px-6 py-8 flex items-center justify-between border-l-4 border-blue-500">
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">No. of Leads</p>
+                                            <p className="text-3xl font-bold text-gray-900 mt-2">{isLoading ? "..." : scPipelineMetrics.leadsCount}</p>
+                                        </div>
+                                        <div className="p-3 rounded-full bg-blue-50 text-blue-600">
+                                            <UsersIcon className="h-8 w-8" />
+                                        </div>
+                                    </div>
+
+                                    {/* Total Value */}
+                                    <div className="bg-white rounded-lg shadow px-6 py-8 flex items-center justify-between border-l-4 border-indigo-500">
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Value</p>
+                                            <p className="text-3xl font-bold text-gray-900 mt-2">
+                                                {isLoading ? "..." : (scPipelineMetrics.leadsValue || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                            </p>
+                                        </div>
+                                        <div className="p-3 rounded-full bg-indigo-50 text-indigo-600">
+                                            <span className="text-2xl font-bold">₹</span>
+                                        </div>
+                                    </div>
+
+                                    {/* No. of Enquiry */}
+                                    <div className="bg-white rounded-lg shadow px-6 py-8 flex items-center justify-between border-l-4 border-green-500">
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">No. of Enquiries</p>
+                                            <p className="text-3xl font-bold text-gray-900 mt-2">{isLoading ? "..." : scPipelineMetrics.enquiryCount}</p>
+                                        </div>
+                                        <div className="p-3 rounded-full bg-green-50 text-green-600">
+                                            <FileTextIcon className="h-8 w-8" />
+                                        </div>
+                                    </div>
+
+                                    {/* Total Value of Enquiries */}
+                                    <div className="bg-white rounded-lg shadow px-6 py-8 flex items-center justify-between border-l-4 border-purple-500">
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Value of Enquiries</p>
+                                            <p className="text-3xl font-bold text-gray-900 mt-2">
+                                                {isLoading ? "..." : (scPipelineMetrics.enquiryValue || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                            </p>
+                                        </div>
+                                        <div className="p-3 rounded-full bg-purple-50 text-purple-600">
+                                            <span className="text-2xl font-bold">₹</span>
+                                        </div>
+                                    </div>
+
                                 </div>
                             </div>
                         </div>

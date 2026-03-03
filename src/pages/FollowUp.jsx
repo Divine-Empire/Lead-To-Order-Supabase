@@ -73,6 +73,8 @@ function FollowUp() {
     timestamp: true,
     callingCount: true,
     enquiryCallingCount: true, // New column
+    noOfFollowUps: true, // Output column for total records in leads_tracker
+    lastFollowUpStatus: true,
     leadNo: true,
     companyName: true,
     personName: true,
@@ -100,6 +102,84 @@ function FollowUp() {
     itemQty: true,
   });
   const [showColumnDropdown, setShowColumnDropdown] = useState(false);
+
+  // Pending column visibility (checked = visible by default)
+  const [pendingVisibleColumns, setPendingVisibleColumns] = useState({
+    actions: true,
+    edit: true,
+    lastFollowUpDate: true,
+    noOfFollowUps: true,
+    lastFollowUpStatus: true,
+    nextCallDate: true,
+    leadNo: true,
+    companyName: true,
+    nextAction: true,
+    personName: true,
+    phoneNo: true,
+    leadSource: true,
+    location: true,
+    customerSay: true,
+    enquiryStatus: true,
+    assignedTo: true,
+    emailAddress: true,
+    state: false,
+    address: false,
+    personName1: false,
+    designation1: false,
+    phoneNumber1: false,
+    personName2: false,
+    designation2: false,
+    phoneNumber2: false,
+    personName3: false,
+    designation3: false,
+    phoneNumber3: false,
+    nob: false,
+    gstNumber: false,
+    customerRegForm: false,
+    creditAccess: false,
+    creditDays: false,
+    creditLimit: false,
+    additionalNotes: false,
+  });
+  const [showPendingColumnDropdown, setShowPendingColumnDropdown] = useState(false);
+
+  const pendingColumnOptions = [
+    { key: "actions", label: "Actions" },
+    { key: "edit", label: "Edit" },
+    { key: "nextCallDate", label: "Next Call Date" },
+    { key: "leadNo", label: "Lead No." },
+    { key: "companyName", label: "Company Name" },
+    { key: "nextAction", label: "Next Action" },
+    { key: "personName", label: "Person Name" },
+    { key: "phoneNo", label: "Phone No." },
+    { key: "leadSource", label: "Lead Source" },
+    { key: "location", label: "Location" },
+    { key: "customerSay", label: "Customer Say" },
+    { key: "enquiryStatus", label: "Enquiry Status" },
+    { key: "assignedTo", label: "Assigned To" },
+    { key: "emailAddress", label: "Email Address" },
+    { key: "lastFollowUpDate", label: "Last Follow Up Date" },
+    { key: "noOfFollowUps", label: "No. of FollowUps" },
+    { key: "lastFollowUpStatus", label: "Last FollowUp Status" },
+    { key: "state", label: "State" },
+    { key: "address", label: "Address" },
+    { key: "personName1", label: "Person Name 1" },
+    { key: "designation1", label: "Designation 1" },
+    { key: "phoneNumber1", label: "Phone Number 1" },
+    { key: "personName2", label: "Person Name 2" },
+    { key: "designation2", label: "Designation 2" },
+    { key: "phoneNumber2", label: "Phone Number 2" },
+    { key: "personName3", label: "Person Name 3" },
+    { key: "designation3", label: "Designation 3" },
+    { key: "phoneNumber3", label: "Phone Number 3" },
+    { key: "nob", label: "Nature of Business" },
+    { key: "gstNumber", label: "GST Number" },
+    { key: "customerRegForm", label: "Customer Registration Form" },
+    { key: "creditAccess", label: "Credit Access" },
+    { key: "creditDays", label: "Credit Days" },
+    { key: "creditLimit", label: "Credit Limit" },
+    { key: "additionalNotes", label: "Additional Notes" },
+  ];
 
   // Helper functions
   const determinePriority = (source) => {
@@ -277,192 +357,192 @@ function FollowUp() {
     }
   };
 
-const handleSaveClick = async (index) => {
-  try {
-    if (activeTab === "pending") {
-      const pendingUpdateData = {
-        "Next_Call_Date": convertDateToYYYYMMDD(editedData.timestamp),
-        "LD-Lead-No": editedData.leadId,
-        "Company_Name": editedData.companyName,
-        "Salesperson_Name": editedData.personName,
-        "Phone_Number": editedData.phoneNumber,
-        "Lead_Source": editedData.leadSource,
-        "Location": editedData.location,
-        "What_Did_The_Customer say?": editedData.customerSay,
-        "Enquiry_Status": editedData.enquiryStatus,
-        "SC_Name": editedData.assignedTo,
-        "Email_Address": editedData.Email_Address,
-        "State": editedData.State,
-        "Address": editedData.Address,
-        "Person_name_1": editedData.Person_name_1,
-        "Designation_1": editedData.Designation_1,
-        "Phone_Number_1": editedData.Phone_Number_1,
-        "Person_Name_2": editedData.Person_Name_2,
-        "Designation_2": editedData.Designation_2,
-        "Phone_Number_2": editedData.Phone_Number_2,
-        "Person_Name_3": editedData.Person_Name_3,
-        "Designation_3": editedData.Designation_3,
-        "Phone_Number_3": editedData.Phone_Number_3,
-        "NOB": editedData.NOB,
-        "GST_Number": editedData.GST_Number,
-        "Customer_Registration Form": editedData.Customer_Registration_Form,
-        "Credit _Access": editedData.Credit_Access,
-        "Credit_Days": editedData.Credit_Days,
-        "Credit_Limit": editedData.Credit_Limit,
-        "Additional_Notes": editedData.Additional_Notes,
-        "Next_Action": editedData.nextAction
+  const handleSaveClick = async (index) => {
+    try {
+      if (activeTab === "pending") {
+        const pendingUpdateData = {
+          "Next_Call_Date": convertDateToYYYYMMDD(editedData.timestamp),
+          "LD-Lead-No": editedData.leadId,
+          "Company_Name": editedData.companyName,
+          "Salesperson_Name": editedData.personName,
+          "Phone_Number": editedData.phoneNumber,
+          "Lead_Source": editedData.leadSource,
+          "Location": editedData.location,
+          "What_Did_The_Customer say?": editedData.customerSay,
+          "Enquiry_Status": editedData.enquiryStatus,
+          "SC_Name": editedData.assignedTo,
+          "Email_Address": editedData.Email_Address,
+          "State": editedData.State,
+          "Address": editedData.Address,
+          "Person_name_1": editedData.Person_name_1,
+          "Designation_1": editedData.Designation_1,
+          "Phone_Number_1": editedData.Phone_Number_1,
+          "Person_Name_2": editedData.Person_Name_2,
+          "Designation_2": editedData.Designation_2,
+          "Phone_Number_2": editedData.Phone_Number_2,
+          "Person_Name_3": editedData.Person_Name_3,
+          "Designation_3": editedData.Designation_3,
+          "Phone_Number_3": editedData.Phone_Number_3,
+          "NOB": editedData.NOB,
+          "GST_Number": editedData.GST_Number,
+          "Customer_Registration Form": editedData.Customer_Registration_Form,
+          "Credit _Access": editedData.Credit_Access,
+          "Credit_Days": editedData.Credit_Days,
+          "Credit_Limit": editedData.Credit_Limit,
+          "Additional_Notes": editedData.Additional_Notes,
+          "Next_Action": editedData.nextAction
+        };
+
+        // Remove undefined/null values
+        Object.keys(pendingUpdateData).forEach((key) => {
+          if (pendingUpdateData[key] === undefined || pendingUpdateData[key] === null) {
+            delete pendingUpdateData[key];
+          }
+        });
+
+        const { error } = await supabase
+          .from("leads_to_order")
+          .update(pendingUpdateData)
+          .eq("id", editedData.id);
+
+        if (error) throw error;
+
+        alert("Updated successfully!");
+        fetchFollowUpData(pendingPage, false, searchTerm);
+        setEditingRowId(null);
+        setEditedData({});
+        return;
+      }
+
+      // Existing logic for History tab
+      // Map the JavaScript field names to actual database column names
+      const updateData = {
+        Company_Name: editedData.companyName,
+        "What_Did_The_Customer_say?": editedData.customerSay,
+        Leads_Tracking_Status: editedData.status,
+        Enquiry_Received_Status: editedData.enquiryStatus,
+        Enquiry_Received_Date: convertDateToYYYYMMDD(editedData.enquiryReceivedDate),
+        Enquiry_for_State: editedData.enquiryState,
+        Project_Name: editedData.projectName,
+        Enquiry_Type: editedData.salesType,
+        Project_Approximate_Value: editedData.projectApproxValue,
+        Item_Name1: editedData.itemName1,
+        Quantity1: editedData.quantity1,
+        Item_Name2: editedData.itemName2,
+        Quantity2: editedData.quantity2,
+        Item_Name3: editedData.itemName3,
+        Quantity3: editedData.quantity3,
+        Item_Name4: editedData.itemName4,
+        Quantity4: editedData.quantity4,
+        Item_Name5: editedData.itemName5,
+        Quantity5: editedData.quantity5,
+        Next_Action: editedData.nextAction,
+        Next_Call_Date: convertDateToYYYYMMDD(editedData.nextCallDate),
+        Next_Call_Time: convertTimeTo24Hour(editedData.nextCallTime),
+        Item_Qty: editedData.itemQty,
       };
 
       // Remove undefined/null values
-      Object.keys(pendingUpdateData).forEach((key) => {
-        if (pendingUpdateData[key] === undefined || pendingUpdateData[key] === null) {
-          delete pendingUpdateData[key];
+      Object.keys(updateData).forEach((key) => {
+        if (updateData[key] === undefined || updateData[key] === null) {
+          delete updateData[key];
         }
       });
 
-      const { error } = await supabase
-        .from("leads_to_order")
-        .update(pendingUpdateData)
-        .eq("id", editedData.id);
+      // Get the lead number for updating leads_to_order table
+      const leadNo = editedData.leadNo;
 
-      if (error) throw error;
+      if (!leadNo) {
+        throw new Error("Lead number is required for updating leads_to_order table");
+      }
 
-      alert("Updated successfully!");
-      fetchFollowUpData(pendingPage, false, searchTerm);
+      // Define the fields to update in leads_to_order
+      const leadsToOrderUpdateData = {
+        "Status": editedData.status,
+        "What_Did_The_Customer say?": editedData.customerSay,
+        "Enquiry_Received_Status": editedData.enquiryStatus,
+        "Enquiry_Received_Date": convertDateToYYYYMMDD(editedData.enquiryReceivedDate),
+        "Enquiry_for_State": editedData.enquiryState,
+        "Project_Name": editedData.projectName,
+        "Enquiry_Type": editedData.salesType,
+        "Project_Approximate_Value": editedData.projectApproxValue,
+        "Item_Name1": editedData.itemName1,
+        "Quantity1": editedData.quantity1,
+        "Item_Name2": editedData.itemName2,
+        "Quantity2": editedData.quantity2,
+        "Item_Name3": editedData.itemName3,
+        "Quantity3": editedData.quantity3,
+        "Item_Name4": editedData.itemName4,
+        "Quantity4": editedData.quantity4,
+        "Item_Name5": editedData.itemName5,
+        "Quantity5": editedData.quantity5,
+        "Next_Action": editedData.nextAction,
+        "Next_Call_Date": convertDateToYYYYMMDD(editedData.nextCallDate),
+        "Next_Call_Time": convertTimeTo24Hour(editedData.nextCallTime),
+      };
+
+      // Remove undefined/null values from leads_to_order update
+      Object.keys(leadsToOrderUpdateData).forEach((key) => {
+        if (leadsToOrderUpdateData[key] === undefined || leadsToOrderUpdateData[key] === null) {
+          delete leadsToOrderUpdateData[key];
+        }
+      });
+
+      // Update both tables in parallel
+      const [updateTrackerResult, updateLeadsOrderResult] = await Promise.allSettled([
+        // Update leads_tracker table
+        supabase
+          .from("leads_tracker")
+          .update(updateData)
+          .eq("id", editedData.id),
+
+        // Update leads_to_order table using LD-Lead-No
+        supabase
+          .from("leads_to_order")
+          .update(leadsToOrderUpdateData)
+          .eq("LD-Lead-No", leadNo)
+      ]);
+
+      // Check for errors in leads_tracker update
+      if (updateTrackerResult.status === 'rejected') {
+        throw new Error(`Error updating leads_tracker: ${updateTrackerResult.reason.message}`);
+      }
+
+      const trackerError = updateTrackerResult.value.error;
+      if (trackerError) {
+        throw new Error(`leads_tracker update failed: ${trackerError.message}`);
+      }
+
+      // Check for errors in leads_to_order update
+      if (updateLeadsOrderResult.status === 'rejected') {
+        console.warn(`Warning: Error updating leads_to_order: ${updateLeadsOrderResult.reason.message}`);
+        // Continue anyway as leads_tracker was updated successfully
+      } else {
+        const leadsOrderError = updateLeadsOrderResult.value.error;
+        if (leadsOrderError) {
+          console.warn(`Warning: leads_to_order update failed: ${leadsOrderError.message}`);
+          // Continue anyway as leads_tracker was updated successfully
+        }
+      }
+
+      alert("Updated successfully in both tables!");
+
+      // Refresh data
+      fetchFollowUpData(historyPage, false, searchTerm);
       setEditingRowId(null);
       setEditedData({});
-      return;
-    }
+    } catch (error) {
+      console.error("Error updating:", error);
 
-    // Existing logic for History tab
-    // Map the JavaScript field names to actual database column names
-    const updateData = {
-      Company_Name: editedData.companyName,
-      "What_Did_The_Customer_say?": editedData.customerSay,
-      Leads_Tracking_Status: editedData.status,
-      Enquiry_Received_Status: editedData.enquiryStatus,
-      Enquiry_Received_Date: convertDateToYYYYMMDD(editedData.enquiryReceivedDate),
-      Enquiry_for_State: editedData.enquiryState,
-      Project_Name: editedData.projectName,
-      Enquiry_Type: editedData.salesType,
-      Project_Approximate_Value: editedData.projectApproxValue,
-      Item_Name1: editedData.itemName1,
-      Quantity1: editedData.quantity1,
-      Item_Name2: editedData.itemName2,
-      Quantity2: editedData.quantity2,
-      Item_Name3: editedData.itemName3,
-      Quantity3: editedData.quantity3,
-      Item_Name4: editedData.itemName4,
-      Quantity4: editedData.quantity4,
-      Item_Name5: editedData.itemName5,
-      Quantity5: editedData.quantity5,
-      Next_Action: editedData.nextAction,
-      Next_Call_Date: convertDateToYYYYMMDD(editedData.nextCallDate),
-      Next_Call_Time: convertTimeTo24Hour(editedData.nextCallTime),
-      Item_Qty: editedData.itemQty,
-    };
-
-    // Remove undefined/null values
-    Object.keys(updateData).forEach((key) => {
-      if (updateData[key] === undefined || updateData[key] === null) {
-        delete updateData[key];
-      }
-    });
-
-    // Get the lead number for updating leads_to_order table
-    const leadNo = editedData.leadNo;
-    
-    if (!leadNo) {
-      throw new Error("Lead number is required for updating leads_to_order table");
-    }
-
-    // Define the fields to update in leads_to_order
-    const leadsToOrderUpdateData = {
-      "Status": editedData.status,
-      "What_Did_The_Customer say?": editedData.customerSay,
-      "Enquiry_Received_Status": editedData.enquiryStatus,
-      "Enquiry_Received_Date": convertDateToYYYYMMDD(editedData.enquiryReceivedDate),
-      "Enquiry_for_State": editedData.enquiryState,
-      "Project_Name": editedData.projectName,
-      "Enquiry_Type": editedData.salesType,
-      "Project_Approximate_Value": editedData.projectApproxValue,
-      "Item_Name1": editedData.itemName1,
-      "Quantity1": editedData.quantity1,
-      "Item_Name2": editedData.itemName2,
-      "Quantity2": editedData.quantity2,
-      "Item_Name3": editedData.itemName3,
-      "Quantity3": editedData.quantity3,
-      "Item_Name4": editedData.itemName4,
-      "Quantity4": editedData.quantity4,
-      "Item_Name5": editedData.itemName5,
-      "Quantity5": editedData.quantity5,
-      "Next_Action": editedData.nextAction,
-      "Next_Call_Date": convertDateToYYYYMMDD(editedData.nextCallDate),
-      "Next_Call_Time": convertTimeTo24Hour(editedData.nextCallTime),
-    };
-
-    // Remove undefined/null values from leads_to_order update
-    Object.keys(leadsToOrderUpdateData).forEach((key) => {
-      if (leadsToOrderUpdateData[key] === undefined || leadsToOrderUpdateData[key] === null) {
-        delete leadsToOrderUpdateData[key];
-      }
-    });
-
-    // Update both tables in parallel
-    const [updateTrackerResult, updateLeadsOrderResult] = await Promise.allSettled([
-      // Update leads_tracker table
-      supabase
-        .from("leads_tracker")
-        .update(updateData)
-        .eq("id", editedData.id),
-      
-      // Update leads_to_order table using LD-Lead-No
-      supabase
-        .from("leads_to_order")
-        .update(leadsToOrderUpdateData)
-        .eq("LD-Lead-No", leadNo)
-    ]);
-
-    // Check for errors in leads_tracker update
-    if (updateTrackerResult.status === 'rejected') {
-      throw new Error(`Error updating leads_tracker: ${updateTrackerResult.reason.message}`);
-    }
-    
-    const trackerError = updateTrackerResult.value.error;
-    if (trackerError) {
-      throw new Error(`leads_tracker update failed: ${trackerError.message}`);
-    }
-
-    // Check for errors in leads_to_order update
-    if (updateLeadsOrderResult.status === 'rejected') {
-      console.warn(`Warning: Error updating leads_to_order: ${updateLeadsOrderResult.reason.message}`);
-      // Continue anyway as leads_tracker was updated successfully
-    } else {
-      const leadsOrderError = updateLeadsOrderResult.value.error;
-      if (leadsOrderError) {
-        console.warn(`Warning: leads_to_order update failed: ${leadsOrderError.message}`);
-        // Continue anyway as leads_tracker was updated successfully
+      // If leads_tracker update failed but leads_to_order succeeded,
+      // show a different message
+      if (error.message.includes('leads_tracker') && !error.message.includes('leads_to_order')) {
+        alert(`Partially updated: leads_to_order was updated but leads_tracker failed: ${error.message}`);
+      } else {
+        alert(`Error updating: ${error.message}`);
       }
     }
-
-    alert("Updated successfully in both tables!");
-
-    // Refresh data
-    fetchFollowUpData(historyPage, false, searchTerm);
-    setEditingRowId(null);
-    setEditedData({});
-  } catch (error) {
-    console.error("Error updating:", error);
-    
-    // If leads_tracker update failed but leads_to_order succeeded,
-    // show a different message
-    if (error.message.includes('leads_tracker') && !error.message.includes('leads_to_order')) {
-      alert(`Partially updated: leads_to_order was updated but leads_tracker failed: ${error.message}`);
-    } else {
-      alert(`Error updating: ${error.message}`);
-    }
-  }
-};
+  };
 
   const handleCancelClick = () => {
     setEditingRowId(null);
@@ -648,9 +728,9 @@ const handleSaveClick = async (index) => {
     }
   }, [isAdmin]);
 
-// Implement DB counts for filter dropdown
-// Add 'Enquiry Calling Count' column to FollowUp.jsx
-const fetchFilterTypeCounts = useCallback(async () => {
+  // Implement DB counts for filter dropdown
+  // Add 'Enquiry Calling Count' column to FollowUp.jsx
+  const fetchFilterTypeCounts = useCallback(async () => {
     try {
       let allQuery, firstQuery, multiQuery;
 
@@ -672,12 +752,12 @@ const fetchFilterTypeCounts = useCallback(async () => {
         allQuery = baseQuery();
         firstQuery = baseQuery().or('Enquiry_Received_Status.is.null,Enquiry_Received_Status.eq."",Enquiry_Received_Status.eq."New"');
         multiQuery = baseQuery().ilike("Enquiry_Received_Status", "%expected%");
-        
+
         // Apply Company Filter to history counts for consistency
         if (companyFilter !== "all") {
-            allQuery = allQuery.eq("Company_Name", companyFilter);
-            firstQuery = firstQuery.eq("Company_Name", companyFilter);
-            multiQuery = multiQuery.eq("Company_Name", companyFilter);
+          allQuery = allQuery.eq("Company_Name", companyFilter);
+          firstQuery = firstQuery.eq("Company_Name", companyFilter);
+          multiQuery = multiQuery.eq("Company_Name", companyFilter);
         }
       }
 
@@ -804,6 +884,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
             priority: determinePriority(row["Lead_Source"] || ""),
             assignedTo: row["SC_Name"] || row["assigned_user"] || "",
             nextAction: row["Next_Action"] || "",
+            lastFollowUpDate: "", // will be enriched below
             // New customer detail columns
             Email_Address: row["Email_Address"] || "",
             State: row["State"] || "",
@@ -824,7 +905,51 @@ const fetchFilterTypeCounts = useCallback(async () => {
             Credit_Days: row["Credit_Days"] || "",
             Credit_Limit: row["Credit_Limit"] || "",
             Additional_Notes: row["Additional_Notes"] || "",
+            noOfFollowUps: 0, // will be enriched below
+            lastFollowUpStatus: "", // will be enriched below
           }));
+
+          // Fetch most-recent Timestamp from leads_tracker per Lead_No
+          try {
+            const leadIds = [...new Set(filteredPending.map(r => r.leadId).filter(Boolean))];
+            if (leadIds.length > 0) {
+              const { data: trackerData } = await supabase
+                .from("leads_tracker")
+                .select('"LD-Lead-No", "Timestamp", "Enquiry_Received_Status"')
+                .in('"LD-Lead-No"', leadIds)
+                .order("Timestamp", { ascending: false }); // most recent first
+
+              if (trackerData && trackerData.length > 0) {
+                // Build map: first occurrence per lead = the most recent (latest) Timestamp
+                const lastFollowUpMap = {};
+                trackerData.forEach(tr => {
+                  const leadNo = tr["LD-Lead-No"];
+                  const ts = tr["Timestamp"];
+                  const status = tr["Enquiry_Received_Status"];
+                  if (!leadNo || !ts) return;
+                  if (!lastFollowUpMap[leadNo]) {
+                    lastFollowUpMap[leadNo] = {
+                      date: ts,
+                      status: status || "",
+                      count: 1
+                    }; // keep only the first = most recent
+                  } else {
+                    lastFollowUpMap[leadNo].count += 1;
+                  }
+                });
+                // Enrich each pending row
+                filteredPending.forEach(row => {
+                  if (row.leadId && lastFollowUpMap[row.leadId]) {
+                    row.lastFollowUpDate = formatDateToDDMMYYYY(lastFollowUpMap[row.leadId].date);
+                    row.noOfFollowUps = lastFollowUpMap[row.leadId].count;
+                    row.lastFollowUpStatus = lastFollowUpMap[row.leadId].status;
+                  }
+                });
+              }
+            }
+          } catch (trackerErr) {
+            console.warn("Could not fetch last follow-up dates:", trackerErr);
+          }
 
           if (isLoadMore) {
             setPendingFollowUps((prev) => [...prev, ...filteredPending]);
@@ -874,16 +999,16 @@ const fetchFilterTypeCounts = useCallback(async () => {
 
           // Apply Company Name Filter
           if (companyFilter !== "all") {
-             // Handle precise matching or trim matching if necessary
-             historyQuery = historyQuery.eq("Company_Name", companyFilter);
+            // Handle precise matching or trim matching if necessary
+            historyQuery = historyQuery.eq("Company_Name", companyFilter);
           }
 
           // Apply Filter Type (First Followup / Expected)
-            if (filterType === "first") {
-              historyQuery = historyQuery.or('Enquiry_Received_Status.is.null,Enquiry_Received_Status.eq."",Enquiry_Received_Status.eq."New"');
-            } else if (filterType === "multi") {
-              historyQuery = historyQuery.ilike("Enquiry_Received_Status", "%expected%");
-            }
+          if (filterType === "first") {
+            historyQuery = historyQuery.or('Enquiry_Received_Status.is.null,Enquiry_Received_Status.eq."",Enquiry_Received_Status.eq."New"');
+          } else if (filterType === "multi") {
+            historyQuery = historyQuery.ilike("Enquiry_Received_Status", "%expected%");
+          }
 
           // Apply date filter at database level
           if (dateFilter === "today") {
@@ -924,24 +1049,24 @@ const fetchFilterTypeCounts = useCallback(async () => {
           const companyCountsMap = {};
           if (data && data.length > 0) {
             const uniqueCompanyNames = [...new Set(data.map(item => item["Company_Name"]).filter(Boolean))];
-            
+
             if (uniqueCompanyNames.length > 0) {
               try {
                 let countQuery = supabase
                   .from("leads_tracker")
                   .select('"Company_Name"');
-                
+
                 countQuery = countQuery.in('"Company_Name"', uniqueCompanyNames);
 
                 // Apply SC name filter if needed (to be consistent with what user sees)
-                 if (!isAdmin() && currentUser && currentUser.username) {
+                if (!isAdmin() && currentUser && currentUser.username) {
                   const usernamesToFilter = getUsernamesToFilter();
                   countQuery = countQuery.in("SC_Name", usernamesToFilter);
-                } 
+                }
 
 
                 if (isAdmin() && scNameFilter !== "all") {
-                   countQuery = countQuery.eq("SC_Name", scNameFilter);
+                  countQuery = countQuery.eq("SC_Name", scNameFilter);
                 }
 
                 // Apply Filter Type to Count Query
@@ -957,21 +1082,21 @@ const fetchFilterTypeCounts = useCallback(async () => {
 
                 // Consolidate date filter logic matching the main query patterns
                 if (startDate) {
-                   countQuery = countQuery.gte("Timestamp", startDate);
+                  countQuery = countQuery.gte("Timestamp", startDate);
                 }
                 if (endDate) {
-                   countQuery = countQuery.lte("Timestamp", endDate);
+                  countQuery = countQuery.lte("Timestamp", endDate);
                 }
-                
+
                 if (dateFilter === "today" && !startDate && !endDate) {
-                   const formattedToday = `${today.getDate().toString().padStart(2, "0")}/${(today.getMonth() + 1).toString().padStart(2, "0")}/${today.getFullYear()}`;
-                   countQuery = countQuery.eq("Timestamp", todayStr);
+                  const formattedToday = `${today.getDate().toString().padStart(2, "0")}/${(today.getMonth() + 1).toString().padStart(2, "0")}/${today.getFullYear()}`;
+                  countQuery = countQuery.eq("Timestamp", todayStr);
                 } else if (dateFilter === "older" && !startDate && !endDate) {
-                   countQuery = countQuery.lt("Timestamp", todayStr);
+                  countQuery = countQuery.lt("Timestamp", todayStr);
                 }
 
                 const { data: countData, error: countError } = await countQuery;
-                
+
                 if (!countError && countData) {
                   countData.forEach(item => {
                     const name = (item["Company_Name"] || "").trim(); // Normalize name
@@ -979,7 +1104,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                   });
                 }
               } catch (err) {
-                 console.error("Error fetching company counts:", err);
+                console.error("Error fetching company counts:", err);
               }
             }
           }
@@ -988,13 +1113,13 @@ const fetchFilterTypeCounts = useCallback(async () => {
           const enquiryCountsMap = {};
           if (data && data.length > 0) {
             const uniqueLeadNos = [...new Set(data.map(item => item["LD-Lead-No"]).filter(Boolean))];
-            
+
             if (uniqueLeadNos.length > 0) {
               try {
                 let enquiryCountQuery = supabase
                   .from("enquiry_tracker")
                   .select('"Enquiry No."');
-                
+
                 enquiryCountQuery = enquiryCountQuery.in('"Enquiry No."', uniqueLeadNos);
 
                 // Apply Date Filters to Enquiry Count Query (matching historyQuery logic)
@@ -1002,20 +1127,20 @@ const fetchFilterTypeCounts = useCallback(async () => {
                 const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
                 if (startDate) {
-                    enquiryCountQuery = enquiryCountQuery.gte("Timestamp", startDate);
+                  enquiryCountQuery = enquiryCountQuery.gte("Timestamp", startDate);
                 }
                 if (endDate) {
-                    enquiryCountQuery = enquiryCountQuery.lte("Timestamp", endDate);
+                  enquiryCountQuery = enquiryCountQuery.lte("Timestamp", endDate);
                 }
-                
+
                 if (dateFilter === "today" && !startDate && !endDate) {
-                    enquiryCountQuery = enquiryCountQuery.eq("Timestamp", todayStr);
+                  enquiryCountQuery = enquiryCountQuery.eq("Timestamp", todayStr);
                 } else if (dateFilter === "older" && !startDate && !endDate) {
-                    enquiryCountQuery = enquiryCountQuery.lt("Timestamp", todayStr);
+                  enquiryCountQuery = enquiryCountQuery.lt("Timestamp", todayStr);
                 }
 
                 const { data: enquiryCountData, error: enquiryCountError } = await enquiryCountQuery;
-                
+
                 if (!enquiryCountError && enquiryCountData) {
                   enquiryCountData.forEach(item => {
                     const leadNo = item["Enquiry No."];
@@ -1023,7 +1148,36 @@ const fetchFilterTypeCounts = useCallback(async () => {
                   });
                 }
               } catch (err) {
-                 console.error("Error fetching enquiry counts:", err);
+                console.error("Error fetching enquiry counts:", err);
+              }
+            }
+          }
+
+          // Fetch Follow-Ups Total Counts for History tab
+          const historyFollowUpsCountMap = {};
+          const historyLastStatusMap = {};
+          if (data && data.length > 0) {
+            const uniqueLeadNosHistory = [...new Set(data.map(item => item["LD-Lead-No"]).filter(Boolean))];
+
+            if (uniqueLeadNosHistory.length > 0) {
+              try {
+                const { data: trackerCountData, error: trackerCountError } = await supabase
+                  .from("leads_tracker")
+                  .select('"LD-Lead-No", "Enquiry_Received_Status", "Timestamp"')
+                  .in('"LD-Lead-No"', uniqueLeadNosHistory)
+                  .order("Timestamp", { ascending: false });
+
+                if (!trackerCountError && trackerCountData) {
+                  trackerCountData.forEach(item => {
+                    const leadNo = item["LD-Lead-No"];
+                    historyFollowUpsCountMap[leadNo] = (historyFollowUpsCountMap[leadNo] || 0) + 1;
+                    if (!historyLastStatusMap[leadNo]) {
+                      historyLastStatusMap[leadNo] = item["Enquiry_Received_Status"] || "";
+                    }
+                  });
+                }
+              } catch (err) {
+                console.error("Error fetching history total counts:", err);
               }
             }
           }
@@ -1034,6 +1188,8 @@ const fetchFilterTypeCounts = useCallback(async () => {
               ? formatDateToDDMMYYYY(row["Timestamp"])
               : "",
             leadNo: row["LD-Lead-No"] || "",
+            noOfFollowUps: historyFollowUpsCountMap[row["LD-Lead-No"]] || 0,
+            lastFollowUpStatus: historyLastStatusMap[row["LD-Lead-No"]] || "",
             companyName: row["Company_Name"] || "",
             companyCount: companyCountsMap[(row["Company_Name"] || "").trim()] || 0,
             enquiryCallingCount: enquiryCountsMap[row["LD-Lead-No"]] || 0, // Map the new count
@@ -1166,19 +1322,19 @@ const fetchFilterTypeCounts = useCallback(async () => {
         const { data: historyData, error: historyError } = await supabase
           .from("leads_tracker")
           .select('"Company_Name"');
-        
+
         let companies = [];
         if (!historyError && historyData) {
-            companies = historyData.map(item => item["Company_Name"]).filter(Boolean);
+          companies = historyData.map(item => item["Company_Name"]).filter(Boolean);
         }
 
         // Optional: Fetch from leads_to_order (Pending) if needed to be comprehensive
         const { data: pendingData, error: pendingError } = await supabase
-            .from("leads_to_order")
-            .select("Company_Name");
-        
+          .from("leads_to_order")
+          .select("Company_Name");
+
         if (!pendingError && pendingData) {
-            companies = [...companies, ...pendingData.map(item => item.Company_Name).filter(Boolean)];
+          companies = [...companies, ...pendingData.map(item => item.Company_Name).filter(Boolean)];
         }
 
         const uniqueCompanies = [...new Set(companies)].sort();
@@ -1382,6 +1538,8 @@ const fetchFilterTypeCounts = useCallback(async () => {
     { key: "timestamp", label: "Timestamp" },
     { key: "callingCount", label: "Calling Count" },
     { key: "enquiryCallingCount", label: "Enquiry Calling Count" }, // New column
+    { key: "noOfFollowUps", label: "No. of FollowUps" }, // New column
+    { key: "lastFollowUpStatus", label: "Last FollowUp Status" },
     { key: "leadNo", label: "Lead No." },
     { key: "companyName", label: "Company Name" },
     { key: "personName", label: "Person Name" },
@@ -1419,13 +1577,16 @@ const fetchFilterTypeCounts = useCallback(async () => {
       if (showColumnDropdown && !event.target.closest(".relative")) {
         setShowColumnDropdown(false);
       }
+      if (showPendingColumnDropdown && !event.target.closest(".relative")) {
+        setShowPendingColumnDropdown(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [showColumnDropdown]);
+  }, [showColumnDropdown, showPendingColumnDropdown]);
 
   // Mobile Card View Component
   const MobileCardView = ({ data, type }) => {
@@ -1444,13 +1605,12 @@ const fetchFilterTypeCounts = useCallback(async () => {
                     {followUp.leadId}
                   </h3>
                   <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                      followUp.priority === "High"
-                        ? "bg-red-100 text-red-700"
-                        : followUp.priority === "Medium"
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${followUp.priority === "High"
+                      ? "bg-red-100 text-red-700"
+                      : followUp.priority === "Medium"
                         ? "bg-amber-100 text-amber-700"
                         : "bg-slate-100 text-slate-700"
-                    }`}
+                      }`}
                   >
                     {followUp.leadSource}
                   </span>
@@ -1589,13 +1749,12 @@ const fetchFilterTypeCounts = useCallback(async () => {
                     {followUp.leadNo}
                   </h3>
                   <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                      followUp.status === "Completed"
-                        ? "bg-green-100 text-green-700"
-                        : followUp.status === "Pending"
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${followUp.status === "Completed"
+                      ? "bg-green-100 text-green-700"
+                      : followUp.status === "Pending"
                         ? "bg-amber-100 text-amber-700"
                         : "bg-red-100 text-red-700"
-                    }`}
+                      }`}
                   >
                     {followUp.status}
                   </span>
@@ -1875,81 +2034,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                 </>
               )}
 
-              {/* Column Selection Dropdown - Only show for history tab */}
-              {activeTab === "history" && (
-                <div className="min-w-0 relative">
-                  <button
-                    onClick={() => setShowColumnDropdown(!showColumnDropdown)}
-                    className="w-full px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white flex items-center justify-between"
-                  >
-                    <span>Select Columns</span>
-                    <svg
-                      className={`w-4 h-4 transition-transform ${
-                        showColumnDropdown ? "rotate-180" : ""
-                      }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </button>
 
-                  {showColumnDropdown && (
-                    <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-gray-300 rounded-md shadow-lg z-50 max-h-80 overflow-y-auto">
-                      <div className="p-2">
-                        {/* Select All Option */}
-                        <div className="flex items-center p-2 hover:bg-gray-50 rounded">
-                          <input
-                            type="checkbox"
-                            id="select-all"
-                            checked={Object.values(visibleColumns).every(
-                              Boolean
-                            )}
-                            onChange={handleSelectAll}
-                            className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded"
-                          />
-                          <label
-                            htmlFor="select-all"
-                            className="ml-2 text-sm font-medium text-gray-900 cursor-pointer"
-                          >
-                            All Columns
-                          </label>
-                        </div>
-
-                        <hr className="my-2" />
-
-                        {/* Individual Column Options */}
-                        {columnOptions.map((option) => (
-                          <div
-                            key={option.key}
-                            className="flex items-center p-2 hover:bg-gray-50 rounded"
-                          >
-                            <input
-                              type="checkbox"
-                              id={`column-${option.key}`}
-                              checked={visibleColumns[option.key]}
-                              onChange={() => handleColumnToggle(option.key)}
-                              className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded"
-                            />
-                            <label
-                              htmlFor={`column-${option.key}`}
-                              className="ml-2 text-sm text-gray-700 cursor-pointer flex-1"
-                            >
-                              {option.label}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
 
               {/* Filter Dropdown */}
               <div className="min-w-0">
@@ -2000,29 +2085,110 @@ const fetchFilterTypeCounts = useCallback(async () => {
 
           {/* Card Content */}
           <div className="p-4 sm:p-6">
-            {/* Tab Navigation */}
-            <div className="mb-4 sm:mb-6">
-              <div className="inline-flex w-full sm:w-auto rounded-md shadow-sm">
+            {/* Tab Navigation with Columns toggle */}
+            <div className="mb-4 sm:mb-6 flex items-center justify-between gap-4">
+              <div className="inline-flex rounded-md shadow-sm">
                 <button
                   onClick={() => setActiveTab("pending")}
-                  className={`flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-l-md transition-colors ${
-                    activeTab === "pending"
-                      ? "bg-amber-100 text-amber-800 border-amber-200"
-                      : "bg-white text-slate-700 hover:bg-slate-50 border-gray-300"
-                  } border`}
+                  className={`flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-l-md transition-colors ${activeTab === "pending"
+                    ? "bg-amber-100 text-amber-800 border-amber-200"
+                    : "bg-white text-slate-700 hover:bg-slate-50 border-gray-300"
+                    } border`}
                 >
                   Pending
                 </button>
                 <button
                   onClick={() => setActiveTab("history")}
-                  className={`flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-r-md transition-colors ${
-                    activeTab === "history"
-                      ? "bg-amber-100 text-amber-800 border-amber-200"
-                      : "bg-white text-slate-700 hover:bg-slate-50 border-gray-300"
-                  } border border-l-0`}
+                  className={`flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-r-md transition-colors ${activeTab === "history"
+                    ? "bg-amber-100 text-amber-800 border-amber-200"
+                    : "bg-white text-slate-700 hover:bg-slate-50 border-gray-300"
+                    } border border-l-0`}
                 >
                   History
                 </button>
+              </div>
+
+              {/* Column Toggle Button - right-aligned next to tabs */}
+              <div className="relative hidden md:block">
+                <button
+                  onClick={() => activeTab === "pending" ? setShowPendingColumnDropdown(!showPendingColumnDropdown) : setShowColumnDropdown(!showColumnDropdown)}
+                  className="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:border-amber-400 transition-all duration-150 shadow-sm"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                  </svg>
+                  Columns
+                  <span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold bg-amber-500 text-white rounded-full">
+                    {activeTab === "pending"
+                      ? Object.values(pendingVisibleColumns).filter(Boolean).length
+                      : Object.values(visibleColumns).filter(Boolean).length}
+                  </span>
+                  <svg className={`w-3 h-3 transition-transform ${(activeTab === "pending" ? showPendingColumnDropdown : showColumnDropdown) ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Pending column dropdown */}
+                {activeTab === "pending" && showPendingColumnDropdown && (
+                  <div className="absolute top-full right-0 mt-1 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-80 overflow-y-auto">
+                    <div className="sticky top-0 bg-white border-b border-gray-100 px-3 py-2">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Toggle Columns</p>
+                    </div>
+                    <div className="p-2">
+                      <div className="flex items-center p-2 hover:bg-amber-50 rounded-lg">
+                        <input type="checkbox" id="pending-select-all"
+                          checked={Object.values(pendingVisibleColumns).every(Boolean)}
+                          onChange={() => { const all = Object.values(pendingVisibleColumns).every(Boolean); setPendingVisibleColumns(Object.fromEntries(Object.keys(pendingVisibleColumns).map(k => [k, !all]))); }}
+                          className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded"
+                        />
+                        <label htmlFor="pending-select-all" className="ml-2 text-sm font-semibold text-gray-800 cursor-pointer">All Columns</label>
+                      </div>
+                      <hr className="my-1.5 border-gray-100" />
+                      {pendingColumnOptions.map((option) => (
+                        <div key={option.key} className="flex items-center p-2 hover:bg-amber-50 rounded-lg transition-colors">
+                          <input type="checkbox" id={`pending-col-${option.key}`}
+                            checked={pendingVisibleColumns[option.key]}
+                            onChange={() => setPendingVisibleColumns(prev => ({ ...prev, [option.key]: !prev[option.key] }))}
+                            className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded"
+                          />
+                          <label htmlFor={`pending-col-${option.key}`} className="ml-2 text-sm text-gray-700 cursor-pointer flex-1">{option.label}</label>
+                          {pendingVisibleColumns[option.key] && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 ml-1"></span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* History column dropdown */}
+                {activeTab === "history" && showColumnDropdown && (
+                  <div className="absolute top-full right-0 mt-1 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-80 overflow-y-auto">
+                    <div className="sticky top-0 bg-white border-b border-gray-100 px-3 py-2">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Toggle Columns</p>
+                    </div>
+                    <div className="p-2">
+                      <div className="flex items-center p-2 hover:bg-amber-50 rounded-lg">
+                        <input type="checkbox" id="history-select-all"
+                          checked={Object.values(visibleColumns).every(Boolean)}
+                          onChange={handleSelectAll}
+                          className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded"
+                        />
+                        <label htmlFor="history-select-all" className="ml-2 text-sm font-semibold text-gray-800 cursor-pointer">All Columns</label>
+                      </div>
+                      <hr className="my-1.5 border-gray-100" />
+                      {columnOptions.map((option) => (
+                        <div key={option.key} className="flex items-center p-2 hover:bg-amber-50 rounded-lg transition-colors">
+                          <input type="checkbox" id={`col-${option.key}`}
+                            checked={visibleColumns[option.key]}
+                            onChange={() => handleColumnToggle(option.key)}
+                            className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded"
+                          />
+                          <label htmlFor={`col-${option.key}`} className="ml-2 text-sm text-gray-700 cursor-pointer flex-1">{option.label}</label>
+                          {visibleColumns[option.key] && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 ml-1"></span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -2045,6 +2211,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
 
                     {/* Desktop Table View */}
                     <div className="hidden md:block overflow-x-auto -mx-4 sm:mx-0">
+
                       <div className="inline-block min-w-full align-middle">
                         <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
                           <table className="min-w-full divide-y divide-gray-200">
@@ -2052,199 +2219,217 @@ const fetchFilterTypeCounts = useCallback(async () => {
                               <tr>
                                 <th
                                   scope="col"
-                                  className="sticky left-0 z-10 bg-slate-50 px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200"
+                                  className={`sticky left-0 z-10 bg-slate-50 px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 ${!pendingVisibleColumns.actions ? 'hidden' : ''}`}
                                 >
                                   Actions
                                 </th>
                                 <th
                                   scope="col"
-                                  className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.edit ? 'hidden' : ''}`}
                                 >
                                   Edit
                                 </th>
                                 <th
                                   scope="col"
-                                  className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.nextCallDate ? 'hidden' : ''}`}
                                 >
-                                  Call Date
+                                  Next Call Date
                                 </th>
                                 <th
                                   scope="col"
-                                  className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.leadNo ? 'hidden' : ''}`}
                                 >
                                   Lead No.
                                 </th>
                                 <th
                                   scope="col"
-                                  className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.companyName ? 'hidden' : ''}`}
                                 >
                                   Company Name
                                 </th>
                                 <th
                                   scope="col"
-                                  className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.nextAction ? 'hidden' : ''}`}
                                 >
                                   Next Action
                                 </th>
                                 <th
                                   scope="col"
-                                  className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.personName ? 'hidden' : ''}`}
                                 >
                                   Person Name
                                 </th>
                                 <th
                                   scope="col"
-                                  className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.phoneNo ? 'hidden' : ''}`}
                                 >
                                   Phone No.
                                 </th>
                                 <th
                                   scope="col"
-                                  className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.leadSource ? 'hidden' : ''}`}
                                 >
                                   Lead Source
                                 </th>
                                 <th
                                   scope="col"
-                                  className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.location ? 'hidden' : ''}`}
                                 >
                                   Location
                                 </th>
                                 <th
                                   scope="col"
-                                  className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.customerSay ? 'hidden' : ''}`}
                                 >
                                   Customer Say
                                 </th>
                                 <th
                                   scope="col"
-                                  className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.enquiryStatus ? 'hidden' : ''}`}
                                 >
                                   Enquiry Status
-                                 </th>
-                                 {isAdmin() && (
-                                   <th
-                                     scope="col"
-                                     className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                                   >
-                                     Assigned To
-                                   </th>
-                                 )}
-                                 <th
-                                   scope="col"
-                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                                 >
-                                   Email Address
-                                 </th>
-                                 <th
-                                   scope="col"
-                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                                 >
-                                   State
-                                 </th>
-                                 <th
-                                   scope="col"
-                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                                 >
-                                   Address
-                                 </th>
-                                 <th
-                                   scope="col"
-                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                                 >
-                                   Person Name 1
-                                 </th>
-                                 <th
-                                   scope="col"
-                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                                 >
-                                   Designation 1
-                                 </th>
-                                 <th
-                                   scope="col"
-                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                                 >
-                                   Phone Number 1
-                                 </th>
-                                 <th
-                                   scope="col"
-                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                                 >
-                                   Person Name 2
-                                 </th>
-                                 <th
-                                   scope="col"
-                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                                 >
-                                   Designation 2
-                                 </th>
-                                 <th
-                                   scope="col"
-                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                                 >
-                                   Phone Number 2
-                                 </th>
-                                 <th
-                                   scope="col"
-                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                                 >
-                                   Person Name 3
-                                 </th>
-                                 <th
-                                   scope="col"
-                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                                 >
-                                   Designation 3
-                                 </th>
-                                 <th
-                                   scope="col"
-                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                                 >
-                                   Phone Number 3
-                                 </th>
-                                 <th
-                                   scope="col"
-                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                                 >
-                                   Nature of Business
-                                 </th>
-                                 <th
-                                   scope="col"
-                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                                 >
-                                   GST Number
-                                 </th>
-                                 <th
-                                   scope="col"
-                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                                 >
-                                   Customer Registration Form
-                                 </th>
-                                 <th
-                                   scope="col"
-                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                                 >
-                                   Credit Access
-                                 </th>
-                                 <th
-                                   scope="col"
-                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                                 >
-                                   Credit Days
-                                 </th>
-                                 <th
-                                   scope="col"
-                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                                 >
-                                   Credit Limit
-                                 </th>
-                                 <th
-                                   scope="col"
-                                   className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                                 >
-                                   Additional Notes
-                                 </th>
-                               </tr>
+                                </th>
+                                {isAdmin() && (
+                                  <th
+                                    scope="col"
+                                    className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.assignedTo ? 'hidden' : ''}`}
+                                  >
+                                    Assigned To
+                                  </th>
+                                )}
+                                <th
+                                  scope="col"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.emailAddress ? 'hidden' : ''}`}
+                                >
+                                  Email Address
+                                </th>
+                                <th
+                                  scope="col"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.lastFollowUpDate ? 'hidden' : ''}`}
+                                >
+                                  Last Follow Up Date
+                                </th>
+                                <th
+                                  scope="col"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.noOfFollowUps ? 'hidden' : ''}`}
+                                >
+                                  No. of FollowUps
+                                </th>
+                                <th
+                                  scope="col"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.lastFollowUpStatus ? 'hidden' : ''}`}
+                                >
+                                  Last FollowUp Status
+                                </th>
+                                <th
+                                  scope="col"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.state ? 'hidden' : ''}`}
+                                >
+                                  State
+                                </th>
+                                <th
+                                  scope="col"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.address ? 'hidden' : ''}`}
+                                >
+                                  Address
+                                </th>
+                                <th
+                                  scope="col"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.personName1 ? 'hidden' : ''}`}
+                                >
+                                  Person Name 1
+                                </th>
+                                <th
+                                  scope="col"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.designation1 ? 'hidden' : ''}`}
+                                >
+                                  Designation 1
+                                </th>
+                                <th
+                                  scope="col"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.phoneNumber1 ? 'hidden' : ''}`}
+                                >
+                                  Phone Number 1
+                                </th>
+                                <th
+                                  scope="col"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.personName2 ? 'hidden' : ''}`}
+                                >
+                                  Person Name 2
+                                </th>
+                                <th
+                                  scope="col"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.designation2 ? 'hidden' : ''}`}
+                                >
+                                  Designation 2
+                                </th>
+                                <th
+                                  scope="col"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.phoneNumber2 ? 'hidden' : ''}`}
+                                >
+                                  Phone Number 2
+                                </th>
+                                <th
+                                  scope="col"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.personName3 ? 'hidden' : ''}`}
+                                >
+                                  Person Name 3
+                                </th>
+                                <th
+                                  scope="col"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.designation3 ? 'hidden' : ''}`}
+                                >
+                                  Designation 3
+                                </th>
+                                <th
+                                  scope="col"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.phoneNumber3 ? 'hidden' : ''}`}
+                                >
+                                  Phone Number 3
+                                </th>
+                                <th
+                                  scope="col"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.nob ? 'hidden' : ''}`}
+                                >
+                                  Nature of Business
+                                </th>
+                                <th
+                                  scope="col"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.gstNumber ? 'hidden' : ''}`}
+                                >
+                                  GST Number
+                                </th>
+                                <th
+                                  scope="col"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.customerRegForm ? 'hidden' : ''}`}
+                                >
+                                  Customer Registration Form
+                                </th>
+                                <th
+                                  scope="col"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.creditAccess ? 'hidden' : ''}`}
+                                >
+                                  Credit Access
+                                </th>
+                                <th
+                                  scope="col"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.creditDays ? 'hidden' : ''}`}
+                                >
+                                  Credit Days
+                                </th>
+                                <th
+                                  scope="col"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.creditLimit ? 'hidden' : ''}`}
+                                >
+                                  Credit Limit
+                                </th>
+                                <th
+                                  scope="col"
+                                  className={`px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap ${!pendingVisibleColumns.additionalNotes ? 'hidden' : ''}`}
+                                >
+                                  Additional Notes
+                                </th>
+                              </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                               {filteredPendingFollowUps.length > 0 ? (
@@ -2254,7 +2439,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                       key={`${followUp.leadId}-${index}`}
                                       className="hover:bg-slate-50 transition-colors"
                                     >
-                                      <td className="sticky left-0 z-10 bg-white px-3 sm:px-4 py-3 sm:py-4 text-sm font-medium border-r border-gray-200">
+                                      <td className={`sticky left-0 z-10 bg-white px-3 sm:px-4 py-3 sm:py-4 text-sm font-medium border-r border-gray-200 ${!pendingVisibleColumns.actions ? 'hidden' : ''}`}>
                                         <div className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2">
                                           <Link
                                             state={followUp.assignedTo}
@@ -2267,7 +2452,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           </Link>
                                         </div>
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm font-medium border-r border-gray-200">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm font-medium border-r border-gray-200 ${!pendingVisibleColumns.edit ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <div className="flex space-x-2">
                                             <button
@@ -2292,7 +2477,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           </button>
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.nextCallDate ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="date"
@@ -2304,7 +2489,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           followUp.timestamp
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm font-medium text-gray-900 whitespace-nowrap ${!pendingVisibleColumns.leadNo ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2316,7 +2501,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           followUp.leadId
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 ${!pendingVisibleColumns.companyName ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2333,7 +2518,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           </div>
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 ${!pendingVisibleColumns.nextAction ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2350,7 +2535,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           </div>
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 ${!pendingVisibleColumns.personName ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2367,7 +2552,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           </div>
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.phoneNo ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2379,7 +2564,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           followUp.phoneNumber
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 ${!pendingVisibleColumns.leadSource ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2389,19 +2574,18 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           />
                                         ) : (
                                           <span
-                                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                              followUp.priority === "High"
-                                                ? "bg-red-100 text-red-800"
-                                                : followUp.priority === "Medium"
+                                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${followUp.priority === "High"
+                                              ? "bg-red-100 text-red-800"
+                                              : followUp.priority === "Medium"
                                                 ? "bg-amber-100 text-amber-800"
                                                 : "bg-slate-100 text-slate-800"
-                                            }`}
+                                              }`}
                                           >
                                             {followUp.leadSource}
                                           </span>
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 ${!pendingVisibleColumns.location ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2418,7 +2602,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           </div>
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 ${!pendingVisibleColumns.customerSay ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <textarea
                                             value={editedData.customerSay || ""}
@@ -2436,7 +2620,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                         )}
                                       </td>
 
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 ${!pendingVisibleColumns.enquiryStatus ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2454,7 +2638,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                         )}
                                       </td>
                                       {isAdmin() && (
-                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.assignedTo ? 'hidden' : ''}`}>
                                           {editingRowId === index ? (
                                             <input
                                               type="text"
@@ -2467,7 +2651,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           )}
                                         </td>
                                       )}
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.emailAddress ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2479,7 +2663,22 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           followUp.Email_Address
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.lastFollowUpDate ? 'hidden' : ''}`}>
+                                        {followUp.lastFollowUpDate || <span className="text-gray-300 text-xs">—</span>}
+                                      </td>
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.noOfFollowUps ? 'hidden' : ''}`}>
+                                        {followUp.noOfFollowUps > 0 ? (
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
+                                            {followUp.noOfFollowUps}
+                                          </span>
+                                        ) : (
+                                          "-"
+                                        )}
+                                      </td>
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.lastFollowUpStatus ? 'hidden' : ''}`}>
+                                        {followUp.lastFollowUpStatus || <span className="text-gray-300 text-xs">—</span>}
+                                      </td>
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.state ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2491,7 +2690,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           followUp.State
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.address ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2503,7 +2702,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           followUp.Address
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.personName1 ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2515,7 +2714,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           followUp.Person_name_1
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.designation1 ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2527,7 +2726,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           followUp.Designation_1
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.phoneNumber1 ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2539,7 +2738,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           followUp.Phone_Number_1
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.personName2 ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2551,7 +2750,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           followUp.Person_Name_2
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.designation2 ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2563,7 +2762,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           followUp.Designation_2
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.phoneNumber2 ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2575,7 +2774,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           followUp.Phone_Number_2
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.personName3 ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2587,7 +2786,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           followUp.Person_Name_3
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.designation3 ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2599,7 +2798,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           followUp.Designation_3
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.phoneNumber3 ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2611,7 +2810,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           followUp.Phone_Number_3
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.nob ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2623,7 +2822,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           followUp.NOB
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.gstNumber ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2635,7 +2834,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           followUp.GST_Number
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.customerRegForm ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2647,7 +2846,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           followUp.Customer_Registration_Form
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.creditAccess ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2659,7 +2858,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           followUp.Credit_Access
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.creditDays ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2671,7 +2870,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           followUp.Credit_Days
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.creditLimit ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <input
                                             type="text"
@@ -2683,7 +2882,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                           followUp.Credit_Limit
                                         )}
                                       </td>
-                                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                      <td className={`px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap ${!pendingVisibleColumns.additionalNotes ? 'hidden' : ''}`}>
                                         {editingRowId === index ? (
                                           <textarea
                                             value={editedData.Additional_Notes || ""}
@@ -2742,6 +2941,7 @@ const fetchFilterTypeCounts = useCallback(async () => {
 
                     {/* Desktop Table View */}
                     <div className="hidden md:block overflow-x-auto -mx-4 sm:mx-0">
+
                       <div className="inline-block min-w-full align-middle">
                         <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
                           <table className="min-w-full divide-y divide-gray-200">
@@ -2776,6 +2976,22 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                     className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
                                   >
                                     Enquiry Calling Count
+                                  </th>
+                                )}
+                                {visibleColumns.noOfFollowUps && (
+                                  <th
+                                    scope="col"
+                                    className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                  >
+                                    No. of FollowUps
+                                  </th>
+                                )}
+                                {visibleColumns.lastFollowUpStatus && (
+                                  <th
+                                    scope="col"
+                                    className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                  >
+                                    Last FollowUp Status
                                   </th>
                                 )}
                                 {visibleColumns.leadNo && (
@@ -2981,13 +3197,31 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                         </td>
                                       )}
 
+                                      {visibleColumns.noOfFollowUps && (
+                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                          {followUp.noOfFollowUps > 0 ? (
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
+                                              {followUp.noOfFollowUps}
+                                            </span>
+                                          ) : (
+                                            "-"
+                                          )}
+                                        </td>
+                                      )}
+
+                                      {visibleColumns.lastFollowUpStatus && (
+                                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500 whitespace-nowrap">
+                                          {followUp.lastFollowUpStatus || <span className="text-gray-300 text-xs">—</span>}
+                                        </td>
+                                      )}
+
                                       {visibleColumns.leadNo && (
                                         <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
                                           {followUp.leadNo}
                                         </td>
                                       )}
 
-                                     {visibleColumns.companyName && (
+                                      {visibleColumns.companyName && (
                                         <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-gray-500">
                                           <div
                                             className="max-w-[120px] sm:max-w-[150px] truncate"
@@ -3050,14 +3284,13 @@ const fetchFilterTypeCounts = useCallback(async () => {
                                             </select>
                                           ) : (
                                             <span
-                                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                followUp.status === "Completed"
-                                                  ? "bg-green-100 text-green-800"
-                                                  : followUp.status ===
-                                                    "Pending"
+                                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${followUp.status === "Completed"
+                                                ? "bg-green-100 text-green-800"
+                                                : followUp.status ===
+                                                  "Pending"
                                                   ? "bg-amber-100 text-amber-800"
                                                   : "bg-red-100 text-red-800"
-                                              }`}
+                                                }`}
                                             >
                                               {followUp.status}
                                             </span>
