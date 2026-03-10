@@ -16,7 +16,6 @@ const QuotationForm = ({
   quotationData,
   handleInputChange,
   handleItemChange,
-  handleFlatDiscountChange,
   handleAddItem,
   handleNoteChange,
   addNote,
@@ -40,6 +39,10 @@ const QuotationForm = ({
   setQuotationData,
   hiddenColumns,
   setHiddenColumns,
+  onQuotationSearch,
+  onLoadMoreQuotations,
+  hasMoreQuotations,
+  isFetchingMore,
 }) => {
   const [dropdownData, setDropdownData] = useState({});
   const [stateOptions, setStateOptions] = useState(["Select State"]);
@@ -858,6 +861,10 @@ const QuotationForm = ({
             preparedByOptions={preparedByOptions}
             stateOptions={stateOptions}
             dropdownData={dropdownData}
+            onQuotationSearch={onQuotationSearch}
+            onLoadMoreQuotations={onLoadMoreQuotations}
+            hasMoreQuotations={hasMoreQuotations}
+            isFetchingMore={isFetchingMore}
           />
 
           <ConsignorDetails

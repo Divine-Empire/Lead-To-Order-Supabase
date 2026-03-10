@@ -13,6 +13,10 @@ const QuotationDetails = ({
   preparedByOptions,
   stateOptions,
   dropdownData,
+  onQuotationSearch,
+  onLoadMoreQuotations,
+  hasMoreQuotations,
+  isFetchingMore,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -100,8 +104,17 @@ const handleQuotationSelection = (quotation) => {
 const clearSelection = () => {
   setSearchTerm('');
   setIsDropdownOpen(false);
-  // Optionally reset quotation data
+  // Reset search to empty to load latest batch
+  onQuotationSearch("");
   handleInputChange('quotationNo', '');
+};
+
+const handleScroll = (e) => {
+  const { scrollTop, scrollHeight, clientHeight } = e.target;
+  // Trigger load more when 20px from bottom
+  if (scrollHeight - scrollTop <= clientHeight + 20) {
+    onLoadMoreQuotations();
+  }
 };
 
 
@@ -119,7 +132,11 @@ const clearSelection = () => {
                     type="text"
                     placeholder="Search quotation number..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setSearchTerm(value);
+                      onQuotationSearch(value);
+                    }}
                     onFocus={() => setIsDropdownOpen(true)}
                     onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
                     className="w-full p-2 border border-gray-300 rounded-md"
@@ -134,27 +151,35 @@ const clearSelection = () => {
                     </button>
                   )}
                 </div>
-                
-                {isDropdownOpen && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                                {isDropdownOpen && (
+                  <div 
+                    className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
+                    onScroll={handleScroll}
+                  >
                     {existingQuotations && existingQuotations.length > 0 ? (
-                      existingQuotations
-                        .filter(quotation => 
-                          searchTerm === '' || 
-                          quotation.toLowerCase().includes(searchTerm.toLowerCase())
-                        )
-                        .map((quotation) => (
+                      <>
+                        {existingQuotations.map((quotation) => (
                           <div 
                             key={quotation}
                             className={`p-2 hover:bg-gray-100 cursor-pointer ${
                               selectedQuotation === quotation ? 'bg-blue-100' : ''
                             }`}                            
-                           onMouseDown={() => handleQuotationSelection(quotation)}
-
+                            onMouseDown={() => handleQuotationSelection(quotation)}
                           >
                             {quotation}
                           </div>
-                        ))
+                        ))}
+                        {isFetchingMore && (
+                          <div className="p-2 text-center">
+                            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                          </div>
+                        )}
+                        {!hasMoreQuotations && existingQuotations.length > 0 && (
+                          <div className="p-2 text-center text-xs text-gray-400">
+                            No more quotations to load
+                          </div>
+                        )}
+                      </>
                     ) : (
                       <div className="p-2 text-gray-500">
                         {isLoadingQuotation ? 'Loading...' : 'No quotations found'}

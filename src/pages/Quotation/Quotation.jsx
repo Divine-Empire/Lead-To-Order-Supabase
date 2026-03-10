@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { DownloadIcon, SaveIcon, ShareIcon } from "../../components/Icons";
 import image1 from "../../assests/WhatsApp Image 2025-05-14 at 4.11.43 PM.jpeg";
 import imageform from "../../assests/banner.jpeg";
@@ -24,6 +24,13 @@ function Quotation() {
   const [isLoadingQuotation, setIsLoadingQuotation] = useState(false);
   const [specialDiscount, setSpecialDiscount] = useState(0);
   const [selectedReferences, setSelectedReferences] = useState([]);
+  
+  // Pagination and Search states for Quotation Dropdown
+  const [queryTerm, setQueryTerm] = useState("");
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const lastFetchedTerm = useRef(null);
 
   // Add hidden columns state
   const [hiddenColumns, setHiddenColumns] = useState({
@@ -89,7 +96,7 @@ function Quotation() {
   };
 
   // Check if we're in view mode
-  const params = new URLSearchParams(window.location.search);
+  const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const isViewMode = params.has("view");
 
   // Use the custom hook for quotation data
@@ -117,38 +124,85 @@ function Quotation() {
     handleSpecialDiscountChange(discount);
   };
 
-  // Fetch existing quotations from Supabase
-  useEffect(() => {
-    const fetchExistingQuotations = async () => {
-      try {
-        console.log("Fetching existing quotations...");
-        const { data, error } = await supabase
-          .from("Make_Quotation")
-          .select("Quotation_No")
-          .order("Timestamp", { ascending: false });
-
-        if (error) {
-          console.error("Error fetching quotation numbers:", error);
-          setExistingQuotations([]);
-          return;
-        }
-
-        const quotationNumbers = data
-          ? data.map((row) => row.Quotation_No).filter(Boolean)
-          : [];
-        setExistingQuotations(quotationNumbers);
-      } catch (error) {
-        console.error("Error fetching quotation numbers:", error);
-        setExistingQuotations([]);
+  // Fetch quotations from Supabase with search and pagination
+  const fetchExistingQuotations = useCallback(async (search = "", currentOffset = 0, append = false) => {
+    try {
+      if (currentOffset === 0) {
+          setIsLoadingQuotation(true);
+          setExistingQuotations([]); // Clear previous results for fresh search
+      } else {
+          setIsFetchingMore(true);
       }
-    };
 
-    fetchExistingQuotations();
+      console.log(`Fetching quotations: search="${search}", offset=${currentOffset}`);
 
-    if (isRevising) {
-      fetchExistingQuotations();
+      let query = supabase
+        .from("Make_Quotation")
+        .select("Quotation_No");
+
+      if (search) {
+        query = query.ilike("Quotation_No", `%${search}%`);
+      }
+
+      query = query
+        .order("Timestamp", { ascending: false })
+        .range(currentOffset, currentOffset + 49);
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error("Error fetching quotation numbers:", error);
+        if (!append) setExistingQuotations([]);
+        setHasMore(false);
+        return;
+      }
+
+      const newQuotations = data ? data.map((row) => row.Quotation_No).filter(Boolean) : [];
+      
+      setExistingQuotations(prev => append ? [...prev, ...newQuotations] : newQuotations);
+      setHasMore(newQuotations.length === 50);
+      setOffset(currentOffset + newQuotations.length);
+    } catch (error) {
+      console.error("Error fetching quotation numbers:", error);
+    } finally {
+      setIsLoadingQuotation(false);
+      setIsFetchingMore(false);
     }
-  }, [isRevising]);
+  }, []);
+
+  // Consolidated search effect for all terms (including empty)
+  useEffect(() => {
+    // Avoid redundant fetches if term hasn't changed
+    if (queryTerm === lastFetchedTerm.current && lastFetchedTerm.current !== null) return;
+    
+    let isCancelled = false;
+    const delay = queryTerm === "" ? 0 : 500;
+    
+    const timer = setTimeout(async () => {
+      if (!isCancelled) {
+          lastFetchedTerm.current = queryTerm;
+          await fetchExistingQuotations(queryTerm, 0, false);
+      }
+    }, delay);
+    
+    return () => {
+        isCancelled = true;
+        clearTimeout(timer);
+    };
+  }, [queryTerm, fetchExistingQuotations]);
+
+  // Handle Search input change from child
+  const triggerDropdownSearch = useCallback((term) => {
+    setQueryTerm(term);
+    setOffset(0);
+  }, []);
+
+  // Handle Load More
+  const handleLoadMoreQuotations = useCallback(() => {
+    if (!isFetchingMore && hasMore) {
+      fetchExistingQuotations(queryTerm, offset, true);
+    }
+  }, [isFetchingMore, hasMore, queryTerm, offset, fetchExistingQuotations]);
 
   // Initialize quotation number
   // Initialize quotation number - RUN ONLY ONCE
@@ -166,7 +220,7 @@ function Quotation() {
     };
 
     initializeQuotationNumber();
-  }, []); // ← Empty dependency array to run only once
+  }, [setQuotationData]); // Stabilized: only runs when setQuotationData (stable) or mount
 
   // Load quotation data from URL if in view mode
   useEffect(() => {
@@ -185,7 +239,7 @@ function Quotation() {
         }
       }
     }
-  }, [setQuotationData]);
+  }, [setQuotationData, params]);
 
   const toggleRevising = () => {
     const newIsRevising = !isRevising;
@@ -763,7 +817,10 @@ function Quotation() {
               setQuotationData={setQuotationData}
               hiddenColumns={hiddenColumns}
               setHiddenColumns={setHiddenColumns}
-
+              onQuotationSearch={triggerDropdownSearch}
+              onLoadMoreQuotations={handleLoadMoreQuotations}
+              hasMoreQuotations={hasMore}
+              isFetchingMore={isFetchingMore}
             />
           ) : (
             <QuotationPreview
