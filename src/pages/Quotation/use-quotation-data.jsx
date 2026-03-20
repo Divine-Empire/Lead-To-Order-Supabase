@@ -1,6 +1,109 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
+
+const roundToTwo = (value) => Number(Number(value || 0).toFixed(2));
+
+const extractGSTParts = (gstValue) => {
+  if (!gstValue) return [];
+
+  const text = String(gstValue).trim();
+  const matches = [...text.matchAll(/(\d+(?:\.\d+)?)/g)];
+  return matches
+    .map((match) => Number.parseFloat(match[1]))
+    .filter((num) => Number.isFinite(num));
+};
+
+const getRatesForCalculation = (gstValue) => {
+  const parts = extractGSTParts(gstValue);
+  if (parts.length === 0) return [];
+
+  if (parts.every((value) => value === parts[0])) {
+    return [parts.reduce((sum, value) => sum + value, 0)];
+  }
+
+  return parts;
+};
+
+const recalculateTotals = (
+  items,
+  shouldUseIGST,
+  discountValue = 0
+) => {
+  const subtotal = roundToTwo(
+    items.reduce((sum, item) => sum + Number(item.amount || 0), 0)
+  );
+
+  const cgstBreakdown = {};
+  const sgstBreakdown = {};
+  const igstBreakdown = {};
+
+  items.forEach((item) => {
+    const amount = Number(item.amount || 0);
+    if (amount <= 0) return;
+
+    const ratesToApply = getRatesForCalculation(item.gst);
+    if (ratesToApply.length === 0) return;
+
+    ratesToApply.forEach((rate) => {
+      if (rate <= 0) return;
+
+      if (shouldUseIGST) {
+        igstBreakdown[rate] =
+          (igstBreakdown[rate] || 0) + roundToTwo((amount * rate) / 100);
+      } else {
+        const halfRate = rate / 2;
+        const halfValue = roundToTwo((amount * halfRate) / 100);
+        cgstBreakdown[halfRate] = (cgstBreakdown[halfRate] || 0) + halfValue;
+        sgstBreakdown[halfRate] = (sgstBreakdown[halfRate] || 0) + halfValue;
+      }
+    });
+  });
+
+  const sumValues = (obj) =>
+    Object.values(obj).reduce((acc, value) => acc + Number(value || 0), 0);
+  const sumKeys = (obj) =>
+    Object.keys(obj).reduce((acc, key) => acc + Number.parseFloat(key || 0), 0);
+
+  const cgstAmount = roundToTwo(sumValues(cgstBreakdown));
+  const sgstAmount = roundToTwo(sumValues(sgstBreakdown));
+  const igstAmount = roundToTwo(sumValues(igstBreakdown));
+
+  const cgstRate = !shouldUseIGST ? roundToTwo(sumKeys(cgstBreakdown)) : 0;
+  const sgstRate = !shouldUseIGST ? roundToTwo(sumKeys(sgstBreakdown)) : 0;
+  const igstRate = shouldUseIGST ? roundToTwo(sumKeys(igstBreakdown)) : 0;
+
+  const totalBeforeSpecialDiscount =
+    subtotal + cgstAmount + sgstAmount + igstAmount;
+
+  const total = Math.max(
+    0,
+    roundToTwo(totalBeforeSpecialDiscount - Number(discountValue || 0))
+  );
+
+  return {
+    subtotal,
+    cgstAmount,
+    sgstAmount,
+    igstAmount,
+    cgstRate,
+    sgstRate,
+    igstRate,
+    cgstBreakdown,
+    sgstBreakdown,
+    igstBreakdown,
+    total,
+  };
+};
+
+const checkStateAndCalculateGST = (consignorState, consigneeState) => {
+  const statesMatch =
+    consignorState &&
+    consigneeState &&
+    consignorState.toLowerCase().trim() ===
+    consigneeState.toLowerCase().trim();
+  return !statesMatch;
+};
 
 export const useQuotationData = (initialSpecialDiscount = 0) => {
   const [specialDiscount, setSpecialDiscount] = useState(
@@ -86,114 +189,11 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
     specialOffers: [""],
   });
 
-  const roundToTwo = (value) => Number(Number(value || 0).toFixed(2));
-
-  const extractGSTParts = (gstValue) => {
-    if (!gstValue) return [];
-
-    const text = String(gstValue).trim();
-    const matches = [...text.matchAll(/(\d+(?:\.\d+)?)/g)];
-    return matches
-      .map((match) => Number.parseFloat(match[1]))
-      .filter((num) => Number.isFinite(num));
-  };
-
-  const getRatesForCalculation = (gstValue) => {
-    const parts = extractGSTParts(gstValue);
-    if (parts.length === 0) return [];
-
-    if (parts.every((value) => value === parts[0])) {
-      return [parts.reduce((sum, value) => sum + value, 0)];
-    }
-
-    return parts;
-  };
-
-  const recalculateTotals = (
-    items,
-    shouldUseIGST,
-    discountValue = specialDiscount
-  ) => {
-    const subtotal = roundToTwo(
-      items.reduce((sum, item) => sum + Number(item.amount || 0), 0)
-    );
-
-    const cgstBreakdown = {};
-    const sgstBreakdown = {};
-    const igstBreakdown = {};
-
-    items.forEach((item) => {
-      const amount = Number(item.amount || 0);
-      if (amount <= 0) return;
-
-      const ratesToApply = getRatesForCalculation(item.gst);
-      if (ratesToApply.length === 0) return;
-
-      ratesToApply.forEach((rate) => {
-        if (rate <= 0) return;
-
-        if (shouldUseIGST) {
-          igstBreakdown[rate] =
-            (igstBreakdown[rate] || 0) + roundToTwo((amount * rate) / 100);
-        } else {
-          const halfRate = rate / 2;
-          const halfValue = roundToTwo((amount * halfRate) / 100);
-          cgstBreakdown[halfRate] = (cgstBreakdown[halfRate] || 0) + halfValue;
-          sgstBreakdown[halfRate] = (sgstBreakdown[halfRate] || 0) + halfValue;
-        }
-      });
-    });
-
-    const sumValues = (obj) =>
-      Object.values(obj).reduce((acc, value) => acc + Number(value || 0), 0);
-    const sumKeys = (obj) =>
-      Object.keys(obj).reduce((acc, key) => acc + Number.parseFloat(key || 0), 0);
-
-    const cgstAmount = roundToTwo(sumValues(cgstBreakdown));
-    const sgstAmount = roundToTwo(sumValues(sgstBreakdown));
-    const igstAmount = roundToTwo(sumValues(igstBreakdown));
-
-    const cgstRate = !shouldUseIGST ? roundToTwo(sumKeys(cgstBreakdown)) : 0;
-    const sgstRate = !shouldUseIGST ? roundToTwo(sumKeys(sgstBreakdown)) : 0;
-    const igstRate = shouldUseIGST ? roundToTwo(sumKeys(igstBreakdown)) : 0;
-
-    const totalBeforeSpecialDiscount =
-      subtotal + cgstAmount + sgstAmount + igstAmount;
-
-    const total = Math.max(
-      0,
-      roundToTwo(totalBeforeSpecialDiscount - Number(discountValue || 0))
-    );
-
-    return {
-      subtotal,
-      cgstAmount,
-      sgstAmount,
-      igstAmount,
-      cgstRate,
-      sgstRate,
-      igstRate,
-      cgstBreakdown,
-      sgstBreakdown,
-      igstBreakdown,
-      total,
-    };
-  };
-
-  const checkStateAndCalculateGST = (consignorState, consigneeState) => {
-    const statesMatch =
-      consignorState &&
-      consigneeState &&
-      consignorState.toLowerCase().trim() ===
-      consigneeState.toLowerCase().trim();
-    return !statesMatch;
-  };
-
   // FIXED: Improved handleInputChange to prevent data loss
-  const handleInputChange = (field, value) => {
+  const handleInputChange = useCallback((field, value) => {
     setQuotationData((prev) => {
-      // Create a deep copy of previous state to avoid mutations
-      const newData = JSON.parse(JSON.stringify(prev));
+      // Use spread operator for better performance than JSON.parse/stringify
+      const newData = { ...prev };
 
       // Update the specific field
       newData[field] = value;
@@ -210,7 +210,7 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
           newData.consigneeState
         );
 
-        const totals = recalculateTotals(value, shouldUseIGST);
+        const totals = recalculateTotals(value, shouldUseIGST, specialDiscount);
 
         return {
           ...newData,
@@ -231,7 +231,7 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
           0
         );
 
-        const totals = recalculateTotals(newData.items, shouldUseIGST);
+        const totals = recalculateTotals(newData.items, shouldUseIGST, specialDiscount);
 
         return {
           ...newData,
@@ -243,15 +243,13 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
 
       return newData;
     });
-  };
+  }, [specialDiscount]);
 
   // FIXED: Improved handleItemChange to prevent data loss
-  const handleItemChange = (id, field, value) => {
+  const handleItemChange = useCallback((id, field, value) => {
     setQuotationData((prev) => {
-      // Create a deep copy of previous state
-      const prevCopy = JSON.parse(JSON.stringify(prev));
-
-      const newItems = prevCopy.items.map((item) => {
+      // Use shallow copies for performance
+      const newItems = prev.items.map((item) => {
         if (item.id === id) {
           const updatedItem = { ...item, [field]: value };
 
@@ -282,26 +280,26 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
       );
 
       const shouldUseIGST = checkStateAndCalculateGST(
-        prevCopy.consignorState,
-        prevCopy.consigneeState
+        prev.consignorState,
+        prev.consigneeState
       );
 
-      const totals = recalculateTotals(newItems, shouldUseIGST);
+      const totals = recalculateTotals(newItems, shouldUseIGST, specialDiscount);
 
       return {
-        ...prevCopy,
+        ...prev,
         items: newItems,
         totalFlatDiscount,
         isIGST: shouldUseIGST,
         ...totals,
       };
     });
-  };
+  }, [specialDiscount]);
 
-  const handleFlatDiscountChange = (value) => {
+  const handleFlatDiscountChange = useCallback((value) => {
     setQuotationData((prev) => {
       const numValue = Number(value);
-      const totals = recalculateTotals(prev.items, prev.isIGST);
+      const totals = recalculateTotals(prev.items, prev.isIGST, specialDiscount);
 
       return {
         ...prev,
@@ -309,9 +307,9 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
         ...totals,
       };
     });
-  };
+  }, [specialDiscount]);
 
-  const handleSpecialDiscountChange = (value) => {
+  const handleSpecialDiscountChange = useCallback((value) => {
     const discount = Number(value) || 0;
     setSpecialDiscount(discount);
 
@@ -323,16 +321,16 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
         ...totals,
       };
     });
-  };
+  }, []);
 
-  const toggleFieldVisibility = (field) => {
+  const toggleFieldVisibility = useCallback((field) => {
     setHiddenFields((prev) => ({
       ...prev,
       [field]: !prev[field],
     }));
-  };
+  }, []);
 
-  const handleNoteChange = (index, value) => {
+  const handleNoteChange = useCallback((index, value) => {
     setQuotationData((prev) => {
       const newNotes = [...prev.notes];
       newNotes[index] = value;
@@ -341,16 +339,16 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
         notes: newNotes,
       };
     });
-  };
+  }, []);
 
-  const addNote = () => {
+  const addNote = useCallback(() => {
     setQuotationData((prev) => ({
       ...prev,
       notes: [...prev.notes, ""],
     }));
-  };
+  }, []);
 
-  const removeNote = (index) => {
+  const removeNote = useCallback((index) => {
     setQuotationData((prev) => {
       const newNotes = [...prev.notes];
       newNotes.splice(index, 1);
@@ -359,39 +357,41 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
         notes: newNotes,
       };
     });
-  };
+  }, []);
 
-  const handleAddItem = () => {
-    const newId =
-      Math.max(0, ...quotationData.items.map((item) => item.id)) + 1;
-    setQuotationData((prev) => ({
-      ...prev,
-      items: [
-        ...prev.items,
-        {
-          id: newId,
-          code: "",
-          name: "",
-          gst: 18,
-          qty: 1,
-          units: "Nos",
-          rate: 0,
-          discount: 0,
-          flatDiscount: 0,
-          amount: 0,
-        },
-      ],
-    }));
-  };
+  const handleAddItem = useCallback(() => {
+    setQuotationData((prev) => {
+      const newId = Math.max(0, ...prev.items.map((item) => item.id)) + 1;
+      return {
+        ...prev,
+        items: [
+          ...prev.items,
+          {
+            id: newId,
+            code: "",
+            name: "",
+            description: "",
+            gst: 18,
+            qty: 1,
+            units: "Nos",
+            rate: 0,
+            discount: 0,
+            flatDiscount: 0,
+            amount: 0,
+          },
+        ],
+      };
+    });
+  }, []);
 
-  const addSpecialOffer = () => {
+  const addSpecialOffer = useCallback(() => {
     setQuotationData((prev) => ({
       ...prev,
       specialOffers: [...(prev.specialOffers || [""]), ""],
     }));
-  };
+  }, []);
 
-  const removeSpecialOffer = (index) => {
+  const removeSpecialOffer = useCallback((index) => {
     setQuotationData((prev) => {
       const newSpecialOffers = [...(prev.specialOffers || [])];
       newSpecialOffers.splice(index, 1);
@@ -400,9 +400,9 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
         specialOffers: newSpecialOffers.length > 0 ? newSpecialOffers : [""],
       };
     });
-  };
+  }, []);
 
-  const handleSpecialOfferChange = (index, value) => {
+  const handleSpecialOfferChange = useCallback((index, value) => {
     setQuotationData((prev) => {
       const newSpecialOffers = [...(prev.specialOffers || [])];
 
@@ -416,9 +416,9 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
         specialOffers: newSpecialOffers,
       };
     });
-  };
+  }, []);
 
-  const getGSTDisplayText = (gstValue) => {
+  const getGSTDisplayText = useCallback((gstValue) => {
     const parts = extractGSTParts(gstValue);
     if (parts.length === 0) return "0%";
 
@@ -427,7 +427,7 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
     }
 
     return parts.map((value) => `${value}%`).join(" + ");
-  };
+  }, []);
 
   return {
     quotationData,

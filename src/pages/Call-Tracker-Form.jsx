@@ -33,7 +33,7 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
     enquiryReceiverName: "",
     enquiryAssignToProject: "",
     gstNumber: "",
-    isCompanyAutoFilled: true
+    isCompanyAutoFilled: false
   })
 
   const [enquiryFormData, setEnquiryFormData] = useState({
@@ -45,7 +45,7 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
   })
 
   const [items, setItems] = useState([{ id: "1", name: "", quantity: "" }])
-  const [isCompanyAutoFilled, setIsCompanyAutoFilled] = useState(false);
+
 
   // Filter companies based on search input
   useEffect(() => {
@@ -447,7 +447,7 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
                 id="leadSource"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 value={newCallTrackerData.leadSource}
-                onChange={(e) => setNewCallTrackerData({ ...newCallTrackerData, leadSource: e.target.value })}
+                onChange={(e) => setNewCallTrackerData(prev => ({ ...prev, leadSource: e.target.value }))}
                 required
               >
                 <option value="">Select source</option>
@@ -467,7 +467,7 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
                 id="scName"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 value={newCallTrackerData.scName}
-                onChange={(e) => setNewCallTrackerData({ ...newCallTrackerData, scName: e.target.value })}
+                onChange={(e) => setNewCallTrackerData(prev => ({ ...prev, scName: e.target.value }))}
                 required
               >
                 <option value="">Select SC Name</option>
@@ -527,8 +527,8 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
                 placeholder="Phone number will auto-fill"
                 value={newCallTrackerData.phoneNumber}
-                onChange={(e) => setNewCallTrackerData({ ...newCallTrackerData, phoneNumber: e.target.value })}
-                readOnly={isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
+                onChange={(e) => setNewCallTrackerData(prev => ({ ...prev, phoneNumber: e.target.value, isCompanyAutoFilled: false }))}
+                readOnly={newCallTrackerData.isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
                 required
               />
             </div>
@@ -542,8 +542,8 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
                 placeholder="Sales person name will auto-fill"
                 value={newCallTrackerData.salesPersonName}
-                onChange={(e) => setNewCallTrackerData({ ...newCallTrackerData, salesPersonName: e.target.value })}
-                readOnly={isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
+                onChange={(e) => setNewCallTrackerData(prev => ({ ...prev, salesPersonName: e.target.value, isCompanyAutoFilled: false }))}
+                readOnly={newCallTrackerData.isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
                 required
               />
             </div>
@@ -557,8 +557,8 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
                 placeholder="Location will auto-fill"
                 value={newCallTrackerData.location}
-                onChange={(e) => setNewCallTrackerData({ ...newCallTrackerData, location: e.target.value })}
-                readOnly={isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
+                onChange={(e) => setNewCallTrackerData(prev => ({ ...prev, location: e.target.value, isCompanyAutoFilled: false }))}
+                readOnly={newCallTrackerData.isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
                 required
               />
             </div>
@@ -573,8 +573,8 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
                 placeholder="Email will auto-fill"
                 value={newCallTrackerData.emailAddress}
-                onChange={(e) => setNewCallTrackerData({ ...newCallTrackerData, emailAddress: e.target.value })}
-                readOnly={isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
+                onChange={(e) => setNewCallTrackerData(prev => ({ ...prev, emailAddress: e.target.value, isCompanyAutoFilled: false }))}
+                readOnly={newCallTrackerData.isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
               />
             </div>
 
@@ -587,12 +587,12 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="Enter shipping address"
                 value={newCallTrackerData.shippingAddress}
-                onChange={(e) => setNewCallTrackerData({ 
-                  ...newCallTrackerData, 
+                onChange={(e) => setNewCallTrackerData(prev => ({ 
+                  ...prev, 
                   shippingAddress: e.target.value,
                   isCompanyAutoFilled: false
-                })}
-                readOnly={isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
+                }))}
+                readOnly={newCallTrackerData.isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
               />
             </div>
 
@@ -604,12 +604,12 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
                 id="enquiryReceiverName"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 value={newCallTrackerData.enquiryReceiverName}
-                onChange={(e) => setNewCallTrackerData({ 
-                  ...newCallTrackerData, 
+                onChange={(e) => setNewCallTrackerData(prev => ({ 
+                  ...prev, 
                   enquiryReceiverName: e.target.value,
                   isCompanyAutoFilled: false
-                })}
-                disabled={isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
+                }))}
+                disabled={newCallTrackerData.isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
               >
                 <option value="">Select receiver</option>
                 {receiverOptions.map((receiver, index) => (
@@ -628,12 +628,12 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
                 id="enquiryAssignToProject"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 value={newCallTrackerData.enquiryAssignToProject}
-                onChange={(e) => setNewCallTrackerData({ 
-                  ...newCallTrackerData, 
+                onChange={(e) => setNewCallTrackerData(prev => ({ 
+                  ...prev, 
                   enquiryAssignToProject: e.target.value,
                   isCompanyAutoFilled: false
-                })}
-                disabled={isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
+                }))}
+                disabled={newCallTrackerData.isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
               >
                 <option value="">Select project</option>
                 {assignToProjectOptions.map((project, index) => (
@@ -653,11 +653,11 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="Enter GST number"
                 value={newCallTrackerData.gstNumber}
-                onChange={(e) => setNewCallTrackerData({ 
-                  ...newCallTrackerData, 
+                onChange={(e) => setNewCallTrackerData(prev => ({ 
+                  ...prev, 
                   gstNumber: e.target.value,
                   isCompanyAutoFilled: false
-                })}
+                }))}
                 readOnly={newCallTrackerData.isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
               />
             </div>

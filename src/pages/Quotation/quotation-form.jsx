@@ -62,13 +62,38 @@ const QuotationForm = ({
   const [leadNoData, setLeadNoData] = useState({});
 
 
-  // Fetch dropdown data from Supabase dropdown table
+  // Fetch dropdown data and product data from Supabase dropdown table
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
+        const columns = [
+          "prepared_by",
+          "quotation_consignor_state",
+          "quotation_consignor_data",
+          "quotation_consignor_address",
+          "quotation_consignor_state_code",
+          "quotation_consignor_gstin",
+          "sp_pan",
+          "quotation_consignor_msmeno",
+          "consignee_company_name",
+          "consignee_billing_address",
+          "consignee_state",
+          "consignee_client_name",
+          "consignee_client_contact_no",
+          "consignee_gstin",
+          "consignee_state_code",
+          "sp_details_reference_name",
+          "sp_contact_no",
+          "reference_phone_no",
+          "item_code",
+          "item_name",
+          "description",
+          "rate",
+        ].join(",");
+
         const { data: dropdownData, error } = await supabase
           .from("dropdown")
-          .select("*");
+          .select(columns);
 
         if (error) {
           console.error("Error fetching dropdown data:", error);
@@ -77,6 +102,8 @@ const QuotationForm = ({
           setCompanyOptions([""]);
           setReferenceOptions([""]);
           setPreparedByOptions([""]);
+          setProductCodes(["Select Code"]);
+          setProductNames(["Select Product"]);
 
           setDropdownData({
             states: {
@@ -87,21 +114,6 @@ const QuotationForm = ({
                   "Divine Empire Private Limited, Raipur, Chhattisgarh",
                 stateCode: "22",
                 gstin: "22AAKCD1234M1Z5",
-              },
-            },
-            companies: {
-              "ABC Corp": {
-                address: "123 Main Street, Mumbai, Maharashtra",
-                state: "Maharashtra",
-                contactName: "Rajesh Kumar",
-                contactNo: "9876543210",
-                gstin: "27ABCDE1234F1Z5",
-                stateCode: "27",
-              },
-            },
-            references: {
-              "John Doe": {
-                mobile: "9898989898",
               },
             },
           });
@@ -116,6 +128,9 @@ const QuotationForm = ({
           const companyDetailsMap = {};
           const referenceOptionsData = ["Select Reference"];
           const referenceDetailsMap = {};
+          const codes = ["Select Code"];
+          const names = ["Select Product"];
+          const productDataMap = {};
 
           dropdownData.forEach((row) => {
             // Extract prepared by names
@@ -170,12 +185,45 @@ const QuotationForm = ({
                 };
               }
             }
+
+            // Extract product information
+            const code = row.item_code;
+            const name = row.item_name;
+            const description = row.description || "";
+            const rate = parseFloat(row.rate) || 0;
+
+            if (code && !codes.includes(code)) {
+              codes.push(code);
+            }
+
+            if (name && !names.includes(name)) {
+              names.push(name);
+            }
+
+            if (code) {
+              productDataMap[code] = {
+                name: name,
+                description: description,
+                rate: rate,
+              };
+            }
+
+            if (name) {
+              productDataMap[name] = {
+                code: code,
+                description: description,
+                rate: rate,
+              };
+            }
           });
 
           setStateOptions(stateOptionsData);
           setCompanyOptions(companyOptionsData);
           setReferenceOptions(referenceOptionsData);
           setPreparedByOptions(preparedByOptionsData);
+          setProductCodes(codes);
+          setProductNames(names);
+          setProductData(productDataMap);
 
           setDropdownData({
             states: stateDetailsMap,
@@ -185,7 +233,6 @@ const QuotationForm = ({
         }
       } catch (error) {
         console.error("Error fetching dropdown data:", error);
-        // Keep existing fallback code unchanged
       }
     };
 
@@ -200,9 +247,31 @@ const QuotationForm = ({
         const leadNoDataMap = {};
 
         // Fetch from leads_to_order table
+        const leadsColumns = [
+          "\"LD-Lead-No\"",
+          "Company_Name",
+          "Address",
+          "State",
+          "Salesperson_Name",
+          "Phone_Number",
+          "GST_Number",
+          "Item_Name1",
+          "Quantity1",
+          "Item_Name2",
+          "Quantity2",
+          "Item_Name3",
+          "Quantity3",
+          "Item_Name4",
+          "Quantity4",
+          "Item_Name5",
+          "Quantity5",
+          "\"Item/qty\"",
+          "Enquiry_Type",
+        ].join(",");
+
         const { data: leadsData, error: leadsError } = await supabase
           .from("leads_to_order")
-          .select("*")
+          .select(leadsColumns)
           .not("Planned1", "is", null)
           .is("Actual1", null);
 
@@ -228,9 +297,42 @@ const QuotationForm = ({
         }
 
         // Fetch from enquiry_to_order table
+        const enquiryColumns = [
+          "enquiry_no",
+          "company_name",
+          "location",
+          "enquiry_for_state",
+          "sales_person_name",
+          "phone_number",
+          "gst_number",
+          "shipping_address",
+          "item_name1",
+          "quantity1",
+          "item_name2",
+          "quantity2",
+          "item_name3",
+          "quantity3",
+          "item_name4",
+          "quantity4",
+          "item_name5",
+          "quantity5",
+          "item_name6",
+          "quantity6",
+          "item_name7",
+          "quantity7",
+          "item_name8",
+          "quantity8",
+          "item_name9",
+          "quantity9",
+          "item_name10",
+          "quantity10",
+          "item_qty",
+          "sales_type",
+        ].join(",");
+
         const { data: enquiryData, error: enquiryError } = await supabase
           .from("enquiry_to_order")
-          .select("*")
+          .select(enquiryColumns)
           .not("planned1", "is", null)
           .is("actual1", null);
 
@@ -272,104 +374,6 @@ const QuotationForm = ({
     handleSpecialDiscountChange(discount);
   };
 
-  // Fetch product data from Supabase dropdown table
-  useEffect(() => {
-    const fetchProductData = async () => {
-      try {
-        const { data: dropdownData, error } = await supabase
-          .from("dropdown")
-          .select("item_code, item_name, description, rate")
-          .not("item_code", "is", null)
-          .not("item_name", "is", null);
-
-        if (error) {
-          console.error("Error fetching product data:", error);
-          // Use fallback data
-          setProductCodes(["Select Code", "CODE1", "CODE2", "CODE3"]);
-          setProductNames([
-            "Select Product",
-            "Product 1",
-            "Product 2",
-            "Product 3",
-          ]);
-          setProductData({
-            CODE1: {
-              name: "Product 1",
-              description: "Description 1",
-              rate: 100,
-            },
-            "Product 1": {
-              code: "CODE1",
-              description: "Description 1",
-              rate: 100,
-            },
-          });
-          return;
-        }
-
-        const codes = ["Select Code"];
-        const names = ["Select Product"];
-        const productDataMap = {};
-
-        if (dropdownData) {
-          dropdownData.forEach((row) => {
-            const code = row.item_code;
-            const name = row.item_name;
-            const description = row.description || "";
-            const rate = parseFloat(row.rate) || 0;
-
-            if (code && !codes.includes(code)) {
-              codes.push(code);
-            }
-
-            if (name && !names.includes(name)) {
-              names.push(name);
-            }
-
-            if (code) {
-              productDataMap[code] = {
-                name: name,
-                description: description,
-                rate: rate,
-              };
-            }
-
-            if (name) {
-              productDataMap[name] = {
-                code: code,
-                description: description,
-                rate: rate,
-              };
-            }
-          });
-        }
-
-        setProductCodes(codes);
-        setProductNames(names);
-        setProductData(productDataMap);
-      } catch (error) {
-        console.error("Error fetching product data:", error);
-        // Use fallback data
-        setProductCodes(["Select Code", "CODE1", "CODE2", "CODE3"]);
-        setProductNames([
-          "Select Product",
-          "Product 1",
-          "Product 2",
-          "Product 3",
-        ]);
-        setProductData({
-          CODE1: { name: "Product 1", description: "Description 1", rate: 100 },
-          "Product 1": {
-            code: "CODE1",
-            description: "Description 1",
-            rate: 100,
-          },
-        });
-      }
-    };
-
-    fetchProductData();
-  }, []);
 
   // Function to handle quotation number updates
   const handleQuotationNumberUpdate = (newQuotationNumber) => {
@@ -411,33 +415,6 @@ const QuotationForm = ({
       handleInputChange("shipTo", leadData.shipTo);
     }
 
-    // Fill additional company details from dropdown data if available
-    if (
-      companyName &&
-      dropdownData.companies &&
-      dropdownData.companies[companyName]
-    ) {
-      const companyDetails = dropdownData.companies[companyName];
-
-      if (companyDetails.address) {
-        handleInputChange("consigneeAddress", companyDetails.address);
-      }
-      if (companyDetails.state) {
-        handleInputChange("consigneeState", companyDetails.state);
-      }
-      if (companyDetails.contactName) {
-        handleInputChange("consigneeContactName", companyDetails.contactName);
-      }
-      if (companyDetails.contactNo) {
-        handleInputChange("consigneeContactNo", companyDetails.contactNo);
-      }
-      if (companyDetails.gstin) {
-        handleInputChange("consigneeGSTIN", companyDetails.gstin);
-      }
-      if (companyDetails.stateCode) {
-        handleInputChange("consigneeStateCode", companyDetails.stateCode);
-      }
-    }
 
     // Get prefix from Enquiry_Type column and update quotation number
     try {
@@ -658,13 +635,22 @@ const QuotationForm = ({
       let itemsFound = false;
       const autoItems = [];
 
+      const leadsColumns = [
+        "Item_Name1", "Quantity1",
+        "Item_Name2", "Quantity2",
+        "Item_Name3", "Quantity3",
+        "Item_Name4", "Quantity4",
+        "Item_Name5", "Quantity5",
+        "\"Item/qty\"",
+      ].join(",");
+
       // Check leads_to_order table first
       const { data: leadsData, error: leadsError } = await supabase
         .from("leads_to_order")
-        .select("*")
+        .select(leadsColumns)
         .eq("Company_Name", companyName)
-        .not("Planned", "is", null)
-        .is("Actual", null)
+        .not("Planned1", "is", null)
+        .is("Actual1", null)
         .limit(1);
 
       if (!leadsError && leadsData && leadsData.length > 0) {
@@ -726,9 +712,23 @@ const QuotationForm = ({
 
       // If not found in leads_to_order, try enquiry_to_order
       if (!itemsFound) {
+        const enquiryColumns = [
+          "item_name1", "quantity1",
+          "item_name2", "quantity2",
+          "item_name3", "quantity3",
+          "item_name4", "quantity4",
+          "item_name5", "quantity5",
+          "item_name6", "quantity6",
+          "item_name7", "quantity7",
+          "item_name8", "quantity8",
+          "item_name9", "quantity9",
+          "item_name10", "quantity10",
+          "item_qty",
+        ].join(",");
+
         const { data: enquiryData, error: enquiryError } = await supabase
           .from("enquiry_to_order")
-          .select("*")
+          .select(enquiryColumns)
           .eq("company_name", companyName)
           .not("planned1", "is", null)
           .is("actual1", null)
