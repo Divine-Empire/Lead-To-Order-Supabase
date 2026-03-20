@@ -267,8 +267,9 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
       const companyDetails = companyDetailsMap[companyName] || {};
       setNewCallTrackerData(prev => ({
         ...prev,
-        phoneNumber: companyDetails.phoneNumber || "",
-        salesPersonName: companyDetails.salesPersonName || "",
+        // Omit phoneNumber and salesPersonName from auto-fill as per user request
+        phoneNumber: "",
+        salesPersonName: "",
         location: companyDetails.location || "",
         gstNumber: companyDetails.gstNumber || "",
         isCompanyAutoFilled: true
@@ -524,11 +525,10 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
               </label>
               <input
                 id="phoneNumber"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
-                placeholder="Phone number will auto-fill"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Enter phone number"
                 value={newCallTrackerData.phoneNumber}
                 onChange={(e) => setNewCallTrackerData(prev => ({ ...prev, phoneNumber: e.target.value, isCompanyAutoFilled: false }))}
-                readOnly={newCallTrackerData.isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
                 required
               />
             </div>
@@ -539,11 +539,10 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
               </label>
               <input
                 id="salesPersonName"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
-                placeholder="Sales person name will auto-fill"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Enter person name"
                 value={newCallTrackerData.salesPersonName}
                 onChange={(e) => setNewCallTrackerData(prev => ({ ...prev, salesPersonName: e.target.value, isCompanyAutoFilled: false }))}
-                readOnly={newCallTrackerData.isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
                 required
               />
             </div>
