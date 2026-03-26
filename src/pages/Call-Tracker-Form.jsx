@@ -13,7 +13,6 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
   const [productCategories, setProductCategories] = useState([])
   const [companyOptions, setCompanyOptions] = useState([])
   const [companyDetailsMap, setCompanyDetailsMap] = useState({})
-  const [lastEnquiryNo, setLastEnquiryNo] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [receiverOptions, setReceiverOptions] = useState([])
   const [assignToProjectOptions, setAssignToProjectOptions] = useState([])
@@ -78,14 +77,12 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          setLastEnquiryNo("En-01");
           setNewCallTrackerData(prev => ({
             ...prev,
             enquiryNo: "En-01"
           }));
           return;
         } else if (error.code === '42P01') {
-          setLastEnquiryNo("En-01");
           setNewCallTrackerData(prev => ({
             ...prev,
             enquiryNo: "En-01"
@@ -93,7 +90,6 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
           return;
         } else {
           console.error("Error fetching last enquiry number:", error);
-          setLastEnquiryNo("En-01");
           setNewCallTrackerData(prev => ({
             ...prev,
             enquiryNo: "En-01"
@@ -103,24 +99,21 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
       }
 
       if (data && data.enquiry_no) {
-        const match = data.enquiry_no.match(/En-(\d+)/);
-        if (match && match[1]) {
-          const nextNumber = parseInt(match[1]) + 1;
+        const matchFound = data.enquiry_no.match(/En-(\d+)/);
+        if (matchFound && matchFound[1]) {
+          const nextNumber = parseInt(matchFound[1]) + 1;
           const nextEnquiryNo = `En-${nextNumber.toString().padStart(2, "0")}`;
-          setLastEnquiryNo(nextEnquiryNo);
           setNewCallTrackerData(prev => ({
             ...prev,
             enquiryNo: nextEnquiryNo
           }));
         } else {
-          setLastEnquiryNo("En-01");
           setNewCallTrackerData(prev => ({
             ...prev,
             enquiryNo: "En-01"
           }));
         }
       } else {
-        setLastEnquiryNo("En-01");
         setNewCallTrackerData(prev => ({
           ...prev,
           enquiryNo: "En-01"
@@ -128,7 +121,6 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
       }
     } catch (error) {
       console.error("Error fetching last enquiry number:", error);
-      setLastEnquiryNo("En-01");
       setNewCallTrackerData(prev => ({
         ...prev,
         enquiryNo: "En-01"
@@ -136,13 +128,11 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
     }
   }
 
-  // Function to fetch dropdown data from DROPDOWN sheet
   const fetchDropdownData = async () => {
     try {
       const [
         { data: leadSourcesData, error: leadSourcesError },
         { data: scNamesData, error: scNamesError },
-        { data: companyData, error: companyError },
         { data: statesData, error: statesError },
         { data: nobData, error: nobError },
         { data: salesTypeData, error: salesTypeError },
@@ -153,7 +143,6 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
       ] = await Promise.all([
         supabase.from("dropdown").select("lead_source").not("lead_source", "is", null),
         supabase.from("dropdown").select("sales_co_ordinator_name").not("sales_co_ordinator_name", "is", null),
-        supabase.from("dropdown").select("direct_enquiry_company_name").not("direct_enquiry_company_name", "is", null),
         supabase.from("dropdown").select("direct_enquiry_state").not("direct_enquiry_state", "is", null),
         supabase.from("dropdown").select("nob").not("nob", "is", null),
         supabase.from("dropdown").select("sales_type").not("sales_type", "is", null),
@@ -164,7 +153,7 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
       ]);
 
       const errors = [
-        leadSourcesError, scNamesError, companyError, statesError, nobError, 
+        leadSourcesError, scNamesError, statesError, nobError, 
         salesTypeError, approachError, productError, receiversError, assignToError
       ].filter(error => error !== null);
 
@@ -175,7 +164,6 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
 
       const sources = leadSourcesData.map(item => item.lead_source);
       const scNames = scNamesData.map(item => item.sales_co_ordinator_name);
-      const companies = companyData.map(item => item.direct_enquiry_company_name);
       const states = statesData.map(item => item.direct_enquiry_state);
       const nobItems = nobData.map(item => item.nob);
       const salesTypeOptions = salesTypeData.map(item => item.sales_type);
@@ -351,9 +339,6 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
           }))
         : [];
 
-        const currentDate = new Date().toISOString().split('T')[0];
-      
-      // Prepare data for Supabase insertion
       const rowData = { 
         // timestamp: currentDate,  // Add this line
         timestamp: new Date().toISOString(),  // Changed from currentDate to ISO string with 
@@ -553,11 +538,10 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
               </label>
               <input
                 id="location"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
-                placeholder="Location will auto-fill"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Enter billing address"
                 value={newCallTrackerData.location}
                 onChange={(e) => setNewCallTrackerData(prev => ({ ...prev, location: e.target.value, isCompanyAutoFilled: false }))}
-                readOnly={newCallTrackerData.isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
                 required
               />
             </div>
@@ -569,11 +553,10 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
               <input
                 id="emailAddress"
                 type="email"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
-                placeholder="Email will auto-fill"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Enter email address"
                 value={newCallTrackerData.emailAddress}
                 onChange={(e) => setNewCallTrackerData(prev => ({ ...prev, emailAddress: e.target.value, isCompanyAutoFilled: false }))}
-                readOnly={newCallTrackerData.isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
               />
             </div>
 
@@ -591,7 +574,6 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
                   shippingAddress: e.target.value,
                   isCompanyAutoFilled: false
                 }))}
-                readOnly={newCallTrackerData.isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
               />
             </div>
 
@@ -608,7 +590,6 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
                   enquiryReceiverName: e.target.value,
                   isCompanyAutoFilled: false
                 }))}
-                disabled={newCallTrackerData.isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
               >
                 <option value="">Select receiver</option>
                 {receiverOptions.map((receiver, index) => (
@@ -632,7 +613,6 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
                   enquiryAssignToProject: e.target.value,
                   isCompanyAutoFilled: false
                 }))}
-                disabled={newCallTrackerData.isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
               >
                 <option value="">Select project</option>
                 {assignToProjectOptions.map((project, index) => (
@@ -657,7 +637,6 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
                   gstNumber: e.target.value,
                   isCompanyAutoFilled: false
                 }))}
-                readOnly={newCallTrackerData.isCompanyAutoFilled && newCallTrackerData.companyName !== ""}
               />
             </div>
 
