@@ -86,10 +86,10 @@ export const getNextQuotationNumber = async (prefix = "NBD") => {
 
       if (error) {
         console.error("Error fetching quotations:", error);
-        return `${yearPrefix}-1001`; // Start from 1001 for NBD CRR
+        return `${yearPrefix}-001`; // Start from 001
       }
 
-      let maxNumber = 1000; // Start from 1000 for NBD CRR
+      let maxNumber = 0; // Start from 0
 
       if (data && data.length > 0) {
         console.log(`Found ${data.length} quotations with prefix "${yearPrefix}"`);
@@ -111,7 +111,7 @@ export const getNextQuotationNumber = async (prefix = "NBD") => {
         console.log("Highest base quotation number found:", maxNumber);
       }
 
-      const nextNumber = maxNumber + 1;
+      const nextNumber = (maxNumber + 1).toString().padStart(3, "0");
       console.log("Next quotation number will be:", nextNumber);
       return `${yearPrefix}-${nextNumber}`;
     }
@@ -126,10 +126,10 @@ export const getNextQuotationNumber = async (prefix = "NBD") => {
 
     if (error) {
       console.error("Error fetching latest quotation:", error);
-      return `${yearPrefix}-2001`; // Start from 2001
+      return `${yearPrefix}-001`; // Start from 001
     }
 
-    let nextNumber = 2001; // Start from 2001
+    let nextNumber = 1; // Start from 1
 
     if (data && data.length > 0) {
       const latestQuotation = data[0].Quotation_No;
@@ -153,11 +153,12 @@ export const getNextQuotationNumber = async (prefix = "NBD") => {
       console.log("Next number calculated:", nextNumber);
     }
 
-    return `${yearPrefix}-${nextNumber}`;
+    const paddedNext = nextNumber.toString().padStart(3, "0");
+    return `${yearPrefix}-${paddedNext}`;
   } catch (error) {
     console.error("Error generating quotation number:", error);
     const financialYear = getCurrentFinancialYear();
-    return `${prefix}-${financialYear.start}-${financialYear.end}-2001`;
+    return `${prefix}-${financialYear.start}-${financialYear.end}-001`;
   }
 };
 
