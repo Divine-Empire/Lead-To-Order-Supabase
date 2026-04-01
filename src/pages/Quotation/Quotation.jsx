@@ -558,7 +558,7 @@ function Quotation() {
             const parts = candidateNo.split("-");
             if (parts.length === 4) {
               const lastNumber = parseInt(parts[3], 10);
-              const newNumber = lastNumber + 1;
+              const newNumber = (lastNumber + 1).toString().padStart(3, "0");
               candidateNo = `${currentPrefix}-${newNumber}`;
             } else {
               // Fallback: fetch latest but keep prefix
@@ -678,7 +678,7 @@ function Quotation() {
       if (isRevising && selectedQuotation) {
         setQuotationData((prev) => ({
           ...prev,
-          quotationNo: finalQuotationNo,
+          quotationNo: authoritativeQuotationNo,
         }));
       }
 
