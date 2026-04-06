@@ -76,85 +76,45 @@ export const getNextQuotationNumber = async (prefix = "NBD") => {
     const financialYear = getCurrentFinancialYear();
     const yearPrefix = `${prefix}-${financialYear.start}-${financialYear.end}`;
 
-    // Special handling for "NBD CRR" prefix - fetch all and find max numerically
-    // String ordering doesn't work: "999" > "1014" alphabetically because '9' > '1'
-    if (prefix === "NBD CRR" || prefix.includes("NBD CRR")) {
-      const { data, error } = await supabase
-        .from("Make_Quotation")
-        .select("Quotation_No")
-        .like("Quotation_No", `${yearPrefix}-%`);
-
-      if (error) {
-        console.error("Error fetching quotations:", error);
-        return `${yearPrefix}-001`; // Start from 001
-      }
-
-      let maxNumber = 0; // Start from 0
-
-      if (data && data.length > 0) {
-        console.log(`Found ${data.length} quotations with prefix "${yearPrefix}"`);
-
-        // Extract the base serial number from each quotation (ignore revision suffixes)
-        data.forEach((item) => {
-          const quotationNo = item.Quotation_No;
-          const parts = quotationNo.split("-");
-
-          // Format: NBD CRR-25-26-1014 (4 parts) or NBD CRR-25-26-1014-1 (5 parts revision)
-          if (parts.length >= 4) {
-            const serialNumber = parseInt(parts[3]);
-            if (!isNaN(serialNumber) && serialNumber > maxNumber) {
-              maxNumber = serialNumber;
-            }
-          }
-        });
-
-        console.log("Highest base quotation number found:", maxNumber);
-      }
-
-      const nextNumber = (maxNumber + 1).toString().padStart(3, "0");
-      console.log("Next quotation number will be:", nextNumber);
-      return `${yearPrefix}-${nextNumber}`;
-    }
-
-    // Default behavior for other prefixes (NBD, etc.)
+    // Fetch all quotations matching the prefix and current year
     const { data, error } = await supabase
       .from("Make_Quotation")
       .select("Quotation_No")
-      .like("Quotation_No", `${yearPrefix}-%`)
-      .order("Quotation_No", { ascending: false })
-      .limit(1);
+      .like("Quotation_No", `${yearPrefix}-%`);
 
     if (error) {
-      console.error("Error fetching latest quotation:", error);
+      console.error("Error fetching latest quotations:", error);
       return `${yearPrefix}-001`; // Start from 001
     }
 
-    let nextNumber = 1; // Start from 1
+    let maxNumber = 0; // Default to 0 if no records found
 
     if (data && data.length > 0) {
-      const latestQuotation = data[0].Quotation_No;
-      console.log("Latest quotation found:", latestQuotation);
+      console.log(`Found ${data.length} quotations with prefix: "${yearPrefix}"`);
 
-      const parts = latestQuotation.split("-");
-      console.log("Parts:", parts);
+      data.forEach((item) => {
+        const quotationNo = item.Quotation_No;
+        const parts = quotationNo.split("-");
 
-      if (parts.length === 4) {
-        const lastNumber = parseInt(parts[3]);
-        if (!isNaN(lastNumber)) {
-          nextNumber = lastNumber + 1;
+        // The serial number should be the 4th part (index 3)
+        // Format: NBD-25-26-001 -> ["NBD", "25", "26", "001"]
+        // Format: NBD-25-26-001-01 (Revision) -> ["NBD", "25", "26", "001", "01"]
+        if (parts.length >= 4) {
+          const serialPart = parts[3];
+          const serialNumber = parseInt(serialPart, 10);
+          if (!isNaN(serialNumber) && serialNumber > maxNumber) {
+            maxNumber = serialNumber;
+          }
         }
-      } else if (parts.length === 5) {
-        const mainNumber = parseInt(parts[3]);
-        if (!isNaN(mainNumber)) {
-          nextNumber = mainNumber + 1;
-        }
-      }
-
-      console.log("Next number calculated:", nextNumber);
+      });
+      console.log(`Highest numeric serial found for "${yearPrefix}": ${maxNumber}`);
     }
 
-    const paddedNext = nextNumber.toString().padStart(3, "0");
-    return `${yearPrefix}-${paddedNext}`;
+    const nextNumber = (maxNumber + 1).toString().padStart(3, "0");
+    const result = `${yearPrefix}-${nextNumber}`;
+    console.log(`Generated next Quotation No: ${result}`);
+    return result;
+
   } catch (error) {
     console.error("Error generating quotation number:", error);
     const financialYear = getCurrentFinancialYear();
