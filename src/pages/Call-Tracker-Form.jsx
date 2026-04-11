@@ -319,6 +319,18 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
 
   // Function to handle form submission
   const handleSubmit = async () => {
+    // Validate that all items have a name and quantity
+    for (const item of items) {
+      if (!item.name || !item.name.trim()) {
+        alert("Item Name is mandatory for all items.");
+        return;
+      }
+      if (!item.quantity || !item.quantity.toString().trim()) {
+        alert("Quantity is mandatory for all items.");
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     
     try {
@@ -760,7 +772,7 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
                 <div key={item.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                   <div className="md:col-span-5 space-y-2">
                     <label htmlFor={`itemName-${item.id}`} className="block text-sm font-medium text-gray-700">
-                      Item Name
+                      Item Name <span className="text-red-500">*</span>
                     </label>
                     <input
                       list={`item-options-${item.id}`}
@@ -779,7 +791,7 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
 
                   <div className="md:col-span-5 space-y-2">
                     <label htmlFor={`quantity-${item.id}`} className="block text-sm font-medium text-gray-700">
-                      Quantity
+                      Quantity <span className="text-red-500">*</span>
                     </label>
                     <input
                       id={`quantity-${item.id}`}
