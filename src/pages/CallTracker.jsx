@@ -977,6 +977,42 @@ const handleSaveClick = async (index) => {
     }
   };
 
+  /**
+   * Aggregates items from individual columns and JSON column for display summary
+   */
+  const aggregateItemsForSummary = (item, namePrefix, qtyPrefix, jsonField) => {
+    const summaryItems = [];
+
+    // Check individual columns 1-10
+    for (let i = 1; i <= 10; i++) {
+      const name = item[`${namePrefix}${i}`];
+      const qty = item[`${qtyPrefix}${i}`];
+      
+      if (name && typeof name === 'string' && name.trim() !== "" && qty !== null && qty !== undefined && qty.toString() !== "0") {
+        summaryItems.push(`${name.trim()} : ${qty}`);
+      }
+    }
+
+    // Add items from the JSON column if any
+    const jsonStr = item[jsonField];
+    if (jsonStr) {
+      try {
+        const extraItems = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
+        if (Array.isArray(extraItems)) {
+          extraItems.forEach(extra => {
+            if (extra.name && extra.quantity && extra.quantity.toString() !== "0") {
+              summaryItems.push(`${extra.name.trim()} : ${extra.quantity}`);
+            }
+          });
+        }
+      } catch (e) {
+        // Silently skip if not a valid JSON array
+      }
+    }
+
+    return summaryItems.join(", ");
+  };
+
   const handleColumnToggle = (columnKey) => {
     setVisibleColumns((prev) => ({
       ...prev,
@@ -1614,7 +1650,7 @@ const handleSaveClick = async (index) => {
         Current_Stage: item["Current_Stage"] || "",
         Calling_Days: item["Calling_Days"] || "",
         priority: determinePriority(item["Lead_Source"] || ""),
-        itemQty: formatItemQty(item["Item/qty"]) || "",
+        itemQty: aggregateItemsForSummary(item, "Item_Name", "Quantity", "Item/qty") || "",
         sc_name: item["SC_Name"] || "",
         nextCallDate: item["Next_Call_Date"] || "",
         nextCallDate1: item["Next Call Date_1"] || "",
@@ -1870,7 +1906,7 @@ const handleSaveClick = async (index) => {
         current_stage: item.current_stage || "",
         calling_days: item.calling_days || "",
         priority: determinePriority(item.lead_source || ""),
-        item_qty: formatItemQty(item.item_qty) || "",
+        item_qty: aggregateItemsForSummary(item, "item_name", "quantity", "item_qty") || "",
         sc_name: item.sales_coordinator_name || "",
         nextCallDate: item.next_call_date || "",
         // New columns added
