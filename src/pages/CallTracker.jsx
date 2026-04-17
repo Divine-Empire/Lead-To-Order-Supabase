@@ -2764,16 +2764,9 @@ const handleSaveClick = async (index) => {
     const formatItemQty = (itemQtyString) => {
       if (!itemQtyString) return "";
 
-      try {
-        const items = JSON.parse(itemQtyString);
-        return items
-          .filter((item) => item.name && item.quantity && item.quantity !== "0")
-          .map((item) => `${item.name} : ${item.quantity}`)
-          .join(", ");
-      } catch (error) {
-        console.error("Error parsing item quantity:", error);
-        return itemQtyString;
-      }
+      // Since the data is now pre-formatted by aggregateItemsForSummary,
+      // we don't need to parse it as JSON here.
+      return itemQtyString;
     };
 
     if (type === "pending") {
