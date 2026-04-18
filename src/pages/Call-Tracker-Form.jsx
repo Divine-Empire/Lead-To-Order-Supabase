@@ -354,7 +354,7 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
       const rowData = {
         // timestamp: currentDate,  // Add this line
         timestamp: new Date().toISOString(),  // Changed from currentDate to ISO string with 
-        //  enquiry_no: newCallTrackerData.enquiryNo,
+        enquiry_no: newCallTrackerData.enquiryNo,
         lead_source: newCallTrackerData.leadSource,
         sales_coordinator_name: newCallTrackerData.scName,
         company_name: newCallTrackerData.companyName,

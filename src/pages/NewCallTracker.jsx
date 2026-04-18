@@ -770,16 +770,18 @@ const updateLeadToOrderTable = async (enquiryNo, allFormData, currentStage, orde
           const items = orderStatusData.quotationItems || [];
           const totalQty = items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
           
-          // Prepare items data for first 5 columns
+          // Prepare items data for first 5 columns if items are present
           const itemUpdates = {};
-          for (let i = 0; i < 5; i++) {
-            const itemNum = i + 1;
-            if (i < items.length) {
-              itemUpdates[`Item_Name${itemNum}`] = items[i].name || "";
-              itemUpdates[`Quantity${itemNum}`] = String(items[i].qty || 0);
-            } else {
-              itemUpdates[`Item_Name${itemNum}`] = null;
-              itemUpdates[`Quantity${itemNum}`] = null;
+          if (items.length > 0) {
+            for (let i = 0; i < 5; i++) {
+              const itemNum = i + 1;
+              if (i < items.length) {
+                itemUpdates[`Item_Name${itemNum}`] = items[i].name || "";
+                itemUpdates[`Quantity${itemNum}`] = String(items[i].qty || 0);
+              } else {
+                itemUpdates[`Item_Name${itemNum}`] = null;
+                itemUpdates[`Quantity${itemNum}`] = null;
+              }
             }
           }
           
@@ -809,10 +811,12 @@ const updateLeadToOrderTable = async (enquiryNo, allFormData, currentStage, orde
               ? orderStatusData.acceptanceFile 
               : "",
             REMARK: orderStatusData.orderRemark,
-            // Add item columns
+            // Add item columns only if they were calculated
             ...itemUpdates,
-            "Total Order Qty": String(totalQty),
-            "Item/qty": itemQtyJson,
+            ...(items.length > 0 ? {
+              "Total Order Qty": String(totalQty),
+              "Item/qty": itemQtyJson,
+            } : {}),
             
             // ✅ Ensure Order_No is set (already set above, but ensure it's included)
             Order_No: updateData.Order_No || await generateNextOrderNumber(),
@@ -1179,16 +1183,18 @@ const checkItemFieldsPopulated = (data) => {
           const items = orderStatusData.quotationItems || [];
           const totalQty = items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
           
-          // Prepare items data for first 10 columns (enquiry_to_order has 10 item slots)
+          // Prepare items data for first 10 columns if items are present
           const itemUpdates = {};
-          for (let i = 0; i < 10; i++) {
-            const itemNum = i + 1;
-            if (i < items.length) {
-              itemUpdates[`item_name${itemNum}`] = items[i].name || "";
-              itemUpdates[`quantity${itemNum}`] = Number(items[i].qty) || 0;
-            } else {
-              itemUpdates[`item_name${itemNum}`] = null;
-              itemUpdates[`quantity${itemNum}`] = null;
+          if (items.length > 0) {
+            for (let i = 0; i < 10; i++) {
+              const itemNum = i + 1;
+              if (i < items.length) {
+                itemUpdates[`item_name${itemNum}`] = items[i].name || "";
+                itemUpdates[`quantity${itemNum}`] = Number(items[i].qty) || 0;
+              } else {
+                itemUpdates[`item_name${itemNum}`] = null;
+                itemUpdates[`quantity${itemNum}`] = null;
+              }
             }
           }
           
@@ -1216,10 +1222,12 @@ const checkItemFieldsPopulated = (data) => {
               ? allFormData.acceptanceFile 
               : "",
             remark: allFormData.orderRemark,
-            // Add item columns
+            // Add item columns only if they were calculated
             ...itemUpdates,
-            total_qty: String(totalQty),
-            item_qty: itemQtyJson,
+            ...(items.length > 0 ? {
+              total_qty: String(totalQty),
+              item_qty: itemQtyJson,
+            } : {}),
           });
           // DON'T reset "no" + "hold" fields - they might contain important data
         } else if (allFormData.orderStatus?.toLowerCase() === "no") {
