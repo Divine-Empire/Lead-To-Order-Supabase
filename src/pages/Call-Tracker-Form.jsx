@@ -9,7 +9,7 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
   const [enquiryStates, setEnquiryStates] = useState([])
   const [nobOptions, setNobOptions] = useState([])
   const [salesTypes, setSalesTypes] = useState([])
-  const [enquiryApproachOptions, setEnquiryApproachOptions] =useState([])
+  const [enquiryApproachOptions, setEnquiryApproachOptions] = useState([])
   const [productCategories, setProductCategories] = useState([])
   const [companyOptions, setCompanyOptions] = useState([])
   const [companyDetailsMap, setCompanyDetailsMap] = useState({})
@@ -148,12 +148,12 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
         supabase.from("dropdown").select("sales_type").not("sales_type", "is", null),
         supabase.from("dropdown").select("enquiry_approach").not("enquiry_approach", "is", null),
         supabase.from("dropdown").select("item_name").not("item_name", "is", null),
-        supabase.from("dropdown").select("lead_receiver_name").not("lead_receiver_name", "is", null),
+        supabase.from("dropdown").select("enquiry_receiver_name").not("enquiry_receiver_name", "is", null),
         supabase.from("dropdown").select("enquiry_assign_to").not("enquiry_assign_to", "is", null)
       ]);
 
       const errors = [
-        leadSourcesError, scNamesError, statesError, nobError, 
+        leadSourcesError, scNamesError, statesError, nobError,
         salesTypeError, approachError, productError, receiversError, assignToError
       ].filter(error => error !== null);
 
@@ -169,7 +169,7 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
       const salesTypeOptions = salesTypeData.map(item => item.sales_type);
       const approachOptions = approachData.map(item => item.enquiry_approach);
       const productItems = productData.map(item => item.item_name);
-      const receivers = receiversData.map(item => item.lead_receiver_name);
+      const receivers = receiversData.map(item => item.enquiry_receiver_name);
       const assignToProjects = assignToData.map(item => item.enquiry_assign_to);
 
       setLeadSources([...new Set(sources)]);
@@ -215,11 +215,11 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
       if (data) {
         const companies = [];
         const detailsMap = {};
-        
+
         data.forEach(company => {
           if (company.direct_enquiry_company_name) {
             companies.push(company.direct_enquiry_company_name);
-            
+
             detailsMap[company.direct_enquiry_company_name] = {
               phoneNumber: company.direct_enquiry_client_contact_no || "",
               salesPersonName: company.direct_enquiry_client_name || "",
@@ -229,7 +229,7 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
             };
           }
         });
-        
+
         setCompanyOptions(companies);
         setFilteredCompanies(companies);
         setCompanyDetailsMap(detailsMap);
@@ -262,7 +262,7 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
         gstNumber: companyDetails.gstNumber || "",
         isCompanyAutoFilled: true
       }));
-      
+
       // Also update the enquiry state if available
       if (companyDetails.enquiryState) {
         setEnquiryFormData(prev => ({
@@ -271,7 +271,7 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
         }));
       }
     }
-    
+
     setShowCompanyDropdown(false);
   }
 
@@ -332,29 +332,29 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
     }
 
     setIsSubmitting(true);
-    
+
     try {
       // Prepare the first 10 items in individual columns
       const itemColumns = {};
       const first10Items = items.slice(0, 10);
-      
+
       first10Items.forEach((item, index) => {
         itemColumns[`item_name${index + 1}`] = item.name || "";
         itemColumns[`quantity${index + 1}`] = item.quantity || "0";
       });
-      
+
       // Prepare additional items beyond 10 as JSON
-      const additionalItems = items.length > 10 
+      const additionalItems = items.length > 10
         ? items.slice(10).map(item => ({
-            name: item.name || "",
-            quantity: item.quantity || "0"
-          }))
+          name: item.name || "",
+          quantity: item.quantity || "0"
+        }))
         : [];
 
-      const rowData = { 
+      const rowData = {
         // timestamp: currentDate,  // Add this line
         timestamp: new Date().toISOString(),  // Changed from currentDate to ISO string with 
-      //  enquiry_no: newCallTrackerData.enquiryNo,
+        //  enquiry_no: newCallTrackerData.enquiryNo,
         lead_source: newCallTrackerData.leadSource,
         sales_coordinator_name: newCallTrackerData.scName,
         company_name: newCallTrackerData.companyName,
@@ -407,8 +407,8 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
         <div className="p-6 border-b">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold">New Call Tracker</h2>
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={() => {
                 try {
                   onClose();
@@ -419,7 +419,7 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
                     modal.style.display = 'none';
                   }
                 }
-              }} 
+              }}
               className="text-gray-500 hover:text-gray-700"
             >
               <svg
@@ -472,7 +472,7 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
                 {scNameOptions.map((scName, index) => (
                   <option key={index} value={scName}>
                     {scName}
-                    </option>
+                  </option>
                 ))}
               </select>
             </div>
@@ -581,8 +581,8 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="Enter shipping address"
                 value={newCallTrackerData.shippingAddress}
-                onChange={(e) => setNewCallTrackerData(prev => ({ 
-                  ...prev, 
+                onChange={(e) => setNewCallTrackerData(prev => ({
+                  ...prev,
                   shippingAddress: e.target.value,
                   isCompanyAutoFilled: false
                 }))}
@@ -597,8 +597,8 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
                 id="enquiryReceiverName"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 value={newCallTrackerData.enquiryReceiverName}
-                onChange={(e) => setNewCallTrackerData(prev => ({ 
-                  ...prev, 
+                onChange={(e) => setNewCallTrackerData(prev => ({
+                  ...prev,
                   enquiryReceiverName: e.target.value,
                   isCompanyAutoFilled: false
                 }))}
@@ -620,8 +620,8 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
                 id="enquiryAssignToProject"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 value={newCallTrackerData.enquiryAssignToProject}
-                onChange={(e) => setNewCallTrackerData(prev => ({ 
-                  ...prev, 
+                onChange={(e) => setNewCallTrackerData(prev => ({
+                  ...prev,
                   enquiryAssignToProject: e.target.value,
                   isCompanyAutoFilled: false
                 }))}
@@ -644,8 +644,8 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="Enter GST number"
                 value={newCallTrackerData.gstNumber}
-                onChange={(e) => setNewCallTrackerData(prev => ({ 
-                  ...prev, 
+                onChange={(e) => setNewCallTrackerData(prev => ({
+                  ...prev,
                   gstNumber: e.target.value,
                   isCompanyAutoFilled: false
                 }))}
@@ -830,7 +830,7 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
                 </div>
               ))}
             </div>
-            
+
           </div>
         </div>
 
