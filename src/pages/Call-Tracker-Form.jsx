@@ -68,63 +68,53 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
   // Function to fetch the last enquiry number from Supabase
   const fetchLastEnquiryNumber = async () => {
     try {
+      // Fetch all enquiry numbers to find the absolute maximum numeric value
       const { data, error } = await supabase
         .from('enquiry_to_order')
         .select('enquiry_no')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
+        .not('enquiry_no', 'is', null);
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          setNewCallTrackerData(prev => ({
-            ...prev,
-            enquiryNo: "En-01"
-          }));
-          return;
-        } else if (error.code === '42P01') {
-          setNewCallTrackerData(prev => ({
-            ...prev,
-            enquiryNo: "En-01"
-          }));
-          return;
-        } else {
-          console.error("Error fetching last enquiry number:", error);
-          setNewCallTrackerData(prev => ({
-            ...prev,
-            enquiryNo: "En-01"
-          }));
-          return;
+        console.error("Error fetching enquiry numbers:", error);
+        // If table doesn't exist or other error, fallback to En-01
+        if (error.code === '42P01') {
+          setNewCallTrackerData(prev => ({ ...prev, enquiryNo: "En-01" }));
+          return "En-01";
         }
       }
 
-      if (data && data.enquiry_no) {
-        const matchFound = data.enquiry_no.match(/En-(\d+)/);
-        if (matchFound && matchFound[1]) {
-          const nextNumber = parseInt(matchFound[1]) + 1;
-          const nextEnquiryNo = `En-${nextNumber.toString().padStart(2, "0")}`;
-          setNewCallTrackerData(prev => ({
-            ...prev,
-            enquiryNo: nextEnquiryNo
-          }));
-        } else {
-          setNewCallTrackerData(prev => ({
-            ...prev,
-            enquiryNo: "En-01"
-          }));
-        }
-      } else {
-        setNewCallTrackerData(prev => ({
-          ...prev,
-          enquiryNo: "En-01"
-        }));
+      let maxNumber = 0;
+      if (data && data.length > 0) {
+        data.forEach(row => {
+          if (row.enquiry_no) {
+            const match = row.enquiry_no.match(/En-(\d+)/i);
+            if (match) {
+              const num = parseInt(match[1], 10);
+              if (!isNaN(num) && num > maxNumber) {
+                maxNumber = num;
+              }
+            }
+          }
+        });
       }
-    } catch (error) {
-      console.error("Error fetching last enquiry number:", error);
+
+      const nextNumber = maxNumber + 1;
+      const nextEnquiryNo = `En-${nextNumber.toString().padStart(2, "0")}`;
+
       setNewCallTrackerData(prev => ({
         ...prev,
-        enquiryNo: "En-01"
+        enquiryNo: nextEnquiryNo
       }));
+      
+      return nextEnquiryNo;
+    } catch (error) {
+      console.error("Error generating next enquiry number:", error);
+      const fallback = "En-01";
+      setNewCallTrackerData(prev => ({
+        ...prev,
+        enquiryNo: fallback
+      }));
+      return fallback;
     }
   }
 
@@ -334,6 +324,10 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
     setIsSubmitting(true);
 
     try {
+      // ✅ Fetch the LATEST enquiry number right before submitting to avoid conflicts
+      const latestEnquiryNo = await fetchLastEnquiryNumber();
+      console.log("Using freshly generated enquiry number:", latestEnquiryNo);
+
       // Prepare the first 10 items in individual columns
       const itemColumns = {};
       const first10Items = items.slice(0, 10);
@@ -354,7 +348,7 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
       const rowData = {
         // timestamp: currentDate,  // Add this line
         timestamp: new Date().toISOString(),  // Changed from currentDate to ISO string with 
-        enquiry_no: newCallTrackerData.enquiryNo,
+        enquiry_no: latestEnquiryNo,
         lead_source: newCallTrackerData.leadSource,
         sales_coordinator_name: newCallTrackerData.scName,
         company_name: newCallTrackerData.companyName,
