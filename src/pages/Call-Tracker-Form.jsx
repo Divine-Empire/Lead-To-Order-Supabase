@@ -72,7 +72,9 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
       const { data, error } = await supabase
         .from('enquiry_to_order')
         .select('enquiry_no')
-        .not('enquiry_no', 'is', null);
+        .not('enquiry_no', 'is', null)
+        .order('timestamp', { ascending: false })
+        .limit(200);
 
       if (error) {
         console.error("Error fetching enquiry numbers:", error);

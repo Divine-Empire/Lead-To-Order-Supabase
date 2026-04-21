@@ -283,7 +283,9 @@ const fetchExistingOrderNumbers = async () => {
     const { data, error } = await supabase
       .from("enquiry_tracker")
       .select('"Order No."') // Use double quotes to escape column name with space
-      .not('"Order No."', 'is', null); // Also escape in the filter
+      .not('"Order No."', 'is', null) // Also escape in the filter
+      .order('"Order No."', { ascending: false })
+      .limit(200);
 
     if (error) {
       console.error("Error fetching order numbers:", error);
