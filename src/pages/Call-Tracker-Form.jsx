@@ -65,10 +65,9 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
     fetchLastEnquiryNumber()
   }, [])
 
-  // Function to fetch the last enquiry number from Supabase
+  // Function to fetch the last enquiry number from Supabase (Used for initial display only)
   const fetchLastEnquiryNumber = async () => {
     try {
-      // Fetch all enquiry numbers to find the absolute maximum numeric value
       const { data, error } = await supabase
         .from('enquiry_to_order')
         .select('enquiry_no')
@@ -78,7 +77,6 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
 
       if (error) {
         console.error("Error fetching enquiry numbers:", error);
-        // If table doesn't exist or other error, fallback to En-01
         if (error.code === '42P01') {
           setNewCallTrackerData(prev => ({ ...prev, enquiryNo: "En-01" }));
           return "En-01";
@@ -326,9 +324,10 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
     setIsSubmitting(true);
 
     try {
-      // ✅ Fetch the LATEST enquiry number right before submitting to avoid conflicts
+      // ✅ STEP 1: Fetch the ACTUAL latest enquiry number right before submitting
+      // This minimizes the chance of duplicates compared to fetching on form load
       const latestEnquiryNo = await fetchLastEnquiryNumber();
-      console.log("Using freshly generated enquiry number:", latestEnquiryNo);
+      console.log("Using latest generated enquiry number:", latestEnquiryNo);
 
       // Prepare the first 10 items in individual columns
       const itemColumns = {};
@@ -348,9 +347,8 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
         : [];
 
       const rowData = {
-        // timestamp: currentDate,  // Add this line
-        timestamp: new Date().toISOString(),  // Changed from currentDate to ISO string with 
-        enquiry_no: latestEnquiryNo,
+        timestamp: new Date().toISOString(),
+        enquiry_no: latestEnquiryNo, // Use the freshly fetched number
         lead_source: newCallTrackerData.leadSource,
         sales_coordinator_name: newCallTrackerData.scName,
         company_name: newCallTrackerData.companyName,
@@ -367,16 +365,14 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
         project_name: enquiryFormData.projectName,
         sales_type: enquiryFormData.salesType,
         enquiry_approach: enquiryFormData.enquiryApproach,
-        // Add the first 10 items as individual columns
         ...itemColumns,
-        // Add additional items as JSON
         item_qty: additionalItems.length > 0 ? JSON.stringify(additionalItems) : null,
         total_qty: calculateTotalQuantity(),
       };
 
       console.log("Data to be submitted to Supabase:", rowData);
 
-      // Insert data into Supabase
+      // Insert data into Supabase directly
       const { data, error } = await supabase
         .from("enquiry_to_order")
         .insert([rowData]);
@@ -386,7 +382,7 @@ const CallTrackerForm = ({ onClose = () => window.history.back() }) => {
         alert("Error saving data: " + error.message);
       } else {
         console.log("Inserted successfully:", data);
-        alert("Call tracker updated successfully");
+        alert(`Call tracker updated successfully. Enquiry No: ${latestEnquiryNo}`);
         onClose();
       }
     } catch (err) {
