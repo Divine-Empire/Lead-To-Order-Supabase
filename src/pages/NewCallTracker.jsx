@@ -280,22 +280,40 @@ useEffect(() => {
 // Fix the column name escaping
 const fetchExistingOrderNumbers = async () => {
   try {
-    const { data, error } = await supabase
-      .from("enquiry_tracker")
-      .select('"Order No."') // Use double quotes to escape column name with space
-      .not('"Order No."', 'is', null) // Also escape in the filter
-      .order('"Order No."', { ascending: false })
-      .limit(200);
+    // 🔍 Fetch from ALL 3 tables with their specific correct date columns
+    const [trackerRes, leadsRes, directRes] = await Promise.all([
+      // 1. enquiry_tracker uses "Timestamp" (Capital T)
+      supabase
+        .from("enquiry_tracker")
+        .select('"Order No."')
+        .not('"Order No."', 'is', null)
+        .order('Timestamp', { ascending: false }) 
+        .limit(1000),
 
-    if (error) {
-      console.error("Error fetching order numbers:", error);
-      return [];
-    }
+      // 2. leads_to_order uses "Timestamp" (Capital T)
+      supabase
+        .from("leads_to_order")
+        .select('Order_No')
+        .not('Order_No', 'is', null)
+        .order('Timestamp', { ascending: false })
+        .limit(1000),
 
-    // Extract order numbers and filter out null/empty values
-    return data
-      .map(item => item["Order No."])
-      .filter(orderNo => orderNo && orderNo.trim() !== "");
+      // 3. enquiry_to_order uses "created_at" (Lowercase)
+      supabase
+        .from("enquiry_to_order")
+        .select('order_no')
+        .not('order_no', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(1000)
+    ]);
+
+    const allNumbers = [
+      ...(trackerRes.data || []).map(item => item["Order No."]),
+      ...(leadsRes.data || []).map(item => item.Order_No),
+      ...(directRes.data || []).map(item => item.order_no)
+    ];
+
+    return allNumbers.filter(no => no && typeof no === 'string' && no.trim() !== "");
   } catch (error) {
     console.error("Exception fetching order numbers:", error);
     return [];
@@ -305,10 +323,9 @@ const fetchExistingOrderNumbers = async () => {
 // Add this function to generate the next order number
 const generateNextOrderNumber = async () => {
   try {
-    // Fetch all existing order numbers
     const existingOrderNumbers = await fetchExistingOrderNumbers();
     
-    // Extract numeric parts and find the maximum
+    // Extract numeric parts using regex that handles any digits after "DO-"
     const orderNumbers = existingOrderNumbers
       .map(orderNo => {
         const match = orderNo.match(/DO-(\d+)/i);
@@ -316,17 +333,17 @@ const generateNextOrderNumber = async () => {
       })
       .filter(num => !isNaN(num) && num > 0);
     
-    // Find the maximum order number
+    // Find absolute maximum among all fetched records
     const maxOrderNumber = orderNumbers.length > 0 ? Math.max(...orderNumbers) : 0;
     
-    // Generate the next order number
     const nextNumber = maxOrderNumber + 1;
+    // Padding to at least 2 digits, but handles 1000+ naturally
     const paddedNumber = String(nextNumber).padStart(2, "0");
     
+    console.log(`📊 Order Number Calc: Max Found=${maxOrderNumber}, Next=${nextNumber}`);
     return `DO-${paddedNumber}`;
   } catch (error) {
     console.error("Error generating order number:", error);
-    // Fallback: generate based on current date/time
     const timestamp = Date.now().toString().slice(-4);
     return `DO-${timestamp}`;
   }
@@ -1224,6 +1241,8 @@ const checkItemFieldsPopulated = (data) => {
               ? allFormData.acceptanceFile 
               : "",
             remark: allFormData.orderRemark,
+            // ✅ Fix: Submit order number to master table
+            order_no: allFormData.generatedOrderNumber || "",
             // Add item columns only if they were calculated
             ...itemUpdates,
             ...(items.length > 0 ? {
@@ -1460,7 +1479,8 @@ const handleSubmit = async (e) => {
             ...formData,
             ...quotationData,
             ...orderExpectedData,
-            ...orderStatusData
+            ...orderStatusData,
+            generatedOrderNumber: orderNumber // Ensure the number is passed for sync
           },
           currentStage
         );
