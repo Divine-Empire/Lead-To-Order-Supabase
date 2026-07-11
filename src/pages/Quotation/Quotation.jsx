@@ -287,10 +287,77 @@ function Quotation() {
           Array.isArray(loadedData.Items) &&
           loadedData.Items.length > 0
         ) {
-          items = loadedData.Items.map((item, index) => ({
-            id: index + 1,
-            ...item,
-          }));
+          items = loadedData.Items.map((item, index) => {
+            if (item.name === "Freight") {
+              const desc = item.description || "";
+              const shouldBeEmpty =
+                desc.toLowerCase().trim().startsWith("extra as per");
+              return {
+                id: index + 1,
+                ...item,
+                isFreight: true,
+                description: shouldBeEmpty ? "" : desc,
+              };
+            }
+            return {
+              id: index + 1,
+              ...item,
+            };
+          });
+        }
+
+        // Ensure at least one default item and one Freight item exist if items is empty
+        if (items.length === 0) {
+          items = [
+            {
+              id: 1,
+              code: "",
+              name: "",
+              description: "",
+              gst: 18,
+              qty: 1,
+              units: "Nos",
+              rate: 0,
+              discount: 0,
+              flatDiscount: 0,
+              amount: 0,
+            },
+            {
+              id: 2,
+              code: "",
+              name: "Freight",
+              description: "",
+              gst: 0,
+              qty: 1,
+              units: "Nos",
+              rate: 0,
+              discount: 0,
+              flatDiscount: 0,
+              amount: 0,
+              isFreight: true,
+            },
+          ];
+        } else {
+          // If items is not empty, check if Freight item is present
+          const hasFreight = items.some(
+            (item) => item.isFreight || item.name === "Freight"
+          );
+          if (!hasFreight) {
+            items.push({
+              id: items.length + 1,
+              code: "",
+              name: "Freight",
+              description: "",
+              gst: 0,
+              qty: 1,
+              units: "Nos",
+              rate: 0,
+              discount: 0,
+              flatDiscount: 0,
+              amount: 0,
+              isFreight: true,
+            });
+          }
         }
 
         const subtotal = items.reduce(
@@ -717,6 +784,20 @@ function Quotation() {
             discount: 0,
             flatDiscount: 0,
             amount: 0,
+          },
+          {
+            id: 2,
+            code: "",
+            name: "Freight",
+            description: "",
+            gst: 0,
+            qty: 1,
+            units: "Nos",
+            rate: 0,
+            discount: 0,
+            flatDiscount: 0,
+            amount: 0,
+            isFreight: true,
           },
         ],
         totalFlatDiscount: 0,

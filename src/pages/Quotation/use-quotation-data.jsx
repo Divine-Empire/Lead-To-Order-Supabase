@@ -154,6 +154,20 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
         flatDiscount: 0,
         amount: 0,
       },
+      {
+        id: 2,
+        code: "",
+        name: "Freight",
+        description: "",
+        gst: 0,
+        qty: 1,
+        units: "Nos",
+        rate: 0,
+        discount: 0,
+        flatDiscount: 0,
+        amount: 0,
+        isFreight: true,
+      },
     ],
     subtotal: 0,
     totalFlatDiscount: 0,
@@ -362,24 +376,32 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
   const handleAddItem = useCallback(() => {
     setQuotationData((prev) => {
       const newId = Math.max(0, ...prev.items.map((item) => item.id)) + 1;
+      // Find where the Freight item is, so we can insert new items before it
+      const freightIndex = prev.items.findIndex(
+        (item) => item.isFreight || item.name === "Freight"
+      );
+      const newItems = [...prev.items];
+      const newItem = {
+        id: newId,
+        code: "",
+        name: "",
+        description: "",
+        gst: 18,
+        qty: 1,
+        units: "Nos",
+        rate: 0,
+        discount: 0,
+        flatDiscount: 0,
+        amount: 0,
+      };
+      if (freightIndex !== -1) {
+        newItems.splice(freightIndex, 0, newItem);
+      } else {
+        newItems.push(newItem);
+      }
       return {
         ...prev,
-        items: [
-          ...prev.items,
-          {
-            id: newId,
-            code: "",
-            name: "",
-            description: "",
-            gst: 18,
-            qty: 1,
-            units: "Nos",
-            rate: 0,
-            discount: 0,
-            flatDiscount: 0,
-            amount: 0,
-          },
-        ],
+        items: newItems,
       };
     });
   }, []);

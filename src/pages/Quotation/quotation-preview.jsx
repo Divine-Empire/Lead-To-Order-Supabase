@@ -150,7 +150,14 @@ const QuotationPreview = ({
             </thead>
             <tbody>
               {quotationData.items.map((item, index) => (
-                <tr key={item.id} className="border">
+                <tr
+                  key={item.id}
+                  className={
+                    item.isFreight || item.name === "Freight"
+                      ? "border bg-gray-400 text-gray-900 border-gray-500"
+                      : "border"
+                  }
+                >
                   <td className="p-2 border">{index + 1}</td>
                   <td className="p-2 border">{item.code || "N/A"}</td>
                   <td className="p-2 border">{item.name || "N/A"}</td>

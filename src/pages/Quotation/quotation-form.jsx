@@ -597,7 +597,7 @@ const QuotationForm = ({
 
         if (productInfo) {
           productCode = productInfo.code || "";
-          productDescription = productInfo.description || "";
+          productDescription = item.name === "Freight" ? "" : (productInfo.description || "");
           productRate = productInfo.rate || 0;
         }
 
@@ -606,7 +606,7 @@ const QuotationForm = ({
           code: productCode,
           name: item.name,
           description: productDescription,
-          gst: 18,
+          gst: item.name === "Freight" ? 0 : 18,
           qty: item.qty,
           units: "Nos",
           rate: productRate,
@@ -812,7 +812,7 @@ const QuotationForm = ({
             // Look up the product code from productData
             const productInfo = productData[item.name];
             const productCode = productInfo ? productInfo.code : "";
-            const productDescription = productInfo ? productInfo.description : "";
+            const productDescription = (item.name === "Freight" || !productInfo) ? "" : (productInfo.description || "");
             const productRate = productInfo ? productInfo.rate : 0;
 
             return {
@@ -820,7 +820,7 @@ const QuotationForm = ({
               code: productCode,
               name: item.name,
               description: productDescription,
-              gst: 18,
+              gst: item.name === "Freight" ? 0 : 18,
               qty: item.qty,
               units: "Nos",
               rate: productRate,

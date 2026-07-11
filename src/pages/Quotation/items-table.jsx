@@ -245,52 +245,100 @@ const ItemsTable = ({
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {quotationData.items.map((item, index) => (
-                <tr key={item.id}>
-                  <td className="px-4 py-2">{index + 1}</td>
+              {quotationData.items
+                .filter((item) => !item.isFreight && item.name !== "Freight")
+                .map((item, index) => (
+                  <tr key={item.id}>
+                    <td className="px-4 py-2">{index + 1}</td>
 
-                  {!hideCode && (
-                    <td className="px-4 py-2">
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={item.code}
-                          onChange={(e) => {
-                            const newCode = e.target.value;
-                            handleItemChange(item.id, "code", newCode);
+                    {!hideCode && (
+                      <td className="px-4 py-2">
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={item.code}
+                            onChange={(e) => {
+                              const newCode = e.target.value;
+                              handleItemChange(item.id, "code", newCode);
 
-                            if (newCode === "") {
-                              handleItemChange(item.id, "name", "");
-                              handleItemChange(item.id, "description", "");
-                              handleItemChange(item.id, "rate", 0);
-                            }
+                              if (newCode === "") {
+                                handleItemChange(item.id, "name", "");
+                                handleItemChange(item.id, "description", "");
+                                handleItemChange(item.id, "rate", 0);
+                              }
 
-                            setSearchTerm({
-                              ...searchTerm,
-                              [`code-${item.id}`]: newCode,
-                            });
-                          }}
-                          onFocus={() => {
-                            setActiveDropdown(`code-${item.id}`);
-                            setSearchTerm({
-                              ...searchTerm,
-                              [`code-${item.id}`]: item.code,
-                            });
-                          }}
-                          className="p-1 w-24 rounded-md border border-gray-300"
-                          disabled={isLoading}
-                          autoComplete="off"
-                        />
+                              setSearchTerm({
+                                ...searchTerm,
+                                [`code-${item.id}`]: newCode,
+                              });
+                            }}
+                            onFocus={() => {
+                              setActiveDropdown(`code-${item.id}`);
+                              setSearchTerm({
+                                ...searchTerm,
+                                [`code-${item.id}`]: item.code,
+                              });
+                            }}
+                            className="p-1 w-24 rounded-md border border-gray-300"
+                            disabled={isLoading}
+                            autoComplete="off"
+                          />
 
-                        {activeDropdown === `code-${item.id}` && (
-                          <>
-                            <div
-                              className="fixed inset-0 z-10"
-                              onClick={() => setActiveDropdown(null)}
-                            />
-                            <div className="absolute z-20 mt-1 w-56 max-h-60 overflow-y-auto bg-white rounded-md border border-gray-300 shadow-lg">
-                              {productCodes
-                                .filter((code) =>
+                          {activeDropdown === `code-${item.id}` && (
+                            <>
+                              <div
+                                className="fixed inset-0 z-10"
+                                onClick={() => setActiveDropdown(null)}
+                              />
+                              <div className="absolute z-20 mt-1 w-56 max-h-60 overflow-y-auto bg-white rounded-md border border-gray-300 shadow-lg">
+                                {productCodes
+                                  .filter((code) =>
+                                    code
+                                      .toLowerCase()
+                                      .includes(
+                                        (
+                                          searchTerm[`code-${item.id}`] || ""
+                                        ).toLowerCase()
+                                      )
+                                  )
+                                  .map((code) => (
+                                    <div
+                                      key={code}
+                                      className="px-3 py-2 cursor-pointer hover:bg-blue-50"
+                                      onClick={() => {
+                                        handleItemChange(item.id, "code", code);
+                                        setActiveDropdown(null);
+
+                                        // Always sync with product data when code changes
+                                        if (productData[code]) {
+                                          const productInfo = productData[code];
+                                          handleItemChange(
+                                            item.id,
+                                            "name",
+                                            productInfo.name
+                                          );
+                                          handleItemChange(
+                                            item.id,
+                                            "description",
+                                            productInfo.name === "Freight" ? "" : (productInfo.description || "")
+                                          );
+                                          handleItemChange(
+                                            item.id,
+                                            "rate",
+                                            productInfo.rate || 0
+                                          );
+                                          handleItemChange(
+                                            item.id,
+                                            "gst",
+                                            productInfo.name === "Freight" ? 0 : (productInfo.gst !== undefined ? productInfo.gst : 18)
+                                          );
+                                        }
+                                      }}
+                                    >
+                                      {code}
+                                    </div>
+                                  ))}
+                                {productCodes.filter((code) =>
                                   code
                                     .toLowerCase()
                                     .includes(
@@ -298,110 +346,108 @@ const ItemsTable = ({
                                         searchTerm[`code-${item.id}`] || ""
                                       ).toLowerCase()
                                     )
-                                )
-                                .map((code) => (
-                                  <div
-                                    key={code}
-                                    className="px-3 py-2 cursor-pointer hover:bg-blue-50"
-                                    onClick={() => {
-                                      handleItemChange(item.id, "code", code);
-                                      setActiveDropdown(null);
+                                ).length === 0 && (
+                                    <div className="px-3 py-2 text-gray-500 text-sm">
+                                      No results found
+                                    </div>
+                                  )}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    )}
 
-                                      // Always sync with product data when code changes
-                                      if (productData[code]) {
-                                        const productInfo = productData[code];
-                                        handleItemChange(
-                                          item.id,
-                                          "name",
-                                          productInfo.name
-                                        );
-                                        handleItemChange(
-                                          item.id,
-                                          "description",
-                                          productInfo.description || ""
-                                        );
-                                        handleItemChange(
-                                          item.id,
-                                          "rate",
-                                          productInfo.rate || 0
-                                        );
-                                        if (productInfo.gst !== undefined) {
+                    {!hideProductName && (
+                      <td className="px-4 py-2">
+                        <div className="relative min-w-[200px]">
+                          <input
+                            type="text"
+                            value={item.name}
+                            onChange={(e) => {
+                              const newName = e.target.value;
+                              handleItemChange(item.id, "name", newName);
+
+                              if (newName === "") {
+                                handleItemChange(item.id, "code", "");
+                                handleItemChange(item.id, "description", "");
+                                handleItemChange(item.id, "rate", 0);
+                              }
+
+                              setSearchTerm({
+                                ...searchTerm,
+                                [`name-${item.id}`]: newName,
+                              });
+                            }}
+                            onFocus={() => {
+                              setActiveDropdown(`name-${item.id}`);
+                              setSearchTerm({
+                                ...searchTerm,
+                                [`name-${item.id}`]: item.name,
+                              });
+                            }}
+                            className="p-1 w-full rounded-md border border-gray-300"
+                            placeholder="Enter item name"
+                            disabled={isLoading}
+                            required
+                            autoComplete="off"
+                          />
+
+                          {activeDropdown === `name-${item.id}` && (
+                            <>
+                              <div
+                                className="fixed inset-0 z-10"
+                                onClick={() => setActiveDropdown(null)}
+                              />
+                              <div className="absolute z-20 mt-1 w-56 max-h-60 overflow-y-auto bg-white rounded-md border border-gray-300 shadow-lg">
+                                {productNames
+                                  .filter((name) =>
+                                    name
+                                      .toLowerCase()
+                                      .includes(
+                                        (
+                                          searchTerm[`name-${item.id}`] || ""
+                                        ).toLowerCase()
+                                      )
+                                  )
+                                  .map((name) => (
+                                    <div
+                                      key={name}
+                                      className="px-3 py-2 cursor-pointer hover:bg-blue-50"
+                                      onClick={() => {
+                                        handleItemChange(item.id, "name", name);
+                                        setActiveDropdown(null);
+
+                                        // Always sync with product data when name changes
+                                        if (productData[name]) {
+                                          const productInfo = productData[name];
+                                          handleItemChange(
+                                            item.id,
+                                            "code",
+                                            productInfo.code
+                                          );
+                                          handleItemChange(
+                                            item.id,
+                                            "description",
+                                            name === "Freight" ? "" : (productInfo.description || "")
+                                          );
+                                          handleItemChange(
+                                            item.id,
+                                            "rate",
+                                            productInfo.rate || 0
+                                          );
                                           handleItemChange(
                                             item.id,
                                             "gst",
-                                            productInfo.gst
+                                            name === "Freight" ? 0 : (productInfo.gst !== undefined ? productInfo.gst : 18)
                                           );
                                         }
-                                      }
-                                    }}
-                                  >
-                                    {code}
-                                  </div>
-                                ))}
-                              {productCodes.filter((code) =>
-                                code
-                                  .toLowerCase()
-                                  .includes(
-                                    (
-                                      searchTerm[`code-${item.id}`] || ""
-                                    ).toLowerCase()
-                                  )
-                              ).length === 0 && (
-                                <div className="px-3 py-2 text-gray-500 text-sm">
-                                  No results found
-                                </div>
-                              )}
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  )}
-
-                  {!hideProductName && (
-                    <td className="px-4 py-2">
-                      <div className="relative min-w-[200px]">
-                        <input
-                          type="text"
-                          value={item.name}
-                          onChange={(e) => {
-                            const newName = e.target.value;
-                            handleItemChange(item.id, "name", newName);
-
-                            if (newName === "") {
-                              handleItemChange(item.id, "code", "");
-                              handleItemChange(item.id, "description", "");
-                              handleItemChange(item.id, "rate", 0);
-                            }
-
-                            setSearchTerm({
-                              ...searchTerm,
-                              [`name-${item.id}`]: newName,
-                            });
-                          }}
-                          onFocus={() => {
-                            setActiveDropdown(`name-${item.id}`);
-                            setSearchTerm({
-                              ...searchTerm,
-                              [`name-${item.id}`]: item.name,
-                            });
-                          }}
-                          className="p-1 w-full rounded-md border border-gray-300"
-                          placeholder="Enter item name"
-                          disabled={isLoading}
-                          required
-                          autoComplete="off"
-                        />
-
-                        {activeDropdown === `name-${item.id}` && (
-                          <>
-                            <div
-                              className="fixed inset-0 z-10"
-                              onClick={() => setActiveDropdown(null)}
-                            />
-                            <div className="absolute z-20 mt-1 w-56 max-h-60 overflow-y-auto bg-white rounded-md border border-gray-300 shadow-lg">
-                              {productNames
-                                .filter((name) =>
+                                      }}
+                                    >
+                                      {name}
+                                    </div>
+                                  ))}
+                                {productNames.filter((name) =>
                                   name
                                     .toLowerCase()
                                     .includes(
@@ -409,375 +455,674 @@ const ItemsTable = ({
                                         searchTerm[`name-${item.id}`] || ""
                                       ).toLowerCase()
                                     )
-                                )
-                                .map((name) => (
-                                  <div
-                                    key={name}
-                                    className="px-3 py-2 cursor-pointer hover:bg-blue-50"
-                                    onClick={() => {
-                                      handleItemChange(item.id, "name", name);
-                                      setActiveDropdown(null);
+                                ).length === 0 && (
+                                    <div className="px-3 py-2 text-gray-500 text-sm">
+                                      No results found
+                                    </div>
+                                  )}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    )}
 
-                                      // Always sync with product data when name changes
-                                      if (productData[name]) {
-                                        const productInfo = productData[name];
-                                        handleItemChange(
-                                          item.id,
-                                          "code",
-                                          productInfo.code
-                                        );
-                                        handleItemChange(
-                                          item.id,
-                                          "description",
-                                          productInfo.description || ""
-                                        );
-                                        handleItemChange(
-                                          item.id,
-                                          "rate",
-                                          productInfo.rate || 0
-                                        );
-                                        if (productInfo.gst !== undefined) {
-                                          handleItemChange(
-                                            item.id,
-                                            "gst",
-                                            productInfo.gst
-                                          );
-                                        }
-                                      }
-                                    }}
-                                  >
-                                    {name}
-                                  </div>
-                                ))}
-                              {productNames.filter((name) =>
-                                name
-                                  .toLowerCase()
-                                  .includes(
-                                    (
-                                      searchTerm[`name-${item.id}`] || ""
-                                    ).toLowerCase()
-                                  )
-                              ).length === 0 && (
-                                <div className="px-3 py-2 text-gray-500 text-sm">
-                                  No results found
-                                </div>
-                              )}
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  )}
+                    {!hideDescription && (
+                      <td className="px-4 py-2">
+                        <div className="relative min-w-[200px]">
+                          <textarea
+                            value={item.description || ""}
+                            onChange={(e) =>
+                              handleItemChange(
+                                item.id,
+                                "description",
+                                e.target.value
+                              )
+                            }
+                            className="p-1 w-full rounded-md border border-gray-300"
+                            style={{
+                              width: `${Math.max(
+                                200,
+                                (item.description || "").length * 8
+                              )}px`,
+                              height: "auto",
+                              minHeight: "32px",
+                            }}
+                            placeholder="Enter description"
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </td>
+                    )}
 
-                  {!hideDescription && (
-                    <td className="px-4 py-2">
-                      <div className="relative min-w-[200px]">
-                        <textarea
-                          value={item.description || ""}
+                    {!hideGST && (
+                      <td className="px-4 py-2">
+                        <select
+                          value={String(item.gst)}
+                          onChange={(e) =>
+                            handleItemChange(item.id, "gst", e.target.value)
+                          }
+                          className="p-1 w-20 rounded-md border border-gray-300"
+                          disabled={isLoading}
+                        >
+                          <option value="0">0%</option>
+                          <option value="5">5%</option>
+                          <option value="18">18%</option>
+                        </select>
+                      </td>
+                    )}
+
+                    {!hideQty && (
+                      <td className="px-4 py-2">
+                        <input
+                          type="number"
+                          value={item.qty || ""}
                           onChange={(e) =>
                             handleItemChange(
                               item.id,
-                              "description",
-                              e.target.value
+                              "qty",
+                              Number.parseFloat(e.target.value) || 0
                             )
                           }
-                          className="p-1 w-full rounded-md border border-gray-300"
-                          style={{
-                          width: `${Math.max(
-                            200,
-                            (item.description || "").length * 8
-                          )}px`,
-                          height: "auto",
-                          minHeight: "32px",
-                        }}
-                          placeholder="Enter description"
+                          className="p-1 w-16 rounded-md border border-gray-300 no-spinner"
+                          placeholder=""
+                          onWheel={(e) => e.target.blur()}
+                          onKeyDown={(e) => {
+                            if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                              e.preventDefault();
+                            }
+                          }}
+                          min="0"
+                          required
                           disabled={isLoading}
                         />
-                      </div>
-                    </td>
-                  )}
+                      </td>
+                    )}
 
-                  {!hideGST && (
-                    <td className="px-4 py-2">
-                      <select
-                        value={String(item.gst)}
-                        onChange={(e) =>
-                          handleItemChange(item.id, "gst", e.target.value)
-                        }
-                        className="p-1 w-20 rounded-md border border-gray-300"
-                        disabled={isLoading}
-                      >
-                        <option value="0">0%</option>
-                        <option value="5">5%</option>
-                        <option value="18">18%</option>
-                      </select>
-                    </td>
-                  )}
-
-                  {!hideQty && (
-                    <td className="px-4 py-2">
-                      <input
-                        type="number"
-                        value={item.qty || ""}
-                        onChange={(e) =>
-                          handleItemChange(
-                            item.id,
-                            "qty",
-                            Number.parseFloat(e.target.value) || 0
-                          )
-                        }
-                        className="p-1 w-16 rounded-md border border-gray-300 no-spinner"
-                        placeholder=""
-                        onWheel={(e) => e.target.blur()}
-                        onKeyDown={(e) => {
-                          if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-                            e.preventDefault();
+                    {!hideUnits && (
+                      <td className="px-4 py-2">
+                        <select
+                          value={item.units}
+                          onChange={(e) =>
+                            handleItemChange(item.id, "units", e.target.value)
                           }
-                        }}
-                        min="0"
-                        required
-                        disabled={isLoading}
-                      />
-                    </td>
-                  )}
+                          className="p-1 w-20 rounded-md border border-gray-300"
+                          disabled={isLoading}
+                        >
+                          <option value="Nos">Nos</option>
+                          <option value="Kg">Kg</option>
+                          <option value="Roll">Roll</option>
+                          <option value="Rmt">Rmt</option>
+                          <option value="Ltr">Ltr</option>
+                          <option value="Bag">Bag</option>
+                          <option value="Pair">Pair</option>
+                          <option value="Set">Set</option>
+                          <option value="Mtr">Mtr</option>
+                          <option value="sqmtr">sqmtr</option>
+                          <option value="Box">Box</option>
+                          <option value="Pc">Pc</option>
+                        </select>
+                      </td>
+                    )}
 
-                  {!hideUnits && (
-                    <td className="px-4 py-2">
-                      <select
-                        value={item.units}
-                        onChange={(e) =>
-                          handleItemChange(item.id, "units", e.target.value)
-                        }
-                        className="p-1 w-20 rounded-md border border-gray-300"
-                        disabled={isLoading}
-                      >
-                        <option value="Nos">Nos</option>
-                        <option value="Kg">Kg</option>
-                        <option value="Roll">Roll</option>
-                        <option value="Rmt">Rmt</option>
-                        <option value="Ltr">Ltr</option>
-                        <option value="Bag">Bag</option>
-                        <option value="Pair">Pair</option>
-                        <option value="Set">Set</option>
-                        <option value="Mtr">Mtr</option>
-                        <option value="sqmtr">sqmtr</option>
-                        <option value="Box">Box</option>
-                        <option value="Pc">Pc</option>
-                      </select>
-                    </td>
-                  )}
-
-                  {!hideRate && (
-                    <td className="px-4 py-2">
-                      <input
-                        type="number"
-                        value={item.rate || ""}
-                        onChange={(e) =>
-                          handleItemChange(
-                            item.id,
-                            "rate",
-                            Number.parseFloat(e.target.value) || 0
-                          )
-                        }
-                        className="p-1 w-24 rounded-md border border-gray-300 no-spinner"
-                        placeholder="0.00"
-                        onWheel={(e) => e.target.blur()}
-                        onKeyDown={(e) => {
-                          if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-                            e.preventDefault();
-                          }
-                        }}
-                        step="0.01"
-                        min="0"
-                        disabled={isLoading}
-                        required
-                      />
-                    </td>
-                  )}
-
-                  {!hideDisc && (
-                    <td className="px-4 py-2">
-                      <input
-                        type="number"
-                        value={item.discount || ""}
-                        onChange={(e) =>
-                          handleItemChange(
-                            item.id,
-                            "discount",
-                            Number.parseFloat(e.target.value) || 0
-                          )
-                        }
-                        className="p-1 w-20 rounded-md border border-gray-300 no-spinner"
-                        placeholder=""
-                        onWheel={(e) => e.target.blur()}
-                        onKeyDown={(e) => {
-                          if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-                            e.preventDefault();
-                          }
-                        }}
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        disabled={isLoading}
-                      />
-                    </td>
-                  )}
-
-                  {!hideFlatDisc && (
-                    <td className="px-4 py-2">
-                      <input
-                        type="number"
-                        value={item.flatDiscount || ""}
-                        onChange={(e) =>
-                          handleItemChange(
-                            item.id,
-                            "flatDiscount",
-                            Number.parseFloat(e.target.value) || 0
-                          )
-                        }
-                        className="p-1 w-16 rounded-md border border-gray-300 no-spinner"
-                        placeholder=""
-                        onWheel={(e) => e.target.blur()}
-                        onKeyDown={(e) => {
-                          if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-                            e.preventDefault();
-                          }
-                        }}
-                        step="0.01"
-                        min="0"
-                        disabled={isLoading}
-                      />
-                    </td>
-                  )}
-
-                  {!hideAmount && (
-                    <td className="px-4 py-2">
-                      <input
-                        type="text"
-                        value={item.amount || ""}
-                        className="p-1 w-24 bg-gray-50 rounded-md border border-gray-300"
-                        readOnly
-                      />
-                    </td>
-                  )}
-
-                  <td className="px-4 py-2">
-                    <button
-                      className="p-1 text-red-500 rounded-md hover:text-red-700"
-                      onClick={() => {
-                        setQuotationData((prev) => {
-                          const newItems = prev.items.filter(
-                            (i) => i.id !== item.id
-                          );
-                          if (newItems.length === 0) {
-                            return prev;
-                          }
-
-                          const subtotal = newItems.reduce(
-                            (sum, current) => sum + Number(current.amount || 0),
-                            0
-                          );
-                          const totalFlatDiscount = newItems.reduce(
-                            (sum, current) =>
-                              sum + Number(current.flatDiscount || 0),
-                            0
-                          );
-
-                          let cgstAmount = 0;
-                          let sgstAmount = 0;
-                          let igstAmount = 0;
-
-                          newItems.forEach((current) => {
-                            const amount = Number(current.amount || 0);
-                            let itemGST = Number(current.gst || 0);
-
-                            if (amount <= 0 || itemGST <= 0) {
-                              return;
-                            }
-
-                            if (
-                              String(current.gst).toUpperCase().includes("IGST")
-                            ) {
-                              itemGST = itemGST / 2;
-                            }
-
-                            if (prev.isIGST) {
-                              igstAmount += (amount * itemGST) / 100;
-                            } else {
-                              const halfGST = itemGST / 2;
-                              const contribution = (amount * halfGST) / 100;
-                              cgstAmount += contribution;
-                              sgstAmount += contribution;
-                            }
-                          });
-
-                          const roundedSubtotal = Number(subtotal.toFixed(2));
-                          cgstAmount = Number(cgstAmount.toFixed(2));
-                          sgstAmount = Number(sgstAmount.toFixed(2));
-                          igstAmount = Number(igstAmount.toFixed(2));
-
-                          const total = Math.max(
-                            0,
-                            Number(
-                              (
-                                roundedSubtotal +
-                                cgstAmount +
-                                sgstAmount +
-                                igstAmount
-                              ).toFixed(2)
+                    {!hideRate && (
+                      <td className="px-4 py-2">
+                        <input
+                          type="number"
+                          value={item.rate || ""}
+                          onChange={(e) =>
+                            handleItemChange(
+                              item.id,
+                              "rate",
+                              Number.parseFloat(e.target.value) || 0
                             )
-                          );
+                          }
+                          className="p-1 w-24 rounded-md border border-gray-300 no-spinner"
+                          placeholder="0.00"
+                          onWheel={(e) => e.target.blur()}
+                          onKeyDown={(e) => {
+                            if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                              e.preventDefault();
+                            }
+                          }}
+                          step="0.01"
+                          min="0"
+                          disabled={isLoading}
+                          required
+                        />
+                      </td>
+                    )}
 
-                          const cgstRate =
-                            !prev.isIGST && roundedSubtotal > 0
-                              ? Number(
+                    {!hideDisc && (
+                      <td className="px-4 py-2">
+                        <input
+                          type="number"
+                          value={item.discount || ""}
+                          onChange={(e) =>
+                            handleItemChange(
+                              item.id,
+                              "discount",
+                              Number.parseFloat(e.target.value) || 0
+                            )
+                          }
+                          className="p-1 w-20 rounded-md border border-gray-300 no-spinner"
+                          placeholder=""
+                          onWheel={(e) => e.target.blur()}
+                          onKeyDown={(e) => {
+                            if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                              e.preventDefault();
+                            }
+                          }}
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          disabled={isLoading}
+                        />
+                      </td>
+                    )}
+
+                    {!hideFlatDisc && (
+                      <td className="px-4 py-2">
+                        <input
+                          type="number"
+                          value={item.flatDiscount || ""}
+                          onChange={(e) =>
+                            handleItemChange(
+                              item.id,
+                              "flatDiscount",
+                              Number.parseFloat(e.target.value) || 0
+                            )
+                          }
+                          className="p-1 w-16 rounded-md border border-gray-300 no-spinner"
+                          placeholder=""
+                          onWheel={(e) => e.target.blur()}
+                          onKeyDown={(e) => {
+                            if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                              e.preventDefault();
+                            }
+                          }}
+                          step="0.01"
+                          min="0"
+                          disabled={isLoading}
+                        />
+                      </td>
+                    )}
+
+                    {!hideAmount && (
+                      <td className="px-4 py-2">
+                        <input
+                          type="text"
+                          value={item.amount || ""}
+                          className="p-1 w-24 bg-gray-50 rounded-md border border-gray-300"
+                          readOnly
+                        />
+                      </td>
+                    )}
+
+                    <td className="px-4 py-2">
+                      <button
+                        className="p-1 text-red-500 rounded-md hover:text-red-700"
+                        onClick={() => {
+                          setQuotationData((prev) => {
+                            const newItems = prev.items.filter(
+                              (i) => i.id !== item.id
+                            );
+                            if (newItems.length === 0) {
+                              return prev;
+                            }
+
+                            const subtotal = newItems.reduce(
+                              (sum, current) => sum + Number(current.amount || 0),
+                              0
+                            );
+                            const totalFlatDiscount = newItems.reduce(
+                              (sum, current) =>
+                                sum + Number(current.flatDiscount || 0),
+                              0
+                            );
+
+                            let cgstAmount = 0;
+                            let sgstAmount = 0;
+                            let igstAmount = 0;
+
+                            newItems.forEach((current) => {
+                              const amount = Number(current.amount || 0);
+                              let itemGST = Number(current.gst || 0);
+
+                              if (amount <= 0 || itemGST <= 0) {
+                                return;
+                              }
+
+                              if (
+                                String(current.gst).toUpperCase().includes("IGST")
+                              ) {
+                                itemGST = itemGST / 2;
+                              }
+
+                              if (prev.isIGST) {
+                                igstAmount += (amount * itemGST) / 100;
+                              } else {
+                                const halfGST = itemGST / 2;
+                                const contribution = (amount * halfGST) / 100;
+                                cgstAmount += contribution;
+                                sgstAmount += contribution;
+                              }
+                            });
+
+                            const roundedSubtotal = Number(subtotal.toFixed(2));
+                            cgstAmount = Number(cgstAmount.toFixed(2));
+                            sgstAmount = Number(sgstAmount.toFixed(2));
+                            igstAmount = Number(igstAmount.toFixed(2));
+
+                            const total = Math.max(
+                              0,
+                              Number(
+                                (
+                                  roundedSubtotal +
+                                  cgstAmount +
+                                  sgstAmount +
+                                  igstAmount
+                                ).toFixed(2)
+                              )
+                            );
+
+                            const cgstRate =
+                              !prev.isIGST && roundedSubtotal > 0
+                                ? Number(
                                   (
                                     (cgstAmount / roundedSubtotal) *
                                     100
                                   ).toFixed(2)
                                 )
-                              : 0;
-                          const sgstRate =
-                            !prev.isIGST && roundedSubtotal > 0
-                              ? Number(
+                                : 0;
+                            const sgstRate =
+                              !prev.isIGST && roundedSubtotal > 0
+                                ? Number(
                                   (
                                     (sgstAmount / roundedSubtotal) *
                                     100
                                   ).toFixed(2)
                                 )
-                              : 0;
-                          const igstRate =
-                            prev.isIGST && roundedSubtotal > 0
-                              ? Number(
+                                : 0;
+                            const igstRate =
+                              prev.isIGST && roundedSubtotal > 0
+                                ? Number(
                                   (
                                     (igstAmount / roundedSubtotal) *
                                     100
                                   ).toFixed(2)
                                 )
-                              : 0;
+                                : 0;
 
-                          return {
-                            ...prev,
-                            items: newItems,
-                            totalFlatDiscount,
-                            subtotal: roundedSubtotal,
-                            cgstAmount,
-                            sgstAmount,
-                            igstAmount,
-                            total,
-                            cgstRate: prev.isIGST ? 0 : cgstRate,
-                            sgstRate: prev.isIGST ? 0 : sgstRate,
-                            igstRate: prev.isIGST ? igstRate : 0,
-                          };
-                        });
-                      }}
-                      disabled={quotationData.items.length <= 1 || isLoading}
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                            return {
+                              ...prev,
+                              items: newItems,
+                              totalFlatDiscount,
+                              subtotal: roundedSubtotal,
+                              cgstAmount,
+                              sgstAmount,
+                              igstAmount,
+                              total,
+                              cgstRate: prev.isIGST ? 0 : cgstRate,
+                              sgstRate: prev.isIGST ? 0 : sgstRate,
+                              igstRate: prev.isIGST ? igstRate : 0,
+                            };
+                          });
+                        }}
+                        disabled={
+                          quotationData.items.filter(
+                            (i) => !i.isFreight && i.name !== "Freight"
+                          ).length <= 1 || isLoading
+                        }
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+
+              {/* Freight Item Row */}
+              {(() => {
+                const freightItem = quotationData.items.find(
+                  (item) => item.isFreight || item.name === "Freight"
+                );
+                if (!freightItem) return null;
+
+                const normalItems = quotationData.items.filter(
+                  (item) => !item.isFreight && item.name !== "Freight"
+                );
+                const freightSNo = normalItems.length + 1;
+
+                return (
+                  <tr key={freightItem.id} className="bg-gray-300 text-gray-900 border-gray-500">
+                    <td className="px-4 py-2">{freightSNo}</td>
+
+                    {!hideCode && (
+                      <td className="px-4 py-2">
+                        <input
+                          type="text"
+                          value={freightItem.code || ""}
+                          className="p-1 w-24 rounded-md border border-gray-500 bg-gray-400 text-gray-800 cursor-not-allowed"
+                          disabled
+                        />
+                      </td>
+                    )}
+
+                    {!hideProductName && (
+                      <td className="px-4 py-2">
+                        <input
+                          type="text"
+                          value="Freight"
+                          className="p-1 w-full min-w-[200px] rounded-md border border-gray-500 bg-gray-400 text-gray-900 cursor-not-allowed"
+                          disabled
+                        />
+                      </td>
+                    )}
+
+                    {!hideDescription && (
+                      <td className="px-4 py-2">
+                        <textarea
+                          value={freightItem.description || ""}
+                          onChange={(e) =>
+                            handleItemChange(
+                              freightItem.id,
+                              "description",
+                              e.target.value
+                            )
+                          }
+                          className="p-1 w-full min-w-[200px] rounded-md border border-gray-300 bg-white text-gray-700 resize-none"
+                          style={{ minHeight: "32px", height: "auto" }}
+                          placeholder="Enter description"
+                          disabled={isLoading}
+                        />
+                      </td>
+                    )}
+
+                    {!hideGST && (
+                      <td className="px-4 py-2">
+                        <select
+                          value={String(freightItem.gst)}
+                          onChange={(e) =>
+                            handleItemChange(
+                              freightItem.id,
+                              "gst",
+                              e.target.value
+                            )
+                          }
+                          className="p-1 w-20 rounded-md border border-gray-300 bg-white text-gray-700"
+                          disabled={isLoading}
+                        >
+                          <option value="0">0%</option>
+                          <option value="5">5%</option>
+                          <option value="18">18%</option>
+                        </select>
+                      </td>
+                    )}
+
+                    {!hideQty && (
+                      <td className="px-4 py-2">
+                        <input
+                          type="number"
+                          value={freightItem.qty || ""}
+                          onChange={(e) =>
+                            handleItemChange(
+                              freightItem.id,
+                              "qty",
+                              Number.parseFloat(e.target.value) || 0
+                            )
+                          }
+                          placeholder="0"
+                          className="p-1 w-16 rounded-md border border-gray-300 no-spinner bg-white text-gray-700"
+                          onWheel={(e) => e.target.blur()}
+                          onKeyDown={(e) => {
+                            if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                              e.preventDefault();
+                            }
+                          }}
+                          min="0"
+                          disabled={isLoading}
+                        />
+                      </td>
+                    )}
+
+                    {!hideUnits && (
+                      <td className="px-4 py-2">
+                        <select
+                          value={freightItem.units}
+                          onChange={(e) =>
+                            handleItemChange(
+                              freightItem.id,
+                              "units",
+                              e.target.value
+                            )
+                          }
+                          className="p-1 w-20 rounded-md border border-gray-300 bg-white text-gray-700"
+                          disabled={isLoading}
+                        >
+                          <option value="Nos">Nos</option>
+                          <option value="Kg">Kg</option>
+                          <option value="Roll">Roll</option>
+                          <option value="Rmt">Rmt</option>
+                          <option value="Ltr">Ltr</option>
+                          <option value="Bag">Bag</option>
+                          <option value="Pair">Pair</option>
+                          <option value="Set">Set</option>
+                          <option value="Mtr">Mtr</option>
+                          <option value="sqmtr">sqmtr</option>
+                          <option value="Box">Box</option>
+                          <option value="Pc">Pc</option>
+                        </select>
+                      </td>
+                    )}
+
+                    {!hideRate && (
+                      <td className="px-4 py-2">
+                        <input
+                          type="number"
+                          value={freightItem.rate || ""}
+                          onChange={(e) =>
+                            handleItemChange(
+                              freightItem.id,
+                              "rate",
+                              Number.parseFloat(e.target.value) || 0
+                            )
+                          }
+                          placeholder="0.00"
+                          className="p-1 w-24 rounded-md border border-gray-300 no-spinner bg-white text-gray-700"
+                          onWheel={(e) => e.target.blur()}
+                          onKeyDown={(e) => {
+                            if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                              e.preventDefault();
+                            }
+                          }}
+                          step="0.01"
+                          min="0"
+                          disabled={isLoading}
+                        />
+                      </td>
+                    )}
+
+                    {!hideDisc && (
+                      <td className="px-4 py-2">
+                        <input
+                          type="number"
+                          value={freightItem.discount || ""}
+                          onChange={(e) =>
+                            handleItemChange(
+                              freightItem.id,
+                              "discount",
+                              Number.parseFloat(e.target.value) || 0
+                            )
+                          }
+                          placeholder="0"
+                          className="p-1 w-20 rounded-md border border-gray-300 no-spinner bg-white text-gray-700"
+                          onWheel={(e) => e.target.blur()}
+                          onKeyDown={(e) => {
+                            if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                              e.preventDefault();
+                            }
+                          }}
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          disabled={isLoading}
+                        />
+                      </td>
+                    )}
+
+                    {!hideFlatDisc && (
+                      <td className="px-4 py-2">
+                        <input
+                          type="number"
+                          value={freightItem.flatDiscount || ""}
+                          onChange={(e) =>
+                            handleItemChange(
+                              freightItem.id,
+                              "flatDiscount",
+                              Number.parseFloat(e.target.value) || 0
+                            )
+                          }
+                          placeholder="0"
+                          className="p-1 w-16 rounded-md border border-gray-300 no-spinner bg-white text-gray-700"
+                          onWheel={(e) => e.target.blur()}
+                          onKeyDown={(e) => {
+                            if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                              e.preventDefault();
+                            }
+                          }}
+                          step="0.01"
+                          min="0"
+                          disabled={isLoading}
+                        />
+                      </td>
+                    )}
+
+                    {!hideAmount && (
+                      <td className="px-4 py-2">
+                        <input
+                          type="text"
+                          value={freightItem.amount || "0.00"}
+                          className="p-1 w-24 bg-gray-400 rounded-md border border-gray-500 text-gray-800 cursor-not-allowed"
+                          readOnly
+                        />
+                      </td>
+                    )}
+
+                    <td className="px-4 py-2">
+                      <button
+                        className="p-1 text-red-500 rounded-md hover:text-red-700"
+                        onClick={() => {
+                          setQuotationData((prev) => {
+                            const newItems = prev.items.filter(
+                              (i) => i.id !== freightItem.id
+                            );
+
+                            const subtotal = newItems.reduce(
+                              (sum, current) => sum + Number(current.amount || 0),
+                              0
+                            );
+                            const totalFlatDiscount = newItems.reduce(
+                              (sum, current) =>
+                                sum + Number(current.flatDiscount || 0),
+                              0
+                            );
+
+                            let cgstAmount = 0;
+                            let sgstAmount = 0;
+                            let igstAmount = 0;
+
+                            newItems.forEach((current) => {
+                              const amount = Number(current.amount || 0);
+                              let itemGST = Number(current.gst || 0);
+
+                              if (amount <= 0 || itemGST <= 0) {
+                                return;
+                              }
+
+                              if (
+                                String(current.gst).toUpperCase().includes("IGST")
+                              ) {
+                                itemGST = itemGST / 2;
+                              }
+
+                              if (prev.isIGST) {
+                                igstAmount += (amount * itemGST) / 100;
+                              } else {
+                                const halfGST = itemGST / 2;
+                                const contribution = (amount * halfGST) / 100;
+                                cgstAmount += contribution;
+                                sgstAmount += contribution;
+                              }
+                            });
+
+                            const roundedSubtotal = Number(subtotal.toFixed(2));
+                            cgstAmount = Number(cgstAmount.toFixed(2));
+                            sgstAmount = Number(sgstAmount.toFixed(2));
+                            igstAmount = Number(igstAmount.toFixed(2));
+
+                            const total = Math.max(
+                              0,
+                              Number(
+                                (
+                                  roundedSubtotal +
+                                  cgstAmount +
+                                  sgstAmount +
+                                  igstAmount
+                                ).toFixed(2)
+                              )
+                            );
+
+                            const cgstRate =
+                              !prev.isIGST && roundedSubtotal > 0
+                                ? Number(
+                                  (
+                                    (cgstAmount / roundedSubtotal) *
+                                    100
+                                  ).toFixed(2)
+                                )
+                                : 0;
+                            const sgstRate =
+                              !prev.isIGST && roundedSubtotal > 0
+                                ? Number(
+                                  (
+                                    (sgstAmount / roundedSubtotal) *
+                                    100
+                                  ).toFixed(2)
+                                )
+                                : 0;
+                            const igstRate =
+                              prev.isIGST && roundedSubtotal > 0
+                                ? Number(
+                                  (
+                                    (igstAmount / roundedSubtotal) *
+                                    100
+                                  ).toFixed(2)
+                                )
+                                : 0;
+
+                            return {
+                              ...prev,
+                              items: newItems,
+                              totalFlatDiscount,
+                              subtotal: roundedSubtotal,
+                              cgstAmount,
+                              sgstAmount,
+                              igstAmount,
+                              total,
+                              cgstRate: prev.isIGST ? 0 : cgstRate,
+                              sgstRate: prev.isIGST ? 0 : sgstRate,
+                              igstRate: prev.isIGST ? igstRate : 0,
+                            };
+                          });
+                        }}
+                        disabled={isLoading}
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })()}
             </tbody>
             <tfoot>
               {/* Subtotal */}
