@@ -305,15 +305,15 @@ function Quotation() {
               const shouldBeEmpty =
                 desc.toLowerCase().trim().startsWith("extra as per");
               return {
-                id: index + 1,
                 ...item,
+                id: index + 1,
                 isFreight: true,
                 description: shouldBeEmpty ? "" : desc,
               };
             }
             return {
-              id: index + 1,
               ...item,
+              id: index + 1,
             };
           });
         }

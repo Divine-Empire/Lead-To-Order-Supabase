@@ -469,7 +469,19 @@ const ItemsTable = ({
 
                     {!hideDescription && (
                       <td className="px-4 py-2">
-                        <div className="relative min-w-[200px]">
+                        <div 
+                          className="relative min-w-[200px]"
+                          style={{
+                            width: `${Math.max(
+                              200,
+                              (item.description || "").length * 8
+                            )}px`,
+                            maxWidth: `${Math.max(
+                              200,
+                              (item.description || "").length * 8
+                            )}px`
+                          }}
+                        >
                           <textarea
                             value={item.description || ""}
                             onChange={(e) =>
@@ -481,12 +493,12 @@ const ItemsTable = ({
                             }
                             className="p-1 w-full rounded-md border border-gray-300"
                             style={{
-                              width: `${Math.max(
-                                200,
-                                (item.description || "").length * 8
-                              )}px`,
                               height: "auto",
                               minHeight: "32px",
+                              maxWidth: `${Math.max(
+                                200,
+                                (item.description || "").length * 8
+                              )}px`
                             }}
                             placeholder="Enter description"
                             disabled={isLoading}
@@ -821,20 +833,41 @@ const ItemsTable = ({
 
                     {!hideDescription && (
                       <td className="px-4 py-2">
-                        <textarea
-                          value={freightItem.description || ""}
-                          onChange={(e) =>
-                            handleItemChange(
-                              freightItem.id,
-                              "description",
-                              e.target.value
-                            )
-                          }
-                          className="p-1 w-full min-w-[200px] rounded-md border border-gray-300 bg-white text-gray-700 resize-none"
-                          style={{ minHeight: "32px", height: "auto" }}
-                          placeholder="Enter description"
-                          disabled={isLoading}
-                        />
+                        <div 
+                          className="relative min-w-[200px]"
+                          style={{
+                            width: `${Math.max(
+                              200,
+                              (freightItem.description || "").length * 8
+                            )}px`,
+                            maxWidth: `${Math.max(
+                              200,
+                              (freightItem.description || "").length * 8
+                            )}px`
+                          }}
+                        >
+                          <textarea
+                            value={freightItem.description || ""}
+                            onChange={(e) =>
+                              handleItemChange(
+                                freightItem.id,
+                                "description",
+                                e.target.value
+                              )
+                            }
+                            className="p-1 w-full rounded-md border border-gray-300 bg-white text-gray-700 resize-none"
+                            style={{
+                              height: "auto",
+                              minHeight: "32px",
+                              maxWidth: `${Math.max(
+                                200,
+                                (freightItem.description || "").length * 8
+                              )}px`
+                            }}
+                            placeholder="Enter description"
+                            disabled={isLoading}
+                          />
+                        </div>
                       </td>
                     )}
 

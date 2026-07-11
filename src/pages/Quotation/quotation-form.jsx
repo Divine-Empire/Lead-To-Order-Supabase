@@ -613,6 +613,7 @@ const QuotationForm = ({
           discount: 0,
           flatDiscount: 0,
           amount: item.qty * productRate,
+          isFreight: item.name === "Freight",
         };
       });
 
@@ -827,6 +828,7 @@ const QuotationForm = ({
               discount: 0,
               flatDiscount: 0,
               amount: item.qty * productRate,
+              isFreight: item.name === "Freight",
             };
           });
 
