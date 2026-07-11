@@ -116,6 +116,7 @@ function Quotation() {
     addSpecialOffer,
     removeSpecialOffer,
     handleSpecialOfferChange,
+    resetQuotationData,
   } = useQuotationData(specialDiscount);
 
   const handleSpecialDiscountChangeWrapper = (value) => {
@@ -241,12 +242,23 @@ function Quotation() {
     }
   }, [setQuotationData, params]);
 
-  const toggleRevising = () => {
+  const toggleRevising = async () => {
     const newIsRevising = !isRevising;
     setIsRevising(newIsRevising);
 
     if (newIsRevising) {
       setSelectedQuotation("");
+    } else {
+      try {
+        const nextQuotationNumber = await getNextQuotationNumber();
+        resetQuotationData(nextQuotationNumber);
+        setSpecialDiscount(0);
+        setSelectedReferences([]);
+        setPdfUrl("");
+        setQuotationLink("");
+      } catch (error) {
+        console.error("Error resetting form on cancel revise:", error);
+      }
     }
   };
 
@@ -337,27 +349,6 @@ function Quotation() {
               isFreight: true,
             },
           ];
-        } else {
-          // If items is not empty, check if Freight item is present
-          const hasFreight = items.some(
-            (item) => item.isFreight || item.name === "Freight"
-          );
-          if (!hasFreight) {
-            items.push({
-              id: items.length + 1,
-              code: "",
-              name: "Freight",
-              description: "",
-              gst: 0,
-              qty: 1,
-              units: "Nos",
-              rate: 0,
-              discount: 0,
-              flatDiscount: 0,
-              amount: 0,
-              isFreight: true,
-            });
-          }
         }
 
         const subtotal = items.reduce(
@@ -753,80 +744,9 @@ function Quotation() {
 
       // Reset form for new quotation
       const nextQuotationNumber = await getNextQuotationNumber();
-      setQuotationData({
-        quotationNo: nextQuotationNumber,
-        date: new Date().toLocaleDateString("en-GB"),
-        consignorState: "",
-        consignorName: "",
-        consignorAddress: "",
-        consignorMobile: "",
-        consignorPhone: "",
-        consignorGSTIN: "",
-        consignorStateCode: "",
-        companyName: "",
-        consigneeName: "",
-        consigneeAddress: "",
-        consigneeState: "",
-        consigneeContactName: "",
-        consigneeContactNo: "",
-        consigneeGSTIN: "",
-        consigneeStateCode: "",
-        msmeNumber: "",
-        items: [
-          {
-            id: 1,
-            code: "",
-            name: "",
-            gst: 18,
-            qty: 1,
-            units: "Nos",
-            rate: 0,
-            discount: 0,
-            flatDiscount: 0,
-            amount: 0,
-          },
-          {
-            id: 2,
-            code: "",
-            name: "Freight",
-            description: "",
-            gst: 0,
-            qty: 1,
-            units: "Nos",
-            rate: 0,
-            discount: 0,
-            flatDiscount: 0,
-            amount: 0,
-            isFreight: true,
-          },
-        ],
-        totalFlatDiscount: 0,
-        subtotal: 0,
-        cgstRate: 9,
-        sgstRate: 9,
-        cgstAmount: 0,
-        sgstAmount: 0,
-        total: 0,
-        validity:
-          "The above quoted prices are valid up to 10 days from date of offer.",
-        paymentTerms:
-          "100% advance payment in the mode of NEFT, RTGS & DD.Payment only accepted in company's account - DIVINE EMPIRE INDIA PVT LTD.",
-        delivery:
-          "Within 7-10 working days after received purchase order and 100% advance payment",
-        freight: "Extra as per actual.",
-        insurance: "Transit insurance for all shipment is at Buyer's scope.",
-        taxes: "Extra mentioned in the quotation.",
-        accountNo: "",
-        bankName: "",
-        bankAddress: "",
-        ifscCode: "",
-        email: "",
-        website: "",
-        pan: "",
-        notes: [""],
-        preparedBy: "",
-        specialOffers: [""],
-      });
+      resetQuotationData(nextQuotationNumber);
+      setSpecialDiscount(0);
+      setSelectedReferences([]);
     } catch (error) {
       console.error("Error in handleSaveQuotation:", error);
       alert("Error: " + error.message);

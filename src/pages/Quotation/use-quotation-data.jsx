@@ -105,6 +105,88 @@ const checkStateAndCalculateGST = (consignorState, consigneeState) => {
   return !statesMatch;
 };
 
+export const INITIAL_QUOTATION_DATA = {
+  quotationNo: "NBD-...",
+  date: new Date().toLocaleDateString("en-GB"),
+  consignorState: "",
+  consignorName: "",
+  consignorAddress: "",
+  consignorMobile: "",
+  consignorPhone: "",
+  consignorGSTIN: "",
+  consignorStateCode: "",
+  companyName: "",
+  consigneeName: "",
+  consigneeAddress: "",
+  consigneeState: "",
+  consigneeContactName: "",
+  consigneeContactNo: "",
+  consigneeGSTIN: "",
+  consigneeStateCode: "",
+  msmeNumber: "",
+  items: [
+    {
+      id: 1,
+      code: "",
+      name: "",
+      description: "",
+      gst: 18,
+      qty: 1,
+      units: "Nos",
+      rate: 0,
+      discount: 0,
+      flatDiscount: 0,
+      amount: 0,
+    },
+    {
+      id: 2,
+      code: "",
+      name: "Freight",
+      description: "",
+      gst: 0,
+      qty: 1,
+      units: "Nos",
+      rate: 0,
+      discount: 0,
+      flatDiscount: 0,
+      amount: 0,
+      isFreight: true,
+    },
+  ],
+  subtotal: 0,
+  totalFlatDiscount: 0,
+  cgstRate: 9,
+  sgstRate: 9,
+  igstRate: 18,
+  isIGST: false,
+  cgstAmount: 0,
+  sgstAmount: 0,
+  igstAmount: 0,
+  total: 0,
+  validity:
+    "The above quoted prices are valid up to 10 days from date of offer.",
+  paymentTerms:
+    "100% advance payment in the mode of NEFT, RTGS & DD.Payment only accepted in company's account - DIVINE EMPIRE INDIA PVT LTD.",
+  delivery:
+    "Within 7-10 working days after received purchase order and 100% advance payment",
+  freight: "Extra as per actual.",
+  insurance: "Transit insurance for all shipment is at Buyer's scope.",
+  warranty: "6 months warranty applicable against Manufacturing defects.",
+  taxes: "Extra as per actual.",
+  afterReceiptOfMaterial: "In case of any discrepancy in the material, please inform us within 24 hours with supporting images attached. After this period, the company will not be responsible for any discrepancies.",
+  technicalSupport: "Video call assistance for installation and troubleshooting of the machine is FOC. For physical assistance: Service charges are free during the warranty period; however, TA & DA will be charged extra as per actuals.",
+  accountNo: "",
+  bankName: "",
+  bankAddress: "",
+  ifscCode: "",
+  email: "",
+  website: "",
+  pan: "",
+  notes: [""],
+  preparedBy: "",
+  specialOffers: [""],
+};
+
 export const useQuotationData = (initialSpecialDiscount = 0) => {
   const [specialDiscount, setSpecialDiscount] = useState(
     initialSpecialDiscount
@@ -122,86 +204,17 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
   });
 
   const [quotationData, setQuotationData] = useState({
-    quotationNo: "NBD-...",
-    date: new Date().toLocaleDateString("en-GB"),
-    consignorState: "",
-    consignorName: "",
-    consignorAddress: "",
-    consignorMobile: "",
-    consignorPhone: "",
-    consignorGSTIN: "",
-    consignorStateCode: "",
-    companyName: "",
-    consigneeName: "",
-    consigneeAddress: "",
-    consigneeState: "",
-    consigneeContactName: "",
-    consigneeContactNo: "",
-    consigneeGSTIN: "",
-    consigneeStateCode: "",
-    msmeNumber: "",
-    items: [
-      {
-        id: 1,
-        code: "",
-        name: "",
-        description: "",
-        gst: 18,
-        qty: 1,
-        units: "Nos",
-        rate: 0,
-        discount: 0,
-        flatDiscount: 0,
-        amount: 0,
-      },
-      {
-        id: 2,
-        code: "",
-        name: "Freight",
-        description: "",
-        gst: 0,
-        qty: 1,
-        units: "Nos",
-        rate: 0,
-        discount: 0,
-        flatDiscount: 0,
-        amount: 0,
-        isFreight: true,
-      },
-    ],
-    subtotal: 0,
-    totalFlatDiscount: 0,
-    cgstRate: 9,
-    sgstRate: 9,
-    igstRate: 18,
-    isIGST: false,
-    cgstAmount: 0,
-    sgstAmount: 0,
-    igstAmount: 0,
-    total: 0,
-    validity:
-      "The above quoted prices are valid up to 10 days from date of offer.",
-    paymentTerms:
-      "100% advance payment in the mode of NEFT, RTGS & DD.Payment only accepted in company's account - DIVINE EMPIRE INDIA PVT LTD.",
-    delivery:
-      "Within 7-10 working days after received purchase order and 100% advance payment",
-    freight: "Extra as per actual.",
-    insurance: "Transit insurance for all shipment is at Buyer's scope.",
-    warranty: "6 months warranty applicable against Manufacturing defects.",
-    taxes: "Extra as per actual.",
-    afterReceiptOfMaterial: "In case of any discrepancy in the material, please inform us within 24 hours with supporting images attached. After this period, the company will not be responsible for any discrepancies.",
-    technicalSupport: "Video call assistance for installation and troubleshooting of the machine is FOC. For physical assistance: Service charges are free during the warranty period; however, TA & DA will be charged extra as per actuals.",
-    accountNo: "",
-    bankName: "",
-    bankAddress: "",
-    ifscCode: "",
-    email: "",
-    website: "",
-    pan: "",
-    notes: [""],
-    preparedBy: "",
-    specialOffers: [""],
+    ...INITIAL_QUOTATION_DATA,
   });
+
+  const resetQuotationData = useCallback((nextQuotationNo) => {
+    setQuotationData({
+      ...INITIAL_QUOTATION_DATA,
+      quotationNo: nextQuotationNo || "",
+      date: new Date().toLocaleDateString("en-GB"),
+    });
+    setSpecialDiscount(0);
+  }, []);
 
   // FIXED: Improved handleInputChange to prevent data loss
   const handleInputChange = useCallback((field, value) => {
@@ -470,5 +483,6 @@ export const useQuotationData = (initialSpecialDiscount = 0) => {
     removeSpecialOffer,
     handleSpecialOfferChange,
     getGSTDisplayText,
+    resetQuotationData,
   };
 };
