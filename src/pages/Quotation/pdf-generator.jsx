@@ -504,7 +504,7 @@ const QuotationPDFComponent = ({
 
             <tbody>
               {itemsData.map((row, rowIndex) => (
-                <tr key={rowIndex} style={{ borderBottom: "1px solid #ddd", pageBreakInside: "avoid", breakInside: "avoid" }}>
+                <tr key={rowIndex} style={{ borderBottom: "1px solid #ddd" }}>
                   {row.map((cell, cellIndex) => (
                     <td
                       key={cellIndex}
@@ -545,7 +545,23 @@ const QuotationPDFComponent = ({
                             : "normal",
                       }}
                     >
-                      {cell}
+                      {tableHeaders[cellIndex] === "Description" ? (
+                        cell.split("\n").map((line, idx) => (
+                          <div
+                            key={idx}
+                            className="avoid-break"
+                            style={{
+                              pageBreakInside: "avoid",
+                              breakInside: "avoid",
+                              minHeight: line.trim() ? "auto" : "1.4em",
+                            }}
+                          >
+                            {line || "\u00A0"}
+                          </div>
+                        ))
+                      ) : (
+                        cell
+                      )}
                     </td>
                   ))}
                 </tr>
@@ -1483,8 +1499,8 @@ export const generateHTMLFromData = (
         page-break-inside: auto;
       }
       tr {
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
+        page-break-inside: auto !important;
+        break-inside: auto !important;
         page-break-after: auto;
       }
       thead {
@@ -1520,8 +1536,8 @@ export const generateHTMLFromData = (
     }
     @media screen {
       tr {
-        page-break-inside: avoid;
-        break-inside: avoid;
+        page-break-inside: auto;
+        break-inside: auto;
       }
     }
     .content-section {
@@ -1535,8 +1551,8 @@ export const generateHTMLFromData = (
     }
     /* Force keep table rows together */
     table tr {
-      page-break-inside: avoid !important;
-      break-inside: avoid !important;
+      page-break-inside: auto !important;
+      break-inside: auto !important;
     }
     /* Keep sections together - inline style backup */
     [style*="pageBreakInside"] {
@@ -1545,8 +1561,8 @@ export const generateHTMLFromData = (
     }
     /* Ensure table cells don't break */
     td, th {
-      page-break-inside: avoid !important;
-      break-inside: avoid !important;
+      page-break-inside: auto !important;
+      break-inside: auto !important;
     }
   </style>
 </head>
@@ -1675,7 +1691,7 @@ export const generatePDFFromData = async (
       },
       pagebreak: {
         mode: "css",
-        avoid: "tr",
+        avoid: ".keep-together, .avoid-break",
       },
     };
 
