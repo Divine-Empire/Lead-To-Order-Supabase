@@ -315,14 +315,12 @@ const QuotationPDFComponent = ({
       {/* Main Content - Matches Preview Layout */}
       <div
         style={{
-          border: "1px solid #ccc",
-          padding: "24px",
-          borderRadius: "8px",
           backgroundColor: "#fff",
         }}
       >
         {/* Header Section - Simplified without contact details */}
         <div
+          className="keep-together"
           style={{
             display: "flex",
             justifyContent: "space-between",
@@ -330,6 +328,8 @@ const QuotationPDFComponent = ({
             marginBottom: "16px",
             paddingBottom: "16px",
             borderBottom: "1px solid #ddd",
+            pageBreakInside: "avoid",
+            breakInside: "avoid",
           }}
         >
           <div style={{ width: "33%", textAlign: "left" }}>
@@ -357,10 +357,13 @@ const QuotationPDFComponent = ({
 
         {/* Consignor and Consignee Details - Updated with mobile and phone */}
         <div
+          className="keep-together"
           style={{
             display: "flex",
             marginBottom: "16px",
             gap: "16px",
+            pageBreakInside: "avoid",
+            breakInside: "avoid",
           }}
         >
           <div style={{ width: "50%" }}>
@@ -434,12 +437,15 @@ const QuotationPDFComponent = ({
 
         {/* Bill To and Ship To */}
         <div
+          className="keep-together"
           style={{
             display: "flex",
             marginBottom: "16px",
             gap: "16px",
             paddingBottom: "16px",
             borderBottom: "1px solid #ddd",
+            pageBreakInside: "avoid",
+            breakInside: "avoid",
           }}
         >
           <div style={{ width: "50%" }}>
@@ -504,7 +510,15 @@ const QuotationPDFComponent = ({
 
             <tbody>
               {itemsData.map((row, rowIndex) => (
-                <tr key={rowIndex} style={{ borderBottom: "1px solid #ddd" }}>
+                <tr
+                  key={rowIndex}
+                  className="avoid-break"
+                  style={{
+                    borderBottom: "1px solid #ddd",
+                    pageBreakInside: "avoid",
+                    breakInside: "avoid",
+                  }}
+                >
                   {row.map((cell, cellIndex) => (
                     <td
                       key={cellIndex}
@@ -571,7 +585,14 @@ const QuotationPDFComponent = ({
 
               {!hiddenColumns?.hideSubtotal && (
                 /* Summary rows section - keep together */
-                <tr style={{ borderTop: "2px solid #000" }}>
+                <tr
+                  className="avoid-break"
+                  style={{
+                    borderTop: "2px solid #000",
+                    pageBreakInside: "avoid",
+                    breakInside: "avoid",
+                  }}
+                >
                   <td
                     colSpan={tableHeaders.length - 1}
                     style={{
@@ -599,7 +620,13 @@ const QuotationPDFComponent = ({
               )}
 
               {!hiddenColumns?.hideTotalQty && (
-                <tr>
+                <tr
+                  className="avoid-break"
+                  style={{
+                    pageBreakInside: "avoid",
+                    breakInside: "avoid",
+                  }}
+                >
                   <td
                     colSpan={tableHeaders.length - 1}
                     style={{
@@ -628,7 +655,13 @@ const QuotationPDFComponent = ({
               )}
 
               {!hiddenColumns.hideTotalFlatDisc && totalFlatDiscount > 0 && (
-                <tr>
+                <tr
+                  className="avoid-break"
+                  style={{
+                    pageBreakInside: "avoid",
+                    breakInside: "avoid",
+                  }}
+                >
                   <td
                     colSpan={tableHeaders.length - 1}
                     style={{
@@ -654,7 +687,13 @@ const QuotationPDFComponent = ({
               )}
 
               {!hiddenColumns.hideSpecialDiscount && (Number(specialDiscount) > 0) && (
-                <tr>
+                <tr
+                  className="avoid-break"
+                  style={{
+                    pageBreakInside: "avoid",
+                    breakInside: "avoid",
+                  }}
+                >
                   <td
                     colSpan={tableHeaders.length - 1}
                     style={{
@@ -680,8 +719,15 @@ const QuotationPDFComponent = ({
               )}
 
               {!hiddenColumns?.hideGrandTotal && (
-
-                <tr style={{ backgroundColor: "#e6f3ff", fontWeight: "bold" }}>
+                <tr
+                  className="avoid-break"
+                  style={{
+                    backgroundColor: "#e6f3ff",
+                    fontWeight: "bold",
+                    pageBreakInside: "avoid",
+                    breakInside: "avoid",
+                  }}
+                >
                   <td
                     colSpan={tableHeaders.length - 1}
                     style={{
@@ -704,8 +750,6 @@ const QuotationPDFComponent = ({
                     ₹{formatCurrency(grandTotal)}
                   </td>
                 </tr>
-
-
               )}
 
 
@@ -714,7 +758,16 @@ const QuotationPDFComponent = ({
         </div>
 
         {/* Tax Breakdown and Amount in Words Section */}
-        <div style={{ marginBottom: "20px" }}>
+        <div
+          className="keep-together tax-section"
+          style={{
+            marginBottom: "20px",
+            pageBreakInside: "avoid",
+            breakInside: "avoid",
+            display: "block",
+            width: "100%",
+          }}
+        >
           {(() => {
             // Check if tax breakdown should be shown
             // Hide table ONLY when BOTH CGST AND SGST are hidden (for non-IGST)
@@ -726,10 +779,26 @@ const QuotationPDFComponent = ({
                 !hiddenColumns?.hideSGST);
 
             return (
-              <div style={{ display: "flex", gap: "16px" }}>
+              <div
+                className="keep-together avoid-break"
+                style={{
+                  width: "100%",
+                  pageBreakInside: "avoid",
+                  breakInside: "avoid",
+                }}
+              >
                 {/* Tax Breakdown Table - Only show if any tax is visible */}
                 {showTaxBreakdown && (
-                  <div style={{ width: "50%" }}>
+                  <div
+                    className="keep-together avoid-break"
+                    style={{
+                      display: "inline-block",
+                      width: "48%",
+                      verticalAlign: "top",
+                      pageBreakInside: "avoid",
+                      breakInside: "avoid",
+                    }}
+                  >
                     <h4
                       style={{
                         margin: "0 0 8px 0",
@@ -992,11 +1061,14 @@ const QuotationPDFComponent = ({
 
                 {/* Amount in Words - ALWAYS SHOW */}
                 <div
+                  className="keep-together avoid-break"
                   style={{
-                    width: showTaxBreakdown ? "50%" : "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
+                    display: "inline-block",
+                    width: showTaxBreakdown ? "48%" : "100%",
+                    marginLeft: showTaxBreakdown ? "4%" : "0",
+                    verticalAlign: "top",
+                    pageBreakInside: "avoid",
+                    breakInside: "avoid",
                   }}
                 >
                   {!hiddenColumns?.hideGrandTotal && (
@@ -1068,7 +1140,13 @@ const QuotationPDFComponent = ({
               >
                 <tbody>
                   {!hiddenFields?.validity && (
-                    <tr>
+                    <tr
+                      className="avoid-break"
+                      style={{
+                        pageBreakInside: "avoid",
+                        breakInside: "avoid",
+                      }}
+                    >
                       <td
                         style={{
                           padding: "4px 0",
@@ -1087,7 +1165,13 @@ const QuotationPDFComponent = ({
                   )}
 
                   {!hiddenFields?.paymentTerms && (
-                    <tr>
+                    <tr
+                      className="avoid-break"
+                      style={{
+                        pageBreakInside: "avoid",
+                        breakInside: "avoid",
+                      }}
+                    >
                       <td
                         style={{
                           padding: "4px 0",
@@ -1105,7 +1189,13 @@ const QuotationPDFComponent = ({
                   )}
 
                   {!hiddenFields?.delivery && (
-                    <tr>
+                    <tr
+                      className="avoid-break"
+                      style={{
+                        pageBreakInside: "avoid",
+                        breakInside: "avoid",
+                      }}
+                    >
                       <td
                         style={{
                           padding: "4px 0",
@@ -1123,7 +1213,13 @@ const QuotationPDFComponent = ({
                   )}
 
                   {!hiddenFields?.freight && (
-                    <tr>
+                    <tr
+                      className="avoid-break"
+                      style={{
+                        pageBreakInside: "avoid",
+                        breakInside: "avoid",
+                      }}
+                    >
                       <td
                         style={{
                           padding: "4px 0",
@@ -1140,7 +1236,13 @@ const QuotationPDFComponent = ({
                   )}
 
                   {!hiddenFields?.warranty && (
-                    <tr>
+                    <tr
+                      className="avoid-break"
+                      style={{
+                        pageBreakInside: "avoid",
+                        breakInside: "avoid",
+                      }}
+                    >
                       <td
                         style={{
                           padding: "4px 0",
@@ -1158,7 +1260,13 @@ const QuotationPDFComponent = ({
                   )}
 
                   {!hiddenFields?.taxes && (
-                    <tr>
+                    <tr
+                      className="avoid-break"
+                      style={{
+                        pageBreakInside: "avoid",
+                        breakInside: "avoid",
+                      }}
+                    >
                       <td
                         style={{
                           padding: "4px 0",
@@ -1176,7 +1284,13 @@ const QuotationPDFComponent = ({
                   )}
 
                   {!hiddenFields?.insurance && (
-                    <tr>
+                    <tr
+                      className="avoid-break"
+                      style={{
+                        pageBreakInside: "avoid",
+                        breakInside: "avoid",
+                      }}
+                    >
                       <td
                         style={{
                           padding: "4px 0",
@@ -1194,7 +1308,13 @@ const QuotationPDFComponent = ({
                   )}
 
                   {!hiddenFields?.afterReceiptOfMaterial && (
-                    <tr>
+                    <tr
+                      className="avoid-break"
+                      style={{
+                        pageBreakInside: "avoid",
+                        breakInside: "avoid",
+                      }}
+                    >
                       <td
                         style={{
                           padding: "4px 0",
@@ -1212,7 +1332,13 @@ const QuotationPDFComponent = ({
                   )}
 
                   {!hiddenFields?.technicalSupport && (
-                    <tr>
+                    <tr
+                      className="avoid-break"
+                      style={{
+                        pageBreakInside: "avoid",
+                        breakInside: "avoid",
+                      }}
+                    >
                       <td
                         style={{
                           padding: "4px 0",
@@ -1235,7 +1361,14 @@ const QuotationPDFComponent = ({
               {quotationData.specialOffers &&
                 quotationData.specialOffers.filter((offer) => offer.trim())
                   .length > 0 && (
-                  <div style={{ marginTop: "16px" }}>
+                  <div
+                    className="keep-together"
+                    style={{
+                      marginTop: "16px",
+                      pageBreakInside: "avoid",
+                      breakInside: "avoid",
+                    }}
+                  >
                     <h4
                       style={{
                         margin: "0 0 8px 0",
@@ -1270,7 +1403,14 @@ const QuotationPDFComponent = ({
               {quotationData.notes &&
                 quotationData.notes.filter((note) => note.trim()).length >
                 0 && (
-                  <div style={{ marginTop: "16px" }}>
+                  <div
+                    className="keep-together"
+                    style={{
+                      marginTop: "16px",
+                      pageBreakInside: "avoid",
+                      breakInside: "avoid",
+                    }}
+                  >
                     <h4
                       style={{
                         margin: "0 0 8px 0",
@@ -1303,10 +1443,9 @@ const QuotationPDFComponent = ({
 
         {/* Bank Details and QR Code */}
         <div
-          className="keep-together"
+          className="keep-together avoid-break"
           style={{
-            display: "flex",
-            gap: "16px",
+            width: "100%",
             marginTop: "20px",
             borderTop: "1px solid #ddd",
             paddingTop: "16px",
@@ -1314,7 +1453,16 @@ const QuotationPDFComponent = ({
             breakInside: "avoid",
           }}
         >
-          <div style={{ width: "50%" }}>
+          <div
+            className="keep-together avoid-break"
+            style={{
+              display: "inline-block",
+              width: "48%",
+              verticalAlign: "top",
+              pageBreakInside: "avoid",
+              breakInside: "avoid",
+            }}
+          >
             <h4
               style={{
                 margin: "0 0 1px 0",
@@ -1354,12 +1502,16 @@ const QuotationPDFComponent = ({
 
           {/* QR Code Section */}
           <div
+            className="keep-together avoid-break"
             style={{
-              width: "50%",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
+              display: "inline-block",
+              width: "48%",
+              marginLeft: "4%",
+              verticalAlign: "top",
+              textAlign: "center",
               padding: "16px",
+              pageBreakInside: "avoid",
+              breakInside: "avoid",
             }}
           >
             <div
@@ -1495,12 +1647,17 @@ export const generateHTMLFromData = (
         page-break-inside: avoid !important;
         break-inside: avoid !important;
       }
+      .tax-section {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    display: block !important;
+}
       table {
         page-break-inside: auto;
       }
       tr {
-        page-break-inside: auto !important;
-        break-inside: auto !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
         page-break-after: auto;
       }
       thead {
@@ -1536,9 +1693,17 @@ export const generateHTMLFromData = (
     }
     @media screen {
       tr {
-        page-break-inside: auto;
-        break-inside: auto;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
       }
+    }
+    .keep-together {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+    .avoid-break {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
     }
     .content-section {
       page-break-inside: avoid !important;
@@ -1551,18 +1716,18 @@ export const generateHTMLFromData = (
     }
     /* Force keep table rows together */
     table tr {
-      page-break-inside: auto !important;
-      break-inside: auto !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
     }
     /* Keep sections together - inline style backup */
-    [style*="pageBreakInside"] {
+    [style*="page-break-inside"], [style*="break-inside"] {
       page-break-inside: avoid !important;
       break-inside: avoid !important;
     }
     /* Ensure table cells don't break */
     td, th {
-      page-break-inside: auto !important;
-      break-inside: auto !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
     }
   </style>
 </head>
@@ -1665,7 +1830,7 @@ export const generatePDFFromData = async (
       "NBD-002";
 
     const options = {
-      margin: [5, 3, 5, 3],
+      margin: [0, 0, 0, 0],
       filename: `Quotation_${preferredNo}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: {
@@ -1690,8 +1855,20 @@ export const generatePDFFromData = async (
         orientation: "portrait",
       },
       pagebreak: {
-        mode: "css",
-        avoid: ".keep-together, .avoid-break",
+        mode: ["avoid-all", "css", "legacy"],
+        before: ".page-break",
+        avoid: [
+          ".keep-together",
+          ".avoid-break",
+          "table",
+          "tr",
+          "td",
+          "th",
+          "h1",
+          "h2",
+          "h3",
+          "h4",
+        ],
       },
     };
 
