@@ -241,7 +241,7 @@ const QuotationPDFComponent = ({
         fontSize: "12px",
         lineHeight: "1.4",
         margin: "0",
-        padding: "20px",
+        padding: "20px 20px 40px 20px",
         backgroundColor: "white",
         color: "black",
         boxSizing: "border-box",
@@ -1637,7 +1637,7 @@ export const generateHTMLFromData = (
       body { margin: 0; }
       @page {
         size: A4;
-        margin: 15mm 10mm 15mm 10mm;
+        margin: 15mm 10mm 20mm 10mm;
       }
       .page-break {
         page-break-before: always !important;
@@ -1830,7 +1830,7 @@ export const generatePDFFromData = async (
       "NBD-002";
 
     const options = {
-      margin: [0, 0, 0, 0],
+      margin: [15, 10, 15, 10],
       filename: `Quotation_${preferredNo}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: {
@@ -1855,12 +1855,11 @@ export const generatePDFFromData = async (
         orientation: "portrait",
       },
       pagebreak: {
-        mode: ["avoid-all", "css", "legacy"],
+        mode: ["css", "legacy"],
         before: ".page-break",
         avoid: [
           ".keep-together",
           ".avoid-break",
-          "table",
           "tr",
           "td",
           "th",
