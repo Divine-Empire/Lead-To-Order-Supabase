@@ -257,6 +257,25 @@ const styles = StyleSheet.create({
     borderStyle: "solid",
     marginTop: 10,
     marginBottom: 15,
+    position: "relative",
+  },
+  tableTopBorderLine: {
+    height: 1,
+    backgroundColor: "#cccccc",
+    width: "100%",
+    position: "absolute",
+    top: 0,
+    left: 0,
+    zIndex: 10,
+  },
+  tableBottomBorderLine: {
+    height: 1,
+    backgroundColor: "#cccccc",
+    width: "100%",
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    zIndex: 10,
   },
   tableRow: {
     flexDirection: "row",
@@ -577,10 +596,24 @@ const QuotationPDFDocument = ({
 
   const items = quotationData.items || [];
 
+  // Calculate dynamic scaled column widths so the sum is always exactly 100%
+  const totalBaseWidth = tableHeaders.reduce((sum, h) => {
+    const widthStr = colStyles[h]?.width || "10%";
+    return sum + parseFloat(widthStr);
+  }, 0) || 100;
+
+  const scaledColWidths = {};
+  tableHeaders.forEach((header) => {
+    const baseWidth = parseFloat(colStyles[header]?.width || "10%");
+    const percentage = (baseWidth / totalBaseWidth) * 100;
+    scaledColWidths[header] = `${percentage.toFixed(4)}%`;
+  });
+
   // Summary Row sizing logic
   const lastHeader = tableHeaders[tableHeaders.length - 1]; // "Amount"
-  const lastColStyle = colStyles[lastHeader] || { width: "11%", textAlign: "right" };
-  const lastColWidthVal = parseFloat(lastColStyle.width) || 11;
+  const lastColStyle = colStyles[lastHeader] || { textAlign: "right" };
+  const lastColWidthStr = scaledColWidths[lastHeader] || "10%";
+  const lastColWidthVal = parseFloat(lastColWidthStr) || 10;
   const labelColWidth = `${100 - lastColWidthVal}%`;
 
   const showTaxBreakdown =
@@ -682,6 +715,8 @@ const QuotationPDFDocument = ({
 
           {/* Items Table */}
           <View style={styles.table}>
+            <View style={styles.tableTopBorderLine} fixed />
+            <View style={styles.tableBottomBorderLine} fixed />
             {/* Header Row */}
             <View style={[styles.tableRow, styles.tableRowHeader]}>
               {tableHeaders.map((header, idx) => (
@@ -690,7 +725,7 @@ const QuotationPDFDocument = ({
                   style={[
                     styles.tableCell,
                     {
-                      width: colStyles[header].width,
+                      width: scaledColWidths[header],
                       flexGrow: colStyles[header].flexGrow,
                     },
                     idx === tableHeaders.length - 1 ? { borderRightWidth: 0 } : {},
@@ -731,7 +766,7 @@ const QuotationPDFDocument = ({
                       style={[
                         styles.tableCell,
                         {
-                          width: colStyles[header].width,
+                          width: scaledColWidths[header],
                           flexGrow: colStyles[header].flexGrow,
                         },
                         idx === tableHeaders.length - 1 ? { borderRightWidth: 0 } : {},
@@ -774,7 +809,7 @@ const QuotationPDFDocument = ({
                       style={[
                         styles.tableCell,
                         {
-                          width: colStyles[header].width,
+                          width: scaledColWidths[header],
                           flexGrow: colStyles[header].flexGrow,
                         },
                         idx === tableHeaders.length - 1 ? { borderRightWidth: 0 } : {},
@@ -802,7 +837,7 @@ const QuotationPDFDocument = ({
                     Subtotal
                   </Text>
                 </View>
-                <View style={[styles.tableCell, { width: lastColStyle.width, borderRightWidth: 0 }]}>
+                <View style={[styles.tableCell, { width: lastColWidthStr, borderRightWidth: 0 }]}>
                   <Text
                     style={[
                       styles.tableCellHeaderText,
@@ -821,7 +856,7 @@ const QuotationPDFDocument = ({
                 <View style={[styles.tableCell, { width: labelColWidth }]}>
                   <Text style={[styles.tableCellText, { textAlign: "right" }]}>Total Qty</Text>
                 </View>
-                <View style={[styles.tableCell, { width: lastColStyle.width, borderRightWidth: 0 }]}>
+                <View style={[styles.tableCell, { width: lastColWidthStr, borderRightWidth: 0 }]}>
                   <Text
                     style={[
                       styles.tableCellText,
@@ -842,7 +877,7 @@ const QuotationPDFDocument = ({
                     Total Flat Discount
                   </Text>
                 </View>
-                <View style={[styles.tableCell, { width: lastColStyle.width, borderRightWidth: 0 }]}>
+                <View style={[styles.tableCell, { width: lastColWidthStr, borderRightWidth: 0 }]}>
                   <Text
                     style={[
                       styles.tableCellText,
@@ -863,7 +898,7 @@ const QuotationPDFDocument = ({
                     Special Discount
                   </Text>
                 </View>
-                <View style={[styles.tableCell, { width: lastColStyle.width, borderRightWidth: 0 }]}>
+                <View style={[styles.tableCell, { width: lastColWidthStr, borderRightWidth: 0 }]}>
                   <Text
                     style={[
                       styles.tableCellText,
@@ -884,7 +919,7 @@ const QuotationPDFDocument = ({
                     Grand Total
                   </Text>
                 </View>
-                <View style={[styles.tableCell, { width: lastColStyle.width, borderRightWidth: 0 }]}>
+                <View style={[styles.tableCell, { width: lastColWidthStr, borderRightWidth: 0 }]}>
                   <Text
                     style={[
                       styles.tableCellHeaderText,
