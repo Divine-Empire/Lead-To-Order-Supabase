@@ -292,10 +292,13 @@ const styles = StyleSheet.create({
     borderBottomStyle: "solid",
   },
   tableCell: {
-    padding: 3.5,
+    paddingTop: 5,
+    paddingBottom: 6,
+    paddingLeft: 3.5,
+    paddingRight: 3.5,
     fontSize: 8.5,
     fontFamily: "Roboto",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     borderRightWidth: 1,
     borderRightColor: "#cccccc",
     borderRightStyle: "solid",
@@ -520,17 +523,17 @@ const styles = StyleSheet.create({
 });
 
 const colStyles = {
-  "S No.": { width: "4%", textAlign: "center" },
-  "Code": { width: "9%", textAlign: "left" },
+  "S No.": { width: "3%", textAlign: "center" },
+  "Code": { width: "8%", textAlign: "left" },
   "Product Name": { width: "24%", textAlign: "left" },
   "Description": { width: "18%", textAlign: "left" },
-  "GST %": { width: "5%", textAlign: "center" },
-  "Qty": { width: "4%", textAlign: "center" },
-  "Units": { width: "5%", textAlign: "center" },
-  "Rate": { width: "10%", textAlign: "right" },
-  "Disc %": { width: "4%", textAlign: "center" },
-  "Flat Disc": { width: "7%", textAlign: "right" },
-  "Amount": { width: "10%", textAlign: "right" },
+  "GST %": { width: "4.5%", textAlign: "center" },
+  "Qty": { width: "3.5%", textAlign: "center" },
+  "Units": { width: "4%", textAlign: "center" },
+  "Rate": { width: "11%", textAlign: "right" },
+  "Disc %": { width: "3.5%", textAlign: "center" },
+  "Flat Disc": { width: "9.5%", textAlign: "right" },
+  "Amount": { width: "11%", textAlign: "right" },
 };
 
 // React PDF Document Component
@@ -615,6 +618,23 @@ const QuotationPDFDocument = ({
   const lastColWidthStr = scaledColWidths[lastHeader] || "10%";
   const lastColWidthVal = parseFloat(lastColWidthStr) || 10;
   const labelColWidth = `${100 - lastColWidthVal}%`;
+
+  // Calculate dynamic font size based on the number of visible columns to optimize space and prevent wrapping
+  let dynamicFontSize = 8.5;
+  if (tableHeaders.length <= 6) {
+    dynamicFontSize = 9.5;
+  } else if (tableHeaders.length === 7 || tableHeaders.length === 8) {
+    dynamicFontSize = 8.5;
+  } else if (tableHeaders.length === 9) {
+    dynamicFontSize = 7.8;
+  } else {
+    dynamicFontSize = 7.0; // 10 or 11 columns
+  }
+
+  // Calculate dynamic word break thresholds based on column counts
+  const codeMaxChars = tableHeaders.length <= 6 ? 16 : (tableHeaders.length >= 9 ? 7 : 10);
+  const nameMaxChars = tableHeaders.length <= 6 ? 24 : (tableHeaders.length >= 9 ? 10 : 16);
+  const descMaxChars = tableHeaders.length <= 6 ? 20 : (tableHeaders.length >= 9 ? 8 : 12);
 
   const showTaxBreakdown =
     (quotationData.isIGST && !hiddenColumns?.hideIGST) ||
@@ -734,7 +754,7 @@ const QuotationPDFDocument = ({
                   <Text
                     style={[
                       styles.tableCellHeaderText,
-                      { textAlign: colStyles[header].textAlign },
+                      { textAlign: colStyles[header].textAlign, fontSize: dynamicFontSize },
                     ]}
                   >
                     {header}
@@ -749,9 +769,9 @@ const QuotationPDFDocument = ({
                 {tableHeaders.map((header, idx) => {
                   let cellContent = "";
                   if (header === "S No.") cellContent = index + 1;
-                  else if (header === "Code") cellContent = wrapLongWords(item.code || " ", 7);
-                  else if (header === "Product Name") cellContent = wrapLongWords(item.name || " ", 10);
-                  else if (header === "Description") cellContent = wrapLongWords(item.description || " ", 8);
+                  else if (header === "Code") cellContent = wrapLongWords(item.code || " ", codeMaxChars);
+                  else if (header === "Product Name") cellContent = wrapLongWords(item.name || " ", nameMaxChars);
+                  else if (header === "Description") cellContent = wrapLongWords(item.description || " ", descMaxChars);
                   else if (header === "GST %") cellContent = `${item.gst || 18}%`;
                   else if (header === "Qty") cellContent = Number(item.qty) || 1;
                   else if (header === "Units") cellContent = item.units || "Nos";
@@ -775,7 +795,7 @@ const QuotationPDFDocument = ({
                       <Text
                         style={[
                           styles.tableCellText,
-                          { textAlign: colStyles[header].textAlign },
+                          { textAlign: colStyles[header].textAlign, fontSize: dynamicFontSize },
                         ]}
                       >
                         {cellContent}
@@ -818,7 +838,7 @@ const QuotationPDFDocument = ({
                       <Text
                         style={[
                           styles.tableCellText,
-                          { textAlign: colStyles[header].textAlign },
+                          { textAlign: colStyles[header].textAlign, fontSize: dynamicFontSize },
                         ]}
                       >
                         {cellContent}
@@ -833,7 +853,7 @@ const QuotationPDFDocument = ({
             {!hiddenColumns?.hideSubtotal && (
               <View style={styles.tableRow} wrap={false}>
                 <View style={[styles.tableCell, { width: labelColWidth }]}>
-                  <Text style={[styles.tableCellHeaderText, { textAlign: "right" }]}>
+                  <Text style={[styles.tableCellHeaderText, { textAlign: "right", fontSize: dynamicFontSize }]}>
                     Subtotal
                   </Text>
                 </View>
@@ -841,7 +861,7 @@ const QuotationPDFDocument = ({
                   <Text
                     style={[
                       styles.tableCellHeaderText,
-                      { textAlign: lastColStyle.textAlign },
+                      { textAlign: lastColStyle.textAlign, fontSize: dynamicFontSize },
                     ]}
                   >
                     ₹{formatCurrency(subtotal)}
@@ -854,13 +874,13 @@ const QuotationPDFDocument = ({
             {!hiddenColumns?.hideTotalQty && (
               <View style={styles.tableRow} wrap={false}>
                 <View style={[styles.tableCell, { width: labelColWidth }]}>
-                  <Text style={[styles.tableCellText, { textAlign: "right" }]}>Total Qty</Text>
+                  <Text style={[styles.tableCellText, { textAlign: "right", fontSize: dynamicFontSize }]}>Total Qty</Text>
                 </View>
                 <View style={[styles.tableCell, { width: lastColWidthStr, borderRightWidth: 0 }]}>
                   <Text
                     style={[
                       styles.tableCellText,
-                      { textAlign: lastColStyle.textAlign },
+                      { textAlign: lastColStyle.textAlign, fontSize: dynamicFontSize },
                     ]}
                   >
                     {items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0)}
@@ -873,7 +893,7 @@ const QuotationPDFDocument = ({
             {!hiddenColumns.hideTotalFlatDisc && totalFlatDiscount > 0 && (
               <View style={styles.tableRow} wrap={false}>
                 <View style={[styles.tableCell, { width: labelColWidth }]}>
-                  <Text style={[styles.tableCellText, { textAlign: "right" }]}>
+                  <Text style={[styles.tableCellText, { textAlign: "right", fontSize: dynamicFontSize }]}>
                     Total Flat Discount
                   </Text>
                 </View>
@@ -881,7 +901,7 @@ const QuotationPDFDocument = ({
                   <Text
                     style={[
                       styles.tableCellText,
-                      { textAlign: lastColStyle.textAlign },
+                      { textAlign: lastColStyle.textAlign, fontSize: dynamicFontSize },
                     ]}
                   >
                     -₹{formatCurrency(totalFlatDiscount)}
@@ -894,7 +914,7 @@ const QuotationPDFDocument = ({
             {!hiddenColumns.hideSpecialDiscount && Number(specialDiscount) > 0 && (
               <View style={styles.tableRow} wrap={false}>
                 <View style={[styles.tableCell, { width: labelColWidth }]}>
-                  <Text style={[styles.tableCellText, { textAlign: "right" }]}>
+                  <Text style={[styles.tableCellText, { textAlign: "right", fontSize: dynamicFontSize }]}>
                     Special Discount
                   </Text>
                 </View>
@@ -902,7 +922,7 @@ const QuotationPDFDocument = ({
                   <Text
                     style={[
                       styles.tableCellText,
-                      { textAlign: lastColStyle.textAlign },
+                      { textAlign: lastColStyle.textAlign, fontSize: dynamicFontSize },
                     ]}
                   >
                     ₹{formatCurrency(Number(specialDiscount) || 0)}
@@ -915,7 +935,7 @@ const QuotationPDFDocument = ({
             {!hiddenColumns?.hideGrandTotal && (
               <View style={[styles.tableRow, { backgroundColor: "#e6f3ff" }]} wrap={false}>
                 <View style={[styles.tableCell, { width: labelColWidth }]}>
-                  <Text style={[styles.tableCellHeaderText, { textAlign: "right" }]}>
+                  <Text style={[styles.tableCellHeaderText, { textAlign: "right", fontSize: dynamicFontSize }]}>
                     Grand Total
                   </Text>
                 </View>
@@ -923,7 +943,7 @@ const QuotationPDFDocument = ({
                   <Text
                     style={[
                       styles.tableCellHeaderText,
-                      { textAlign: lastColStyle.textAlign },
+                      { textAlign: lastColStyle.textAlign, fontSize: dynamicFontSize },
                     ]}
                   >
                     ₹{formatCurrency(grandTotal)}
