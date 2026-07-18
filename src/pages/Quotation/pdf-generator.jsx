@@ -7,10 +7,21 @@ import {
   StyleSheet,
   Image,
   pdf,
+  Font,
 } from "@react-pdf/renderer";
 import logo from "../../assests/WhatsApp Image 2025-05-14 at 4.11.43 PM.jpeg";
 import qr from "../../assests/qrlogo.png";
 import maniquipLogo1 from "../../assests/maniquip-logo-screenshot.png";
+
+// Register custom Google Font that contains the Indian Rupee symbol (₹) using stable CDNJS assets
+Font.register({
+  family: "Roboto",
+  fonts: [
+    { src: "https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf" },
+    { src: "https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Medium.ttf", fontWeight: "bold" },
+    { src: "https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Italic.ttf", fontStyle: "italic" },
+  ],
+});
 
 // Function to convert number to words for Indian Rupees
 const numberToWords = (num) => {
@@ -114,7 +125,7 @@ const formatCurrency = (value) => {
     .trim();
 };
 
-// React-PDF Stylesheet
+// React-PDF Stylesheet using Roboto for full Indian Rupee Symbol support
 const styles = StyleSheet.create({
   page: {
     paddingTop: 20,
@@ -122,16 +133,16 @@ const styles = StyleSheet.create({
     paddingLeft: 20,
     paddingRight: 20,
     backgroundColor: "#ffffff",
-    fontFamily: "Helvetica",
-    fontSize: 9,
-    lineHeight: 1.3,
+    fontFamily: "Roboto",
+    fontSize: 9.5,
+    lineHeight: 1.45,
     color: "#000000",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 15,
+    marginBottom: 10,
     paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#000000",
@@ -151,68 +162,68 @@ const styles = StyleSheet.create({
   },
   companyName: {
     fontSize: 18,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Roboto",
+    fontWeight: "bold",
     color: "#113878",
     textAlign: "center",
   },
   companySubtitle: {
     fontSize: 14,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Roboto",
+    fontWeight: "bold",
     color: "#113878",
     textAlign: "center",
     marginTop: 8,
+  },
+  boxContainer: {
+    borderWidth: 1,
+    borderColor: "#cccccc",
+    borderStyle: "solid",
+    borderRadius: 6,
+    padding: 15,
   },
   titleSection: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 12,
+    marginBottom: 15,
     paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#dddddd",
     borderBottomStyle: "solid",
   },
   titleText: {
-    fontSize: 16,
-    fontFamily: "Helvetica-Bold",
-    color: "#333333",
+    fontSize: 18,
+    fontFamily: "Roboto",
+    fontWeight: "bold",
+    color: "#000000",
   },
   metaTextRight: {
     textAlign: "right",
   },
-  metaLabel: {
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
-  },
-  metaValue: {
-    fontSize: 9,
-    fontFamily: "Helvetica",
-  },
   detailsSection: {
     flexDirection: "row",
-    marginBottom: 12,
+    marginBottom: 15,
   },
   detailsColumn: {
     width: "50%",
     paddingRight: 10,
   },
   detailsTitle: {
-    fontSize: 10,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 10.5,
+    fontFamily: "Roboto",
+    fontWeight: "bold",
     marginBottom: 4,
-    color: "#333333",
+    color: "#000000",
   },
   detailsText: {
-    fontSize: 8,
-    fontFamily: "Helvetica",
-    lineHeight: 1.3,
-  },
-  detailsLabel: {
-    fontFamily: "Helvetica-Bold",
+    fontSize: 8.5,
+    fontFamily: "Roboto",
+    lineHeight: 1.45,
   },
   billShipSection: {
     flexDirection: "row",
-    marginBottom: 12,
+    marginBottom: 15,
     paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#dddddd",
@@ -223,8 +234,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#cccccc",
     borderStyle: "solid",
-    marginTop: 5,
-    marginBottom: 10,
+    marginTop: 10,
+    marginBottom: 15,
   },
   tableRow: {
     flexDirection: "row",
@@ -241,23 +252,27 @@ const styles = StyleSheet.create({
     borderBottomStyle: "solid",
   },
   tableCell: {
-    padding: 3,
-    fontSize: 7.5,
-    fontFamily: "Helvetica",
+    padding: 3.5,
+    fontSize: 8.5,
+    fontFamily: "Roboto",
     justifyContent: "center",
+    borderRightWidth: 1,
+    borderRightColor: "#cccccc",
+    borderRightStyle: "solid",
   },
   tableCellText: {
-    fontSize: 7.5,
-    fontFamily: "Helvetica",
+    fontSize: 8.5,
+    fontFamily: "Roboto",
   },
   tableCellHeaderText: {
-    fontFamily: "Helvetica-Bold",
-    fontSize: 7.5,
+    fontFamily: "Roboto",
+    fontWeight: "bold",
+    fontSize: 8.5,
   },
   twoColSection: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 12,
+    marginBottom: 15,
   },
   twoColLeft: {
     width: "48%",
@@ -269,10 +284,11 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   sectionTitle: {
-    fontSize: 10,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 10.5,
+    fontFamily: "Roboto",
+    fontWeight: "bold",
     marginBottom: 4,
-    color: "#333333",
+    color: "#000000",
   },
   taxTable: {
     width: "100%",
@@ -293,23 +309,29 @@ const styles = StyleSheet.create({
   },
   taxCell: {
     padding: "3px 4px",
-    fontSize: 7,
-    fontFamily: "Helvetica",
+    fontSize: 7.5,
+    fontFamily: "Roboto",
+    borderRightWidth: 1,
+    borderRightColor: "#dddddd",
+    borderRightStyle: "solid",
   },
   taxCellHeader: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Roboto",
+    fontWeight: "bold",
+    fontSize: 7.5,
   },
   amountWordsBox: {
     marginTop: 4,
   },
   amountWordsLabel: {
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 9.5,
+    fontFamily: "Roboto",
+    fontWeight: "bold",
     marginBottom: 2,
   },
   amountWordsText: {
-    fontSize: 8,
-    fontFamily: "Helvetica",
+    fontSize: 8.5,
+    fontFamily: "Roboto",
     textTransform: "capitalize",
   },
   grandTotalTextRight: {
@@ -317,8 +339,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   grandTotalLarge: {
-    fontSize: 12,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 13,
+    fontFamily: "Roboto",
+    fontWeight: "bold",
   },
   termsSection: {
     marginTop: 10,
@@ -333,13 +356,14 @@ const styles = StyleSheet.create({
   },
   termLabel: {
     width: 120,
-    fontSize: 8,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 8.5,
+    fontFamily: "Roboto",
+    fontWeight: "bold",
   },
   termValue: {
     flex: 1,
-    fontSize: 8,
-    fontFamily: "Helvetica",
+    fontSize: 8.5,
+    fontFamily: "Roboto",
   },
   specialOffersContainer: {
     marginTop: 10,
@@ -351,22 +375,23 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   specialOffersTitle: {
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 9.5,
+    fontFamily: "Roboto",
+    fontWeight: "bold",
     color: "#e65100",
     marginBottom: 4,
   },
   specialOfferText: {
-    fontSize: 8,
-    fontFamily: "Helvetica",
+    fontSize: 8.5,
+    fontFamily: "Roboto",
     marginBottom: 2,
   },
   notesContainer: {
     marginTop: 10,
   },
   noteText: {
-    fontSize: 8,
-    fontFamily: "Helvetica",
+    fontSize: 8.5,
+    fontFamily: "Roboto",
     marginBottom: 2,
   },
   bankQrSection: {
@@ -378,19 +403,35 @@ const styles = StyleSheet.create({
     borderTopStyle: "solid",
     paddingTop: 10,
   },
-  qrContainer: {
-    width: "48%",
+  qrBox: {
+    borderWidth: 1,
+    borderColor: "#cccccc",
+    borderStyle: "solid",
+    borderRadius: 8,
+    width: 130,
     alignItems: "center",
-    justifyContent: "center",
+    overflow: "hidden",
+    backgroundColor: "#ffffff",
   },
   qrImage: {
     width: 100,
     height: 100,
-    marginBottom: 4,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  qrFooter: {
+    backgroundColor: "#f8f9fa",
+    borderTopWidth: 1,
+    borderTopColor: "#cccccc",
+    borderTopStyle: "solid",
+    width: "100%",
+    padding: 4,
+    textAlign: "center",
   },
   qrText: {
-    fontSize: 8,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 8.5,
+    fontFamily: "Roboto",
+    fontWeight: "bold",
   },
   declarationSection: {
     marginTop: 12,
@@ -401,26 +442,28 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   declarationTitle: {
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 9.5,
+    fontFamily: "Roboto",
+    fontWeight: "bold",
     marginBottom: 4,
   },
   declarationText: {
-    fontSize: 8,
-    fontFamily: "Helvetica",
+    fontSize: 8.5,
+    fontFamily: "Roboto",
     textAlign: "right",
     maxWidth: "80%",
-    lineHeight: 1.3,
+    lineHeight: 1.45,
   },
   declarationPrepared: {
-    fontSize: 8,
-    fontFamily: "Helvetica",
+    fontSize: 8.5,
+    fontFamily: "Roboto",
     marginTop: 8,
     marginBottom: 8,
   },
   declarationNote: {
-    fontSize: 7,
-    fontFamily: "Helvetica-Oblique",
+    fontSize: 7.5,
+    fontFamily: "Roboto",
+    fontStyle: "italic",
     color: "#666666",
   },
   pageNumber: {
@@ -435,16 +478,13 @@ const styles = StyleSheet.create({
 });
 
 const colStyles = {
-  "S No.": { width: "5%", textAlign: "center" },
-  "Code": { width: "8%", textAlign: "left" },
-  "Product Name": { width: "20%", textAlign: "left" },
-  "Description": { width: "27%", flexGrow: 1, textAlign: "left" },
-  "GST %": { width: "6%", textAlign: "center" },
-  "Qty": { width: "5%", textAlign: "center" },
-  "Units": { width: "6%", textAlign: "center" },
-  "Rate": { width: "8%", textAlign: "right" },
-  "Disc %": { width: "6%", textAlign: "center" },
-  "Flat Disc": { width: "8%", textAlign: "right" },
+  "S No.": { width: "6%", textAlign: "center" },
+  "Code": { width: "12%", textAlign: "left" },
+  "Product Name": { width: "38%", flexGrow: 1, textAlign: "left" },
+  "GST %": { width: "8%", textAlign: "center" },
+  "Qty": { width: "6%", textAlign: "center" },
+  "Units": { width: "8%", textAlign: "center" },
+  "Rate": { width: "11%", textAlign: "right" },
   "Amount": { width: "11%", textAlign: "right" },
 };
 
@@ -496,23 +536,22 @@ const QuotationPDFDocument = ({
     }
   })();
 
-  // Build table headers list based on hidden columns
-  const tableHeaders = ["S No."];
-  if (!hiddenColumns?.hideCode) tableHeaders.push("Code");
-  if (!hiddenColumns?.hideProductName) tableHeaders.push("Product Name");
-  if (!hiddenColumns?.hideDescription) tableHeaders.push("Description");
-  if (!hiddenColumns?.hideGST) tableHeaders.push("GST %");
-  if (!hiddenColumns?.hideQty) tableHeaders.push("Qty");
-  if (!hiddenColumns?.hideUnits) tableHeaders.push("Units");
-  if (!hiddenColumns?.hideRate) tableHeaders.push("Rate");
-  if (!hiddenColumns?.hideDisc) tableHeaders.push("Disc %");
-  if (!hiddenColumns?.hideFlatDisc) tableHeaders.push("Flat Disc");
-  if (!hiddenColumns?.hideAmount) tableHeaders.push("Amount");
+  // Enforced columns list based on user reference image
+  const tableHeaders = [
+    "S No.",
+    "Code",
+    "Product Name",
+    "GST %",
+    "Qty",
+    "Units",
+    "Rate",
+    "Amount",
+  ];
 
   const items = quotationData.items || [];
 
   // Summary Row sizing logic
-  const lastHeader = tableHeaders[tableHeaders.length - 1];
+  const lastHeader = tableHeaders[tableHeaders.length - 1]; // "Amount"
   const lastColStyle = colStyles[lastHeader] || { width: "11%", textAlign: "right" };
   const lastColWidthVal = parseFloat(lastColStyle.width) || 11;
   const labelColWidth = `${100 - lastColWidthVal}%`;
@@ -526,7 +565,7 @@ const QuotationPDFDocument = ({
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Header Section */}
+        {/* Header Section (remains outside the box) */}
         <View style={styles.header}>
           <Image src={logo} style={styles.headerLogoLeft} />
           <View style={styles.headerCenter}>
@@ -536,133 +575,125 @@ const QuotationPDFDocument = ({
           <Image src={maniquipLogo1} style={styles.headerLogoRight} />
         </View>
 
-        {/* Title and Metadata */}
-        <View style={styles.titleSection}>
-          <Text style={styles.titleText}>QUOTATION</Text>
-          <View style={styles.metaTextRight}>
-            <Text style={styles.metaLabel}>
-              Quo No: <Text style={styles.metaValue}>{displayedQuotationNo}</Text>
-            </Text>
-            <Text style={styles.metaLabel}>
-              Date: <Text style={styles.metaValue}>{dateStr}</Text>
-            </Text>
-          </View>
-        </View>
-
-        {/* Details Section */}
-        <View style={styles.detailsSection} wrap={false}>
-          <View style={styles.detailsColumn}>
-            <Text style={styles.detailsTitle}>Consignor Details</Text>
-            <Text style={[styles.detailsText, { fontFamily: "Helvetica-Bold" }]}>
-              DIVINE EMPIRE INDIA( PVT. LTD. )
-            </Text>
-            {selectedReferences && selectedReferences.length > 0 && (
-              <Text style={styles.detailsText}>{selectedReferences.join(", ")}</Text>
-            )}
-            <Text style={styles.detailsText}>{quotationData.consignorAddress || " "}</Text>
-            <Text style={styles.detailsText}>
-              <Text style={styles.detailsLabel}>Mobile: </Text>
-              {quotationData.consignorMobile || " "}
-            </Text>
-            <Text style={styles.detailsText}>
-              <Text style={styles.detailsLabel}>Phone: </Text>0772-400515
-            </Text>
-            <Text style={styles.detailsText}>
-              <Text style={styles.detailsLabel}>GSTIN: </Text>
-              {quotationData.consignorGSTIN || " "}
-            </Text>
-            <Text style={styles.detailsText}>
-              <Text style={styles.detailsLabel}>State Code: </Text>
-              {quotationData.consignorStateCode || " "}
-            </Text>
-            <Text style={styles.detailsText}>
-              <Text style={styles.detailsLabel}>MSME Number: </Text>
-              {quotationData.msmeNumber || " "}
-            </Text>
+        {/* Box enclosing the Quotation contents */}
+        <View style={styles.boxContainer}>
+          {/* Title and Metadata */}
+          <View style={styles.titleSection}>
+            <Text style={styles.titleText}>QUOTATION</Text>
+            <View style={styles.metaTextRight}>
+              <Text style={{ fontFamily: "Roboto", fontWeight: "bold", fontSize: 9 }}>
+                Quo No: {displayedQuotationNo}
+              </Text>
+              <Text style={{ fontFamily: "Roboto", fontSize: 9 }}>
+                Date: {dateStr}
+              </Text>
+            </View>
           </View>
 
-          <View style={styles.detailsColumn}>
-            <Text style={styles.detailsTitle}>Consignee Details</Text>
-            <Text style={styles.detailsText}>
-              <Text style={styles.detailsLabel}>Company Name: </Text>
-              {quotationData.consigneeName || " "}
-            </Text>
-            <Text style={styles.detailsText}>
-              <Text style={styles.detailsLabel}>Contact Name: </Text>
-              {quotationData.consigneeContactName || " "}
-            </Text>
-            <Text style={styles.detailsText}>
-              <Text style={styles.detailsLabel}>Contact No.: </Text>
-              {quotationData.consigneeContactNo || " "}
-            </Text>
-            <Text style={styles.detailsText}>
-              <Text style={styles.detailsLabel}>State: </Text>
-              {quotationData.consigneeState || " "}
-            </Text>
-            <Text style={styles.detailsText}>
-              <Text style={styles.detailsLabel}>GSTIN: </Text>
-              {quotationData.consigneeGSTIN || " "}
-            </Text>
-            <Text style={styles.detailsText}>
-              <Text style={styles.detailsLabel}>State Code: </Text>
-              {quotationData.consigneeStateCode || " "}
-            </Text>
-          </View>
-        </View>
+          {/* Details Section */}
+          <View style={styles.detailsSection} wrap={false}>
+            <View style={styles.detailsColumn}>
+              <Text style={styles.detailsTitle}>Consignor Details</Text>
+              <Text style={styles.detailsText}>
+                DIVINE EMPIRE INDIA( PVT. LTD. )
+              </Text>
+              {selectedReferences && selectedReferences.length > 0 && (
+                <Text style={styles.detailsText}>{selectedReferences.join(", ")}</Text>
+              )}
+              <Text style={styles.detailsText}>{quotationData.consignorAddress || " "}</Text>
+              <Text style={styles.detailsText}>
+                Mobile: {quotationData.consignorMobile || " "}
+              </Text>
+              <Text style={styles.detailsText}>
+                Phone: 0772-400515
+              </Text>
+              <Text style={styles.detailsText}>
+                GSTIN: {quotationData.consignorGSTIN || " "}
+              </Text>
+              <Text style={styles.detailsText}>
+                State Code: {quotationData.consignorStateCode || " "}
+              </Text>
+              <Text style={styles.detailsText}>
+                MSME Number: {quotationData.msmeNumber || " "}
+              </Text>
+            </View>
 
-        {/* Bill To & Ship To */}
-        <View style={styles.billShipSection} wrap={false}>
-          <View style={styles.detailsColumn}>
-            <Text style={styles.detailsTitle}>Bill To</Text>
-            <Text style={styles.detailsText}>{quotationData.consigneeAddress || " "}</Text>
+            <View style={styles.detailsColumn}>
+              <Text style={styles.detailsTitle}>Consignee Details</Text>
+              <Text style={styles.detailsText}>
+                Company Name: {quotationData.consigneeName || " "}
+              </Text>
+              <Text style={styles.detailsText}>
+                Contact Name: {quotationData.consigneeContactName || " "}
+              </Text>
+              <Text style={styles.detailsText}>
+                Contact No.: {quotationData.consigneeContactNo || " "}
+              </Text>
+              <Text style={styles.detailsText}>
+                State: {quotationData.consigneeState || " "}
+              </Text>
+              <Text style={styles.detailsText}>
+                GSTIN: {quotationData.consigneeGSTIN || " "}
+              </Text>
+              <Text style={styles.detailsText}>
+                State Code: {quotationData.consigneeStateCode || " "}
+              </Text>
+            </View>
           </View>
-          <View style={styles.detailsColumn}>
-            <Text style={styles.detailsTitle}>Ship To</Text>
-            <Text style={styles.detailsText}>{quotationData.shipTo || " "}</Text>
-          </View>
-        </View>
 
-        {/* Items Table */}
-        <View style={styles.table}>
-          {/* Header Row */}
-          <View style={[styles.tableRow, styles.tableRowHeader]} fixed>
-            {tableHeaders.map((header) => (
-              <View
-                key={header}
-                style={[
-                  styles.tableCell,
-                  {
-                    width: colStyles[header].width,
-                    flexGrow: colStyles[header].flexGrow,
-                  },
-                ]}
-              >
-                <Text
+          {/* Bill To & Ship To */}
+          <View style={styles.billShipSection} wrap={false}>
+            <View style={styles.detailsColumn}>
+              <Text style={styles.detailsTitle}>Bill To</Text>
+              <Text style={styles.detailsText}>{quotationData.consigneeAddress || " "}</Text>
+            </View>
+            <View style={styles.detailsColumn}>
+              <Text style={styles.detailsTitle}>Ship To</Text>
+              <Text style={styles.detailsText}>{quotationData.shipTo || " "}</Text>
+            </View>
+          </View>
+
+          {/* Items Table */}
+          <View style={styles.table}>
+            {/* Header Row */}
+            <View style={[styles.tableRow, styles.tableRowHeader]}>
+              {tableHeaders.map((header, idx) => (
+                <View
+                  key={header}
                   style={[
-                    styles.tableCellHeaderText,
-                    { textAlign: colStyles[header].textAlign },
+                    styles.tableCell,
+                    {
+                      width: colStyles[header].width,
+                      flexGrow: colStyles[header].flexGrow,
+                    },
+                    idx === tableHeaders.length - 1 ? { borderRightWidth: 0 } : {},
                   ]}
                 >
-                  {header}
-                </Text>
-              </View>
-            ))}
-          </View>
+                  <Text
+                    style={[
+                      styles.tableCellHeaderText,
+                      { textAlign: colStyles[header].textAlign },
+                    ]}
+                  >
+                    {header}
+                  </Text>
+                </View>
+              ))}
+            </View>
 
-          {/* Data Rows */}
-          {items.map((item, index) => (
-            <View key={index} style={styles.tableRow} wrap={false}>
-              <View style={[styles.tableCell, { width: colStyles["S No."].width }]}>
-                <Text
-                  style={[
-                    styles.tableCellText,
-                    { textAlign: colStyles["S No."].textAlign },
-                  ]}
-                >
-                  {index + 1}
-                </Text>
-              </View>
-              {!hiddenColumns?.hideCode && (
+            {/* Data Rows */}
+            {items.map((item, index) => (
+              <View key={index} style={styles.tableRow} wrap={false}>
+                <View style={[styles.tableCell, { width: colStyles["S No."].width }]}>
+                  <Text
+                    style={[
+                      styles.tableCellText,
+                      { textAlign: colStyles["S No."].textAlign },
+                    ]}
+                  >
+                    {index + 1}
+                  </Text>
+                </View>
                 <View style={[styles.tableCell, { width: colStyles["Code"].width }]}>
                   <Text
                     style={[
@@ -673,9 +704,15 @@ const QuotationPDFDocument = ({
                     {item.code || " "}
                   </Text>
                 </View>
-              )}
-              {!hiddenColumns?.hideProductName && (
-                <View style={[styles.tableCell, { width: colStyles["Product Name"].width }]}>
+                <View
+                  style={[
+                    styles.tableCell,
+                    {
+                      width: colStyles["Product Name"].width,
+                      flexGrow: colStyles["Product Name"].flexGrow,
+                    },
+                  ]}
+                >
                   <Text
                     style={[
                       styles.tableCellText,
@@ -685,28 +722,6 @@ const QuotationPDFDocument = ({
                     {item.name || " "}
                   </Text>
                 </View>
-              )}
-              {!hiddenColumns?.hideDescription && (
-                <View
-                  style={[
-                    styles.tableCell,
-                    {
-                      width: colStyles["Description"].width,
-                      flexGrow: colStyles["Description"].flexGrow,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.tableCellText,
-                      { textAlign: colStyles["Description"].textAlign },
-                    ]}
-                  >
-                    {item.description || " "}
-                  </Text>
-                </View>
-              )}
-              {!hiddenColumns?.hideGST && (
                 <View style={[styles.tableCell, { width: colStyles["GST %"].width }]}>
                   <Text
                     style={[
@@ -717,8 +732,6 @@ const QuotationPDFDocument = ({
                     {item.gst || 18}%
                   </Text>
                 </View>
-              )}
-              {!hiddenColumns?.hideQty && (
                 <View style={[styles.tableCell, { width: colStyles["Qty"].width }]}>
                   <Text
                     style={[
@@ -729,8 +742,6 @@ const QuotationPDFDocument = ({
                     {Number(item.qty) || 1}
                   </Text>
                 </View>
-              )}
-              {!hiddenColumns?.hideUnits && (
                 <View style={[styles.tableCell, { width: colStyles["Units"].width }]}>
                   <Text
                     style={[
@@ -741,8 +752,6 @@ const QuotationPDFDocument = ({
                     {item.units || "Nos"}
                   </Text>
                 </View>
-              )}
-              {!hiddenColumns?.hideRate && (
                 <View style={[styles.tableCell, { width: colStyles["Rate"].width }]}>
                   <Text
                     style={[
@@ -750,420 +759,380 @@ const QuotationPDFDocument = ({
                       { textAlign: colStyles["Rate"].textAlign },
                     ]}
                   >
-                    Rs. {formatCurrency(item.rate || 0)}
+                    ₹{formatCurrency(item.rate || 0)}
                   </Text>
                 </View>
-              )}
-              {!hiddenColumns?.hideDisc && (
-                <View style={[styles.tableCell, { width: colStyles["Disc %"].width }]}>
-                  <Text
-                    style={[
-                      styles.tableCellText,
-                      { textAlign: colStyles["Disc %"].textAlign },
-                    ]}
-                  >
-                    {item.discount || 0}%
-                  </Text>
-                </View>
-              )}
-              {!hiddenColumns?.hideFlatDisc && (
-                <View style={[styles.tableCell, { width: colStyles["Flat Disc"].width }]}>
-                  <Text
-                    style={[
-                      styles.tableCellText,
-                      { textAlign: colStyles["Flat Disc"].textAlign },
-                    ]}
-                  >
-                    Rs. {formatCurrency(item.flatDiscount || 0)}
-                  </Text>
-                </View>
-              )}
-              {!hiddenColumns?.hideAmount && (
-                <View style={[styles.tableCell, { width: colStyles["Amount"].width }]}>
+                <View style={[styles.tableCell, { width: colStyles["Amount"].width, borderRightWidth: 0 }]}>
                   <Text
                     style={[
                       styles.tableCellText,
                       { textAlign: colStyles["Amount"].textAlign },
                     ]}
                   >
-                    Rs. {formatCurrency(item.amount || 0)}
+                    ₹{formatCurrency(item.amount || 0)}
                   </Text>
                 </View>
-              )}
-            </View>
-          ))}
-
-          {/* Empty fallback row */}
-          {items.length === 0 && (
-            <View style={styles.tableRow} wrap={false}>
-              <View style={[styles.tableCell, { width: colStyles["S No."].width }]}>
-                <Text
-                  style={[
-                    styles.tableCellText,
-                    { textAlign: colStyles["S No."].textAlign },
-                  ]}
-                >
-                  1
-                </Text>
               </View>
-              {!hiddenColumns?.hideCode && (
+            ))}
+
+            {/* Empty fallback row */}
+            {items.length === 0 && (
+              <View style={styles.tableRow} wrap={false}>
+                <View style={[styles.tableCell, { width: colStyles["S No."].width }]}>
+                  <Text
+                    style={[
+                      styles.tableCellText,
+                      { textAlign: colStyles["S No."].textAlign },
+                    ]}
+                  >
+                    1
+                  </Text>
+                </View>
                 <View style={[styles.tableCell, { width: colStyles["Code"].width }]}>
                   <Text style={[styles.tableCellText, { textAlign: colStyles["Code"].textAlign }]}>
                     {" "}
                   </Text>
                 </View>
-              )}
-              {!hiddenColumns?.hideProductName && (
-                <View style={[styles.tableCell, { width: colStyles["Product Name"].width }]}>
-                  <Text style={[styles.tableCellText, { textAlign: colStyles["Product Name"].textAlign }]}>
-                    {" "}
-                  </Text>
-                </View>
-              )}
-              {!hiddenColumns?.hideDescription && (
                 <View
                   style={[
                     styles.tableCell,
                     {
-                      width: colStyles["Description"].width,
-                      flexGrow: colStyles["Description"].flexGrow,
+                      width: colStyles["Product Name"].width,
+                      flexGrow: colStyles["Product Name"].flexGrow,
                     },
                   ]}
                 >
-                  <Text style={[styles.tableCellText, { textAlign: colStyles["Description"].textAlign }]}>
+                  <Text style={[styles.tableCellText, { textAlign: colStyles["Product Name"].textAlign }]}>
                     {" "}
                   </Text>
                 </View>
-              )}
-              {!hiddenColumns?.hideGST && (
                 <View style={[styles.tableCell, { width: colStyles["GST %"].width }]}>
                   <Text style={[styles.tableCellText, { textAlign: colStyles["GST %"].textAlign }]}>
                     18%
                   </Text>
                 </View>
-              )}
-              {!hiddenColumns?.hideQty && (
                 <View style={[styles.tableCell, { width: colStyles["Qty"].width }]}>
                   <Text style={[styles.tableCellText, { textAlign: colStyles["Qty"].textAlign }]}>
                     1
                   </Text>
                 </View>
-              )}
-              {!hiddenColumns?.hideUnits && (
                 <View style={[styles.tableCell, { width: colStyles["Units"].width }]}>
                   <Text style={[styles.tableCellText, { textAlign: colStyles["Units"].textAlign }]}>
                     Nos
                   </Text>
                 </View>
-              )}
-              {!hiddenColumns?.hideRate && (
                 <View style={[styles.tableCell, { width: colStyles["Rate"].width }]}>
                   <Text style={[styles.tableCellText, { textAlign: colStyles["Rate"].textAlign }]}>
-                    Rs. 0.00
+                    ₹0.00
                   </Text>
                 </View>
-              )}
-              {!hiddenColumns?.hideDisc && (
-                <View style={[styles.tableCell, { width: colStyles["Disc %"].width }]}>
-                  <Text style={[styles.tableCellText, { textAlign: colStyles["Disc %"].textAlign }]}>
-                    0%
-                  </Text>
-                </View>
-              )}
-              {!hiddenColumns?.hideFlatDisc && (
-                <View style={[styles.tableCell, { width: colStyles["Flat Disc"].width }]}>
-                  <Text style={[styles.tableCellText, { textAlign: colStyles["Flat Disc"].textAlign }]}>
-                    Rs. 0.00
-                  </Text>
-                </View>
-              )}
-              {!hiddenColumns?.hideAmount && (
-                <View style={[styles.tableCell, { width: colStyles["Amount"].width }]}>
+                <View style={[styles.tableCell, { width: colStyles["Amount"].width, borderRightWidth: 0 }]}>
                   <Text style={[styles.tableCellText, { textAlign: colStyles["Amount"].textAlign }]}>
-                    Rs. 0.00
+                    ₹0.00
                   </Text>
                 </View>
-              )}
-            </View>
-          )}
+              </View>
+            )}
 
-          {/* Subtotal */}
-          {!hiddenColumns?.hideSubtotal && (
-            <View style={styles.tableRow} wrap={false}>
-              <View style={[styles.tableCell, { width: labelColWidth }]}>
-                <Text style={[styles.tableCellHeaderText, { textAlign: "right" }]}>
-                  Subtotal
-                </Text>
-              </View>
-              <View style={[styles.tableCell, { width: lastColStyle.width }]}>
-                <Text
-                  style={[
-                    styles.tableCellHeaderText,
-                    { textAlign: lastColStyle.textAlign },
-                  ]}
-                >
-                  Rs. {formatCurrency(subtotal)}
-                </Text>
-              </View>
-            </View>
-          )}
-
-          {/* Total Qty */}
-          {!hiddenColumns?.hideTotalQty && (
-            <View style={styles.tableRow} wrap={false}>
-              <View style={[styles.tableCell, { width: labelColWidth }]}>
-                <Text style={[styles.tableCellText, { textAlign: "right" }]}>Total Qty</Text>
-              </View>
-              <View style={[styles.tableCell, { width: lastColStyle.width }]}>
-                <Text
-                  style={[
-                    styles.tableCellText,
-                    { textAlign: lastColStyle.textAlign },
-                  ]}
-                >
-                  {items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0)}
-                </Text>
-              </View>
-            </View>
-          )}
-
-          {/* Total Flat Discount */}
-          {!hiddenColumns.hideTotalFlatDisc && totalFlatDiscount > 0 && (
-            <View style={styles.tableRow} wrap={false}>
-              <View style={[styles.tableCell, { width: labelColWidth }]}>
-                <Text style={[styles.tableCellText, { textAlign: "right" }]}>
-                  Total Flat Discount
-                </Text>
-              </View>
-              <View style={[styles.tableCell, { width: lastColStyle.width }]}>
-                <Text
-                  style={[
-                    styles.tableCellText,
-                    { textAlign: lastColStyle.textAlign },
-                  ]}
-                >
-                  -Rs. {formatCurrency(totalFlatDiscount)}
-                </Text>
-              </View>
-            </View>
-          )}
-
-          {/* Special Discount */}
-          {!hiddenColumns.hideSpecialDiscount && Number(specialDiscount) > 0 && (
-            <View style={styles.tableRow} wrap={false}>
-              <View style={[styles.tableCell, { width: labelColWidth }]}>
-                <Text style={[styles.tableCellText, { textAlign: "right" }]}>
-                  Special Discount
-                </Text>
-              </View>
-              <View style={[styles.tableCell, { width: lastColStyle.width }]}>
-                <Text
-                  style={[
-                    styles.tableCellText,
-                    { textAlign: lastColStyle.textAlign },
-                  ]}
-                >
-                  Rs. {formatCurrency(Number(specialDiscount) || 0)}
-                </Text>
-              </View>
-            </View>
-          )}
-
-          {/* Grand Total */}
-          {!hiddenColumns?.hideGrandTotal && (
-            <View style={[styles.tableRow, { backgroundColor: "#e6f3ff" }]} wrap={false}>
-              <View style={[styles.tableCell, { width: labelColWidth }]}>
-                <Text style={[styles.tableCellHeaderText, { textAlign: "right" }]}>
-                  Grand Total
-                </Text>
-              </View>
-              <View style={[styles.tableCell, { width: lastColStyle.width }]}>
-                <Text
-                  style={[
-                    styles.tableCellHeaderText,
-                    { textAlign: lastColStyle.textAlign },
-                  ]}
-                >
-                  Rs. {formatCurrency(grandTotal)}
-                </Text>
-              </View>
-            </View>
-          )}
-        </View>
-
-        {/* Tax Breakdown & Amount in Words */}
-        <View style={styles.twoColSection} wrap={false}>
-          {showTaxBreakdown ? (
-            <>
-              <View style={styles.twoColLeft}>
-                <Text style={styles.sectionTitle}>Tax Breakdown</Text>
-                <View style={styles.taxTable}>
-                  <View style={[styles.taxRow, styles.taxRowHeader]}>
-                    <View style={[styles.taxCell, { width: "40%" }]}>
-                      <Text style={styles.taxCellHeader}>Tax Type</Text>
-                    </View>
-                    <View style={[styles.taxCell, { width: "25%" }]}>
-                      <Text style={styles.taxCellHeader}>Rate</Text>
-                    </View>
-                    <View style={[styles.taxCell, { width: "35%", textAlign: "right" }]}>
-                      <Text style={styles.taxCellHeader}>Amount</Text>
-                    </View>
-                  </View>
-
-                  {/* IGST breakdown */}
-                  {quotationData.isIGST && !hiddenColumns?.hideIGST && (
-                    <>
-                      {Object.entries(quotationData.igstBreakdown || {}).map(
-                        ([rate, value]) => (
-                          <View key={`igst-${rate}`} style={styles.taxRow}>
-                            <View style={[styles.taxCell, { width: "40%" }]}>
-                              <Text>IGST</Text>
-                            </View>
-                            <View style={[styles.taxCell, { width: "25%" }]}>
-                              <Text>{Number(rate)}%</Text>
-                            </View>
-                            <View
-                              style={[
-                                styles.taxCell,
-                                { width: "35%", textAlign: "right" },
-                              ]}
-                            >
-                              <Text>Rs. {formatCurrency(Number(value))}</Text>
-                            </View>
-                          </View>
-                        )
-                      )}
-                      <View style={[styles.taxRow, { backgroundColor: "#f8f9fa" }]}>
-                        <View style={[styles.taxCell, { width: "40%" }]}>
-                          <Text style={styles.taxCellHeader}>IGST Total</Text>
-                        </View>
-                        <View style={[styles.taxCell, { width: "25%" }]}>
-                          <Text style={styles.taxCellHeader}>
-                            {quotationData.igstRate || 18}%
-                          </Text>
-                        </View>
-                        <View
-                          style={[
-                            styles.taxCell,
-                            { width: "35%", textAlign: "right" },
-                          ]}
-                        >
-                          <Text style={styles.taxCellHeader}>
-                            Rs. {formatCurrency(igstAmount)}
-                          </Text>
-                        </View>
-                      </View>
-                    </>
-                  )}
-
-                  {/* CGST & SGST breakdowns */}
-                  {!quotationData.isIGST && (
-                    <>
-                      {!hiddenColumns?.hideCGST && (
-                        <>
-                          {Object.entries(quotationData.cgstBreakdown || {}).map(
-                            ([rate, value]) => (
-                              <View key={`cgst-${rate}`} style={styles.taxRow}>
-                                <View style={[styles.taxCell, { width: "40%" }]}>
-                                  <Text>CGST</Text>
-                                </View>
-                                <View style={[styles.taxCell, { width: "25%" }]}>
-                                  <Text>{Number(rate)}%</Text>
-                                </View>
-                                <View
-                                  style={[
-                                    styles.taxCell,
-                                    { width: "35%", textAlign: "right" },
-                                  ]}
-                                >
-                                  <Text>Rs. {formatCurrency(Number(value))}</Text>
-                                </View>
-                              </View>
-                            )
-                          )}
-                          <View
-                            style={[
-                              styles.taxRow,
-                              { backgroundColor: "#f8f9fa" },
-                            ]}
-                          >
-                            <View style={[styles.taxCell, { width: "40%" }]}>
-                              <Text style={styles.taxCellHeader}>CGST Total</Text>
-                            </View>
-                            <View style={[styles.taxCell, { width: "25%" }]}>
-                              <Text style={styles.taxCellHeader}>
-                                {quotationData.cgstRate || 9}%
-                              </Text>
-                            </View>
-                            <View
-                              style={[
-                                styles.taxCell,
-                                { width: "35%", textAlign: "right" },
-                              ]}
-                            >
-                              <Text style={styles.taxCellHeader}>
-                                Rs. {formatCurrency(cgstAmount)}
-                              </Text>
-                            </View>
-                          </View>
-                        </>
-                      )}
-
-                      {!hiddenColumns?.hideSGST && (
-                        <>
-                          {Object.entries(quotationData.sgstBreakdown || {}).map(
-                            ([rate, value]) => (
-                              <View key={`sgst-${rate}`} style={styles.taxRow}>
-                                <View style={[styles.taxCell, { width: "40%" }]}>
-                                  <Text>SGST</Text>
-                                </View>
-                                <View style={[styles.taxCell, { width: "25%" }]}>
-                                  <Text>{Number(rate)}%</Text>
-                                </View>
-                                <View
-                                  style={[
-                                    styles.taxCell,
-                                    { width: "35%", textAlign: "right" },
-                                  ]}
-                                >
-                                  <Text>Rs. {formatCurrency(Number(value))}</Text>
-                                </View>
-                              </View>
-                            )
-                          )}
-                          <View
-                            style={[
-                              styles.taxRow,
-                              { backgroundColor: "#f8f9fa" },
-                            ]}
-                          >
-                            <View style={[styles.taxCell, { width: "40%" }]}>
-                              <Text style={styles.taxCellHeader}>SGST Total</Text>
-                            </View>
-                            <View style={[styles.taxCell, { width: "25%" }]}>
-                              <Text style={styles.taxCellHeader}>
-                                {quotationData.sgstRate || 9}%
-                              </Text>
-                            </View>
-                            <View
-                              style={[
-                                styles.taxCell,
-                                { width: "35%", textAlign: "right" },
-                              ]}
-                            >
-                              <Text style={styles.taxCellHeader}>
-                                Rs. {formatCurrency(sgstAmount)}
-                              </Text>
-                            </View>
-                          </View>
-                        </>
-                      )}
-                    </>
-                  )}
+            {/* Subtotal */}
+            {!hiddenColumns?.hideSubtotal && (
+              <View style={styles.tableRow} wrap={false}>
+                <View style={[styles.tableCell, { width: labelColWidth }]}>
+                  <Text style={[styles.tableCellHeaderText, { textAlign: "right" }]}>
+                    Subtotal
+                  </Text>
+                </View>
+                <View style={[styles.tableCell, { width: lastColStyle.width, borderRightWidth: 0 }]}>
+                  <Text
+                    style={[
+                      styles.tableCellHeaderText,
+                      { textAlign: lastColStyle.textAlign },
+                    ]}
+                  >
+                    ₹{formatCurrency(subtotal)}
+                  </Text>
                 </View>
               </View>
+            )}
 
-              <View style={styles.twoColRight}>
+            {/* Total Qty */}
+            {!hiddenColumns?.hideTotalQty && (
+              <View style={styles.tableRow} wrap={false}>
+                <View style={[styles.tableCell, { width: labelColWidth }]}>
+                  <Text style={[styles.tableCellText, { textAlign: "right" }]}>Total Qty</Text>
+                </View>
+                <View style={[styles.tableCell, { width: lastColStyle.width, borderRightWidth: 0 }]}>
+                  <Text
+                    style={[
+                      styles.tableCellText,
+                      { textAlign: lastColStyle.textAlign },
+                    ]}
+                  >
+                    {items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0)}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Total Flat Discount */}
+            {!hiddenColumns.hideTotalFlatDisc && totalFlatDiscount > 0 && (
+              <View style={styles.tableRow} wrap={false}>
+                <View style={[styles.tableCell, { width: labelColWidth }]}>
+                  <Text style={[styles.tableCellText, { textAlign: "right" }]}>
+                    Total Flat Discount
+                  </Text>
+                </View>
+                <View style={[styles.tableCell, { width: lastColStyle.width, borderRightWidth: 0 }]}>
+                  <Text
+                    style={[
+                      styles.tableCellText,
+                      { textAlign: lastColStyle.textAlign },
+                    ]}
+                  >
+                    -₹{formatCurrency(totalFlatDiscount)}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Special Discount */}
+            {!hiddenColumns.hideSpecialDiscount && Number(specialDiscount) > 0 && (
+              <View style={styles.tableRow} wrap={false}>
+                <View style={[styles.tableCell, { width: labelColWidth }]}>
+                  <Text style={[styles.tableCellText, { textAlign: "right" }]}>
+                    Special Discount
+                  </Text>
+                </View>
+                <View style={[styles.tableCell, { width: lastColStyle.width, borderRightWidth: 0 }]}>
+                  <Text
+                    style={[
+                      styles.tableCellText,
+                      { textAlign: lastColStyle.textAlign },
+                    ]}
+                  >
+                    ₹{formatCurrency(Number(specialDiscount) || 0)}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Grand Total */}
+            {!hiddenColumns?.hideGrandTotal && (
+              <View style={[styles.tableRow, { backgroundColor: "#e6f3ff" }]} wrap={false}>
+                <View style={[styles.tableCell, { width: labelColWidth }]}>
+                  <Text style={[styles.tableCellHeaderText, { textAlign: "right" }]}>
+                    Grand Total
+                  </Text>
+                </View>
+                <View style={[styles.tableCell, { width: lastColStyle.width, borderRightWidth: 0 }]}>
+                  <Text
+                    style={[
+                      styles.tableCellHeaderText,
+                      { textAlign: lastColStyle.textAlign },
+                    ]}
+                  >
+                    ₹{formatCurrency(grandTotal)}
+                  </Text>
+                </View>
+              </View>
+            )}
+          </View>
+
+          {/* Tax Breakdown & Amount in Words */}
+          <View style={styles.twoColSection} wrap={false}>
+            {showTaxBreakdown ? (
+              <>
+                <View style={styles.twoColLeft}>
+                  <Text style={styles.sectionTitle}>Tax Breakdown</Text>
+                  <View style={styles.taxTable}>
+                    <View style={[styles.taxRow, styles.taxRowHeader]}>
+                      <View style={[styles.taxCell, { width: "40%" }]}>
+                        <Text style={styles.taxCellHeader}>Tax Type</Text>
+                      </View>
+                      <View style={[styles.taxCell, { width: "25%" }]}>
+                        <Text style={styles.taxCellHeader}>Rate</Text>
+                      </View>
+                      <View style={[styles.taxCell, { width: "35%", textAlign: "right", borderRightWidth: 0 }]}>
+                        <Text style={styles.taxCellHeader}>Amount</Text>
+                      </View>
+                    </View>
+
+                    {/* IGST breakdown */}
+                    {quotationData.isIGST && !hiddenColumns?.hideIGST && (
+                      <>
+                        {Object.entries(quotationData.igstBreakdown || {}).map(
+                          ([rate, value]) => (
+                            <View key={`igst-${rate}`} style={styles.taxRow}>
+                              <View style={[styles.taxCell, { width: "40%" }]}>
+                                <Text>IGST</Text>
+                              </View>
+                              <View style={[styles.taxCell, { width: "25%" }]}>
+                                <Text>{Number(rate)}%</Text>
+                              </View>
+                              <View
+                                style={[
+                                  styles.taxCell,
+                                  { width: "35%", textAlign: "right", borderRightWidth: 0 },
+                                ]}
+                              >
+                                <Text>₹{formatCurrency(Number(value))}</Text>
+                              </View>
+                            </View>
+                          )
+                        )}
+                        <View style={[styles.taxRow, { backgroundColor: "#f8f9fa" }]}>
+                          <View style={[styles.taxCell, { width: "40%" }]}>
+                            <Text style={styles.taxCellHeader}>IGST Total</Text>
+                          </View>
+                          <View style={[styles.taxCell, { width: "25%" }]}>
+                            <Text style={styles.taxCellHeader}>
+                              {quotationData.igstRate || 18}%
+                            </Text>
+                          </View>
+                          <View
+                            style={[
+                              styles.taxCell,
+                              { width: "35%", textAlign: "right", borderRightWidth: 0 },
+                            ]}
+                          >
+                            <Text style={styles.taxCellHeader}>
+                              ₹{formatCurrency(igstAmount)}
+                            </Text>
+                          </View>
+                        </View>
+                      </>
+                    )}
+
+                    {/* CGST & SGST breakdowns */}
+                    {!quotationData.isIGST && (
+                      <>
+                        {!hiddenColumns?.hideCGST && (
+                          <>
+                            {Object.entries(quotationData.cgstBreakdown || {}).map(
+                              ([rate, value]) => (
+                                <View key={`cgst-${rate}`} style={styles.taxRow}>
+                                  <View style={[styles.taxCell, { width: "40%" }]}>
+                                    <Text>CGST</Text>
+                                  </View>
+                                  <View style={[styles.taxCell, { width: "25%" }]}>
+                                    <Text>{Number(rate)}%</Text>
+                                  </View>
+                                  <View
+                                    style={[
+                                      styles.taxCell,
+                                      { width: "35%", textAlign: "right", borderRightWidth: 0 },
+                                    ]}
+                                  >
+                                    <Text>₹{formatCurrency(Number(value))}</Text>
+                                  </View>
+                                </View>
+                              )
+                            )}
+                            <View
+                              style={[
+                                styles.taxRow,
+                                { backgroundColor: "#f8f9fa" },
+                              ]}
+                            >
+                              <View style={[styles.taxCell, { width: "40%" }]}>
+                                <Text style={styles.taxCellHeader}>CGST Total</Text>
+                              </View>
+                              <View style={[styles.taxCell, { width: "25%" }]}>
+                                <Text style={styles.taxCellHeader}>
+                                  {quotationData.cgstRate || 9}%
+                                </Text>
+                              </View>
+                              <View
+                                style={[
+                                  styles.taxCell,
+                                  { width: "35%", textAlign: "right", borderRightWidth: 0 },
+                                ]}
+                              >
+                                <Text style={styles.taxCellHeader}>
+                                  ₹{formatCurrency(cgstAmount)}
+                                </Text>
+                              </View>
+                            </View>
+                          </>
+                        )}
+
+                        {!hiddenColumns?.hideSGST && (
+                          <>
+                            {Object.entries(quotationData.sgstBreakdown || {}).map(
+                              ([rate, value]) => (
+                                <View key={`sgst-${rate}`} style={styles.taxRow}>
+                                  <View style={[styles.taxCell, { width: "40%" }]}>
+                                    <Text>SGST</Text>
+                                  </View>
+                                  <View style={[styles.taxCell, { width: "25%" }]}>
+                                    <Text>{Number(rate)}%</Text>
+                                  </View>
+                                  <View
+                                    style={[
+                                      styles.taxCell,
+                                      { width: "35%", textAlign: "right", borderRightWidth: 0 },
+                                    ]}
+                                  >
+                                    <Text>₹{formatCurrency(Number(value))}</Text>
+                                  </View>
+                                </View>
+                              )
+                            )}
+                            <View
+                              style={[
+                                styles.taxRow,
+                                { backgroundColor: "#f8f9fa" },
+                              ]}
+                            >
+                              <View style={[styles.taxCell, { width: "40%" }]}>
+                                <Text style={styles.taxCellHeader}>SGST Total</Text>
+                              </View>
+                              <View style={[styles.taxCell, { width: "25%" }]}>
+                                <Text style={styles.taxCellHeader}>
+                                  {quotationData.sgstRate || 9}%
+                                </Text>
+                              </View>
+                              <View
+                                style={[
+                                  styles.taxCell,
+                                  { width: "35%", textAlign: "right", borderRightWidth: 0 },
+                                ]}
+                              >
+                                <Text style={styles.taxCellHeader}>
+                                  ₹{formatCurrency(sgstAmount)}
+                                </Text>
+                              </View>
+                            </View>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </View>
+                </View>
+
+                <View style={styles.twoColRight}>
+                  {!hiddenColumns?.hideGrandTotal && (
+                    <View style={styles.amountWordsBox}>
+                      <Text style={styles.amountWordsLabel}>
+                        Amount Chargeable (in words)
+                      </Text>
+                      <Text style={styles.amountWordsText}>
+                        {Number(grandTotal) > 0
+                          ? numberToWords(grandTotal)
+                          : "Zero"}{" "}
+                        Only
+                      </Text>
+                      <View style={styles.grandTotalTextRight}>
+                        <Text style={styles.grandTotalLarge}>
+                          Grand Total: ₹{formatCurrency(grandTotal)}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                </View>
+              </>
+            ) : (
+              <View style={styles.twoColFull}>
                 {!hiddenColumns?.hideGrandTotal && (
                   <View style={styles.amountWordsBox}>
                     <Text style={styles.amountWordsLabel}>
@@ -1177,209 +1146,185 @@ const QuotationPDFDocument = ({
                     </Text>
                     <View style={styles.grandTotalTextRight}>
                       <Text style={styles.grandTotalLarge}>
-                        Grand Total: Rs. {formatCurrency(grandTotal)}
+                        Grand Total: ₹{formatCurrency(grandTotal)}
                       </Text>
                     </View>
                   </View>
                 )}
               </View>
-            </>
-          ) : (
-            <View style={styles.twoColFull}>
-              {!hiddenColumns?.hideGrandTotal && (
-                <View style={styles.amountWordsBox}>
-                  <Text style={styles.amountWordsLabel}>
-                    Amount Chargeable (in words)
-                  </Text>
-                  <Text style={styles.amountWordsText}>
-                    {Number(grandTotal) > 0
-                      ? numberToWords(grandTotal)
-                      : "Zero"}{" "}
-                    Only
-                  </Text>
-                  <View style={styles.grandTotalTextRight}>
-                    <Text style={styles.grandTotalLarge}>
-                      Grand Total: Rs. {formatCurrency(grandTotal)}
+            )}
+          </View>
+
+          {/* Terms & Conditions */}
+          <View style={styles.termsSection} wrap={false}>
+            <Text style={styles.sectionTitle}>Terms & Conditions</Text>
+            {!hiddenFields?.validity && (
+              <View style={styles.termRow}>
+                <Text style={styles.termLabel}>Validity</Text>
+                <Text style={styles.termValue}>
+                  {quotationData.validity ||
+                    "The above quoted prices are valid up to 10 days from date of offer."}
+                </Text>
+              </View>
+            )}
+            {!hiddenFields?.paymentTerms && (
+              <View style={styles.termRow}>
+                <Text style={styles.termLabel}>Payment Terms</Text>
+                <Text style={styles.termValue}>
+                  {quotationData.paymentTerms ||
+                    "100% advance payment in the mode of NEFT, RTGS & DD. Payment only accepted in company's account – DIVINE EMPIRE INDIA PVT LTD."}
+                </Text>
+              </View>
+            )}
+            {!hiddenFields?.delivery && (
+              <View style={styles.termRow}>
+                <Text style={styles.termLabel}>Delivery</Text>
+                <Text style={styles.termValue}>
+                  {quotationData.delivery ||
+                    "Within 7-10 working days after received purchase order and 100% advance payment"}
+                </Text>
+              </View>
+            )}
+            {!hiddenFields?.freight && (
+              <View style={styles.termRow}>
+                <Text style={styles.termLabel}>Freight</Text>
+                <Text style={styles.termValue}>
+                  {quotationData.freight || "Extra as per actual."}
+                </Text>
+              </View>
+            )}
+            {!hiddenFields?.warranty && (
+              <View style={styles.termRow}>
+                <Text style={styles.termLabel}>Warranty</Text>
+                <Text style={styles.termValue}>
+                  {quotationData.warranty ||
+                    "6 months warranty applicable against Manufacturing defects."}
+                </Text>
+              </View>
+            )}
+            {!hiddenFields?.taxes && (
+              <View style={styles.termRow}>
+                <Text style={styles.termLabel}>Taxes</Text>
+                <Text style={styles.termValue}>
+                  {quotationData.taxes || "Extra mentioned in the quotation."}
+                </Text>
+              </View>
+            )}
+            {!hiddenFields?.insurance && (
+              <View style={styles.termRow}>
+                <Text style={styles.termLabel}>Insurance</Text>
+                <Text style={styles.termValue}>
+                  {quotationData.insurance ||
+                    "Transit insurance for all shipment is at Buyer's scope."}
+                </Text>
+              </View>
+            )}
+            {!hiddenFields?.afterReceiptOfMaterial && (
+              <View style={styles.termRow}>
+                <Text style={styles.termLabel}>After Receipt of Material</Text>
+                <Text style={styles.termValue}>
+                  {quotationData.afterReceiptOfMaterial ||
+                    "In case of any discrepancy in the material, please inform us within 24 hours with supporting images attached. After this period, the company will not be responsible for any discrepancies."}
+                </Text>
+              </View>
+            )}
+            {!hiddenFields?.technicalSupport && (
+              <View style={styles.termRow}>
+                <Text style={styles.termLabel}>Technical Support</Text>
+                <Text style={styles.termValue}>
+                  {quotationData.technicalSupport ||
+                    "Video call assistance for installation and troubleshooting of the machine is FOC. For physical assistance: Service charges are free during the warranty period; however, TA & DA will be charged extra as per actuals."}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Special Anniversary Offers */}
+          {quotationData.specialOffers &&
+            quotationData.specialOffers.filter((offer) => offer.trim()).length > 0 && (
+              <View style={styles.specialOffersContainer} wrap={false}>
+                <Text style={styles.specialOffersTitle}>
+                  Divine Empire's 10th Anniversary Special Offer
+                </Text>
+                {quotationData.specialOffers
+                  .filter((offer) => offer.trim())
+                  .map((offer, index) => (
+                    <Text key={index} style={styles.specialOfferText}>
+                      • {offer}
                     </Text>
-                  </View>
+                  ))}
+              </View>
+            )}
+
+          {/* Notes Section */}
+          {quotationData.notes &&
+            quotationData.notes.filter((note) => note.trim()).length > 0 && (
+              <View style={styles.notesContainer} wrap={false}>
+                <Text style={styles.sectionTitle}>Notes</Text>
+                {quotationData.notes
+                  .filter((note) => note.trim())
+                  .map((note, index) => (
+                    <Text key={index} style={styles.noteText}>
+                      {index + 1}. {note}
+                    </Text>
+                  ))}
+              </View>
+            )}
+
+          {/* Bank Details and QR Code */}
+          <View style={styles.bankQrSection} wrap={false}>
+            <View style={styles.twoColLeft}>
+              <Text style={styles.sectionTitle}>Bank Details</Text>
+              <Text style={styles.detailsText}>
+                DIVINE EMPIRE INDIA PVT LTD.
+              </Text>
+              <Text style={styles.detailsText}>
+                Account No.: {quotationData.accountNo || " "}
+              </Text>
+              <Text style={styles.detailsText}>
+                Bank Name: {quotationData.bankName || " "}
+              </Text>
+              <Text style={styles.detailsText}>
+                Bank Address: {quotationData.bankAddress || " "}
+              </Text>
+              <Text style={styles.detailsText}>
+                IFSC CODE: {quotationData.ifscCode || " "}
+              </Text>
+              <Text style={styles.detailsText}>
+                Email: {quotationData.email || " "}
+              </Text>
+              <Text style={styles.detailsText}>
+                Website: {quotationData.website || " "}
+              </Text>
+              <Text style={styles.detailsText}>
+                Company PAN: {quotationData.pan || " "}
+              </Text>
+            </View>
+            <View style={{ width: "48%", alignItems: "flex-end" }}>
+              <View style={styles.qrBox}>
+                <Image src={qr} style={styles.qrImage} />
+                <View style={styles.qrFooter}>
+                  <Text style={styles.qrText}>Scan for Payment</Text>
                 </View>
-              )}
+              </View>
             </View>
-          )}
-        </View>
+          </View>
 
-        {/* Terms & Conditions */}
-        <View style={styles.termsSection} wrap={false}>
-          <Text style={styles.sectionTitle}>Terms & Conditions</Text>
-          {!hiddenFields?.validity && (
-            <View style={styles.termRow}>
-              <Text style={styles.termLabel}>Validity</Text>
-              <Text style={styles.termValue}>
-                {quotationData.validity ||
-                  "The above quoted prices are valid up to 10 days from date of offer."}
-              </Text>
-            </View>
-          )}
-          {!hiddenFields?.paymentTerms && (
-            <View style={styles.termRow}>
-              <Text style={styles.termLabel}>Payment Terms</Text>
-              <Text style={styles.termValue}>
-                {quotationData.paymentTerms ||
-                  "100% advance payment in the mode of NEFT, RTGS & DD. Payment only accepted in company's account – DIVINE EMPIRE INDIA PVT LTD."}
-              </Text>
-            </View>
-          )}
-          {!hiddenFields?.delivery && (
-            <View style={styles.termRow}>
-              <Text style={styles.termLabel}>Delivery</Text>
-              <Text style={styles.termValue}>
-                {quotationData.delivery ||
-                  "Within 7-10 working days after received purchase order and 100% advance payment"}
-              </Text>
-            </View>
-          )}
-          {!hiddenFields?.freight && (
-            <View style={styles.termRow}>
-              <Text style={styles.termLabel}>Freight</Text>
-              <Text style={styles.termValue}>
-                {quotationData.freight || "Extra as per actual."}
-              </Text>
-            </View>
-          )}
-          {!hiddenFields?.warranty && (
-            <View style={styles.termRow}>
-              <Text style={styles.termLabel}>Warranty</Text>
-              <Text style={styles.termValue}>
-                {quotationData.warranty ||
-                  "6 months warranty applicable against Manufacturing defects."}
-              </Text>
-            </View>
-          )}
-          {!hiddenFields?.taxes && (
-            <View style={styles.termRow}>
-              <Text style={styles.termLabel}>Taxes</Text>
-              <Text style={styles.termValue}>
-                {quotationData.taxes || "Extra mentioned in the quotation."}
-              </Text>
-            </View>
-          )}
-          {!hiddenFields?.insurance && (
-            <View style={styles.termRow}>
-              <Text style={styles.termLabel}>Insurance</Text>
-              <Text style={styles.termValue}>
-                {quotationData.insurance ||
-                  "Transit insurance for all shipment is at Buyer's scope."}
-              </Text>
-            </View>
-          )}
-          {!hiddenFields?.afterReceiptOfMaterial && (
-            <View style={styles.termRow}>
-              <Text style={styles.termLabel}>After Receipt of Material</Text>
-              <Text style={styles.termValue}>
-                {quotationData.afterReceiptOfMaterial ||
-                  "In case of any discrepancy in the material, please inform us within 24 hours with supporting images attached. After this period, the company will not be responsible for any discrepancies."}
-              </Text>
-            </View>
-          )}
-          {!hiddenFields?.technicalSupport && (
-            <View style={styles.termRow}>
-              <Text style={styles.termLabel}>Technical Support</Text>
-              <Text style={styles.termValue}>
-                {quotationData.technicalSupport ||
-                  "Video call assistance for installation and troubleshooting of the machine is FOC. For physical assistance: Service charges are free during the warranty period; however, TA & DA will be charged extra as per actuals."}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Special Anniversary Offers */}
-        {quotationData.specialOffers &&
-          quotationData.specialOffers.filter((offer) => offer.trim()).length > 0 && (
-            <View style={styles.specialOffersContainer} wrap={false}>
-              <Text style={styles.specialOffersTitle}>
-                Divine Empire's 10th Anniversary Special Offer
-              </Text>
-              {quotationData.specialOffers
-                .filter((offer) => offer.trim())
-                .map((offer, index) => (
-                  <Text key={index} style={styles.specialOfferText}>
-                    • {offer}
-                  </Text>
-                ))}
-            </View>
-          )}
-
-        {/* Notes Section */}
-        {quotationData.notes &&
-          quotationData.notes.filter((note) => note.trim()).length > 0 && (
-            <View style={styles.notesContainer} wrap={false}>
-              <Text style={styles.sectionTitle}>Notes</Text>
-              {quotationData.notes
-                .filter((note) => note.trim())
-                .map((note, index) => (
-                  <Text key={index} style={styles.noteText}>
-                    {index + 1}. {note}
-                  </Text>
-                ))}
-            </View>
-          )}
-
-        {/* Bank Details and QR Code */}
-        <View style={styles.bankQrSection} wrap={false}>
-          <View style={styles.twoColLeft}>
-            <Text style={styles.sectionTitle}>Bank Details</Text>
-            <Text style={[styles.detailsText, { fontFamily: "Helvetica-Bold", marginBottom: 2 }]}>
-              DIVINE EMPIRE INDIA PVT LTD.
+          {/* Declaration */}
+          <View style={styles.declarationSection} wrap={false}>
+            <Text style={styles.declarationTitle}>Declaration:</Text>
+            <Text style={styles.declarationText}>
+              We declare that this Quotation shows the actual price of the goods
+              described and that all particulars are true and correct.
             </Text>
-            <Text style={styles.detailsText}>
-              <Text style={styles.detailsLabel}>Account No.: </Text>
-              {quotationData.accountNo || " "}
+            <Text style={styles.declarationPrepared}>
+              Prepared By: {quotationData.preparedBy || " "}
             </Text>
-            <Text style={styles.detailsText}>
-              <Text style={styles.detailsLabel}>Bank Name: </Text>
-              {quotationData.bankName || " "}
-            </Text>
-            <Text style={styles.detailsText}>
-              <Text style={styles.detailsLabel}>Bank Address: </Text>
-              {quotationData.bankAddress || " "}
-            </Text>
-            <Text style={styles.detailsText}>
-              <Text style={styles.detailsLabel}>IFSC CODE: </Text>
-              {quotationData.ifscCode || " "}
-            </Text>
-            <Text style={styles.detailsText}>
-              <Text style={styles.detailsLabel}>Email: </Text>
-              {quotationData.email || " "}
-            </Text>
-            <Text style={styles.detailsText}>
-              <Text style={styles.detailsLabel}>Website: </Text>
-              {quotationData.website || " "}
-            </Text>
-            <Text style={styles.detailsText}>
-              <Text style={styles.detailsLabel}>Company PAN: </Text>
-              {quotationData.pan || " "}
+            <Text style={styles.declarationNote}>
+              This Quotation is computer-generated and does not require a seal or
+              signature.
             </Text>
           </View>
-          <View style={styles.qrContainer}>
-            <Image src={qr} style={styles.qrImage} />
-            <Text style={styles.qrText}>Scan for Payment</Text>
-          </View>
-        </View>
-
-        {/* Declaration */}
-        <View style={styles.declarationSection} wrap={false}>
-          <Text style={styles.declarationTitle}>Declaration:</Text>
-          <Text style={styles.declarationText}>
-            We declare that this Quotation shows the actual price of the goods
-            described and that all particulars are true and correct.
-          </Text>
-          <Text style={styles.declarationPrepared}>
-            Prepared By: {quotationData.preparedBy || " "}
-          </Text>
-          <Text style={styles.declarationNote}>
-            This Quotation is computer-generated and does not require a seal or
-            signature.
-          </Text>
         </View>
 
         {/* Footer Page Number */}
