@@ -125,6 +125,30 @@ const formatCurrency = (value) => {
     .trim();
 };
 
+// Helper to force line wrapping on long continuous strings in react-pdf
+const wrapLongWords = (val, maxChars = 8) => {
+  if (!val) return "";
+  const str = String(val);
+  return str
+    .split("\n")
+    .map((line) =>
+      line
+        .split(" ")
+        .map((word) => {
+          if (word.length > maxChars) {
+            let result = "";
+            for (let i = 0; i < word.length; i += maxChars) {
+              result += word.slice(i, i + maxChars) + "\u200B";
+            }
+            return result;
+          }
+          return word;
+        })
+        .join(" ")
+    )
+    .join("\n");
+};
+
 // React-PDF Stylesheet using Roboto for full Indian Rupee Symbol support
 const styles = StyleSheet.create({
   page: {
@@ -176,11 +200,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   boxContainer: {
-    borderWidth: 1,
-    borderColor: "#cccccc",
-    borderStyle: "solid",
-    borderRadius: 6,
-    padding: 15,
+    paddingTop: 10,
+    paddingBottom: 10,
   },
   titleSection: {
     flexDirection: "row",
@@ -259,10 +280,12 @@ const styles = StyleSheet.create({
     borderRightWidth: 1,
     borderRightColor: "#cccccc",
     borderRightStyle: "solid",
+    flexShrink: 0,
   },
   tableCellText: {
     fontSize: 8.5,
     fontFamily: "Roboto",
+    wordBreak: "break-all",
   },
   tableCellHeaderText: {
     fontFamily: "Roboto",
@@ -478,14 +501,17 @@ const styles = StyleSheet.create({
 });
 
 const colStyles = {
-  "S No.": { width: "6%", textAlign: "center" },
-  "Code": { width: "12%", textAlign: "left" },
-  "Product Name": { width: "38%", flexGrow: 1, textAlign: "left" },
-  "GST %": { width: "8%", textAlign: "center" },
-  "Qty": { width: "6%", textAlign: "center" },
-  "Units": { width: "8%", textAlign: "center" },
-  "Rate": { width: "11%", textAlign: "right" },
-  "Amount": { width: "11%", textAlign: "right" },
+  "S No.": { width: "4%", textAlign: "center" },
+  "Code": { width: "9%", textAlign: "left" },
+  "Product Name": { width: "24%", textAlign: "left" },
+  "Description": { width: "18%", textAlign: "left" },
+  "GST %": { width: "5%", textAlign: "center" },
+  "Qty": { width: "4%", textAlign: "center" },
+  "Units": { width: "5%", textAlign: "center" },
+  "Rate": { width: "10%", textAlign: "right" },
+  "Disc %": { width: "4%", textAlign: "center" },
+  "Flat Disc": { width: "7%", textAlign: "right" },
+  "Amount": { width: "10%", textAlign: "right" },
 };
 
 // React PDF Document Component
@@ -536,17 +562,18 @@ const QuotationPDFDocument = ({
     }
   })();
 
-  // Enforced columns list based on user reference image
-  const tableHeaders = [
-    "S No.",
-    "Code",
-    "Product Name",
-    "GST %",
-    "Qty",
-    "Units",
-    "Rate",
-    "Amount",
-  ];
+  // Dynamically push visible columns
+  const tableHeaders = ["S No."];
+  if (!hiddenColumns?.hideCode) tableHeaders.push("Code");
+  if (!hiddenColumns?.hideProductName) tableHeaders.push("Product Name");
+  if (!hiddenColumns?.hideDescription) tableHeaders.push("Description");
+  if (!hiddenColumns?.hideGST) tableHeaders.push("GST %");
+  if (!hiddenColumns?.hideQty) tableHeaders.push("Qty");
+  if (!hiddenColumns?.hideUnits) tableHeaders.push("Units");
+  if (!hiddenColumns?.hideRate) tableHeaders.push("Rate");
+  if (!hiddenColumns?.hideDisc) tableHeaders.push("Disc %");
+  if (!hiddenColumns?.hideFlatDisc) tableHeaders.push("Flat Disc");
+  if (!hiddenColumns?.hideAmount) tableHeaders.push("Amount");
 
   const items = quotationData.items || [];
 
@@ -683,154 +710,87 @@ const QuotationPDFDocument = ({
 
             {/* Data Rows */}
             {items.map((item, index) => (
-              <View key={index} style={styles.tableRow} wrap={false}>
-                <View style={[styles.tableCell, { width: colStyles["S No."].width }]}>
-                  <Text
-                    style={[
-                      styles.tableCellText,
-                      { textAlign: colStyles["S No."].textAlign },
-                    ]}
-                  >
-                    {index + 1}
-                  </Text>
-                </View>
-                <View style={[styles.tableCell, { width: colStyles["Code"].width }]}>
-                  <Text
-                    style={[
-                      styles.tableCellText,
-                      { textAlign: colStyles["Code"].textAlign },
-                    ]}
-                  >
-                    {item.code || " "}
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.tableCell,
-                    {
-                      width: colStyles["Product Name"].width,
-                      flexGrow: colStyles["Product Name"].flexGrow,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.tableCellText,
-                      { textAlign: colStyles["Product Name"].textAlign },
-                    ]}
-                  >
-                    {item.name || " "}
-                  </Text>
-                </View>
-                <View style={[styles.tableCell, { width: colStyles["GST %"].width }]}>
-                  <Text
-                    style={[
-                      styles.tableCellText,
-                      { textAlign: colStyles["GST %"].textAlign },
-                    ]}
-                  >
-                    {item.gst || 18}%
-                  </Text>
-                </View>
-                <View style={[styles.tableCell, { width: colStyles["Qty"].width }]}>
-                  <Text
-                    style={[
-                      styles.tableCellText,
-                      { textAlign: colStyles["Qty"].textAlign },
-                    ]}
-                  >
-                    {Number(item.qty) || 1}
-                  </Text>
-                </View>
-                <View style={[styles.tableCell, { width: colStyles["Units"].width }]}>
-                  <Text
-                    style={[
-                      styles.tableCellText,
-                      { textAlign: colStyles["Units"].textAlign },
-                    ]}
-                  >
-                    {item.units || "Nos"}
-                  </Text>
-                </View>
-                <View style={[styles.tableCell, { width: colStyles["Rate"].width }]}>
-                  <Text
-                    style={[
-                      styles.tableCellText,
-                      { textAlign: colStyles["Rate"].textAlign },
-                    ]}
-                  >
-                    ₹{formatCurrency(item.rate || 0)}
-                  </Text>
-                </View>
-                <View style={[styles.tableCell, { width: colStyles["Amount"].width, borderRightWidth: 0 }]}>
-                  <Text
-                    style={[
-                      styles.tableCellText,
-                      { textAlign: colStyles["Amount"].textAlign },
-                    ]}
-                  >
-                    ₹{formatCurrency(item.amount || 0)}
-                  </Text>
-                </View>
+              <View key={index} style={styles.tableRow}>
+                {tableHeaders.map((header, idx) => {
+                  let cellContent = "";
+                  if (header === "S No.") cellContent = index + 1;
+                  else if (header === "Code") cellContent = wrapLongWords(item.code || " ", 7);
+                  else if (header === "Product Name") cellContent = wrapLongWords(item.name || " ", 10);
+                  else if (header === "Description") cellContent = wrapLongWords(item.description || " ", 8);
+                  else if (header === "GST %") cellContent = `${item.gst || 18}%`;
+                  else if (header === "Qty") cellContent = Number(item.qty) || 1;
+                  else if (header === "Units") cellContent = item.units || "Nos";
+                  else if (header === "Rate") cellContent = `₹${formatCurrency(item.rate || 0)}`;
+                  else if (header === "Disc %") cellContent = `${item.discount || 0}%`;
+                  else if (header === "Flat Disc") cellContent = `₹${formatCurrency(item.flatDiscount || 0)}`;
+                  else if (header === "Amount") cellContent = `₹${formatCurrency(item.amount || 0)}`;
+
+                  return (
+                    <View
+                      key={header}
+                      style={[
+                        styles.tableCell,
+                        {
+                          width: colStyles[header].width,
+                          flexGrow: colStyles[header].flexGrow,
+                        },
+                        idx === tableHeaders.length - 1 ? { borderRightWidth: 0 } : {},
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.tableCellText,
+                          { textAlign: colStyles[header].textAlign },
+                        ]}
+                      >
+                        {cellContent}
+                      </Text>
+                    </View>
+                  );
+                })}
               </View>
             ))}
 
             {/* Empty fallback row */}
             {items.length === 0 && (
               <View style={styles.tableRow} wrap={false}>
-                <View style={[styles.tableCell, { width: colStyles["S No."].width }]}>
-                  <Text
-                    style={[
-                      styles.tableCellText,
-                      { textAlign: colStyles["S No."].textAlign },
-                    ]}
-                  >
-                    1
-                  </Text>
-                </View>
-                <View style={[styles.tableCell, { width: colStyles["Code"].width }]}>
-                  <Text style={[styles.tableCellText, { textAlign: colStyles["Code"].textAlign }]}>
-                    {" "}
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.tableCell,
-                    {
-                      width: colStyles["Product Name"].width,
-                      flexGrow: colStyles["Product Name"].flexGrow,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.tableCellText, { textAlign: colStyles["Product Name"].textAlign }]}>
-                    {" "}
-                  </Text>
-                </View>
-                <View style={[styles.tableCell, { width: colStyles["GST %"].width }]}>
-                  <Text style={[styles.tableCellText, { textAlign: colStyles["GST %"].textAlign }]}>
-                    18%
-                  </Text>
-                </View>
-                <View style={[styles.tableCell, { width: colStyles["Qty"].width }]}>
-                  <Text style={[styles.tableCellText, { textAlign: colStyles["Qty"].textAlign }]}>
-                    1
-                  </Text>
-                </View>
-                <View style={[styles.tableCell, { width: colStyles["Units"].width }]}>
-                  <Text style={[styles.tableCellText, { textAlign: colStyles["Units"].textAlign }]}>
-                    Nos
-                  </Text>
-                </View>
-                <View style={[styles.tableCell, { width: colStyles["Rate"].width }]}>
-                  <Text style={[styles.tableCellText, { textAlign: colStyles["Rate"].textAlign }]}>
-                    ₹0.00
-                  </Text>
-                </View>
-                <View style={[styles.tableCell, { width: colStyles["Amount"].width, borderRightWidth: 0 }]}>
-                  <Text style={[styles.tableCellText, { textAlign: colStyles["Amount"].textAlign }]}>
-                    ₹0.00
-                  </Text>
-                </View>
+                {tableHeaders.map((header, idx) => {
+                  let cellContent = "";
+                  if (header === "S No.") cellContent = "1";
+                  else if (header === "Code") cellContent = " ";
+                  else if (header === "Product Name") cellContent = " ";
+                  else if (header === "Description") cellContent = " ";
+                  else if (header === "GST %") cellContent = "18%";
+                  else if (header === "Qty") cellContent = "1";
+                  else if (header === "Units") cellContent = "Nos";
+                  else if (header === "Rate") cellContent = "₹0.00";
+                  else if (header === "Disc %") cellContent = "0%";
+                  else if (header === "Flat Disc") cellContent = "₹0.00";
+                  else if (header === "Amount") cellContent = "₹0.00";
+
+                  return (
+                    <View
+                      key={header}
+                      style={[
+                        styles.tableCell,
+                        {
+                          width: colStyles[header].width,
+                          flexGrow: colStyles[header].flexGrow,
+                        },
+                        idx === tableHeaders.length - 1 ? { borderRightWidth: 0 } : {},
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.tableCellText,
+                          { textAlign: colStyles[header].textAlign },
+                        ]}
+                      >
+                        {cellContent}
+                      </Text>
+                    </View>
+                  );
+                })}
               </View>
             )}
 
@@ -1156,10 +1116,10 @@ const QuotationPDFDocument = ({
           </View>
 
           {/* Terms & Conditions */}
-          <View style={styles.termsSection} wrap={false}>
+          <View style={styles.termsSection}>
             <Text style={styles.sectionTitle}>Terms & Conditions</Text>
             {!hiddenFields?.validity && (
-              <View style={styles.termRow}>
+              <View style={styles.termRow} wrap={false}>
                 <Text style={styles.termLabel}>Validity</Text>
                 <Text style={styles.termValue}>
                   {quotationData.validity ||
@@ -1168,7 +1128,7 @@ const QuotationPDFDocument = ({
               </View>
             )}
             {!hiddenFields?.paymentTerms && (
-              <View style={styles.termRow}>
+              <View style={styles.termRow} wrap={false}>
                 <Text style={styles.termLabel}>Payment Terms</Text>
                 <Text style={styles.termValue}>
                   {quotationData.paymentTerms ||
@@ -1177,7 +1137,7 @@ const QuotationPDFDocument = ({
               </View>
             )}
             {!hiddenFields?.delivery && (
-              <View style={styles.termRow}>
+              <View style={styles.termRow} wrap={false}>
                 <Text style={styles.termLabel}>Delivery</Text>
                 <Text style={styles.termValue}>
                   {quotationData.delivery ||
@@ -1186,7 +1146,7 @@ const QuotationPDFDocument = ({
               </View>
             )}
             {!hiddenFields?.freight && (
-              <View style={styles.termRow}>
+              <View style={styles.termRow} wrap={false}>
                 <Text style={styles.termLabel}>Freight</Text>
                 <Text style={styles.termValue}>
                   {quotationData.freight || "Extra as per actual."}
@@ -1194,7 +1154,7 @@ const QuotationPDFDocument = ({
               </View>
             )}
             {!hiddenFields?.warranty && (
-              <View style={styles.termRow}>
+              <View style={styles.termRow} wrap={false}>
                 <Text style={styles.termLabel}>Warranty</Text>
                 <Text style={styles.termValue}>
                   {quotationData.warranty ||
@@ -1203,7 +1163,7 @@ const QuotationPDFDocument = ({
               </View>
             )}
             {!hiddenFields?.taxes && (
-              <View style={styles.termRow}>
+              <View style={styles.termRow} wrap={false}>
                 <Text style={styles.termLabel}>Taxes</Text>
                 <Text style={styles.termValue}>
                   {quotationData.taxes || "Extra mentioned in the quotation."}
@@ -1211,7 +1171,7 @@ const QuotationPDFDocument = ({
               </View>
             )}
             {!hiddenFields?.insurance && (
-              <View style={styles.termRow}>
+              <View style={styles.termRow} wrap={false}>
                 <Text style={styles.termLabel}>Insurance</Text>
                 <Text style={styles.termValue}>
                   {quotationData.insurance ||
@@ -1220,7 +1180,7 @@ const QuotationPDFDocument = ({
               </View>
             )}
             {!hiddenFields?.afterReceiptOfMaterial && (
-              <View style={styles.termRow}>
+              <View style={styles.termRow} wrap={false}>
                 <Text style={styles.termLabel}>After Receipt of Material</Text>
                 <Text style={styles.termValue}>
                   {quotationData.afterReceiptOfMaterial ||
@@ -1229,7 +1189,7 @@ const QuotationPDFDocument = ({
               </View>
             )}
             {!hiddenFields?.technicalSupport && (
-              <View style={styles.termRow}>
+              <View style={styles.termRow} wrap={false}>
                 <Text style={styles.termLabel}>Technical Support</Text>
                 <Text style={styles.termValue}>
                   {quotationData.technicalSupport ||
