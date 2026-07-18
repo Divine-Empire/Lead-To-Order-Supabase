@@ -252,9 +252,15 @@ const styles = StyleSheet.create({
   },
   table: {
     width: "100%",
-    borderWidth: 1,
-    borderColor: "#cccccc",
-    borderStyle: "solid",
+    borderLeftWidth: 1,
+    borderLeftColor: "#cccccc",
+    borderLeftStyle: "solid",
+    borderRightWidth: 1,
+    borderRightColor: "#cccccc",
+    borderRightStyle: "solid",
+    borderBottomWidth: 1,
+    borderBottomColor: "#cccccc",
+    borderBottomStyle: "solid",
     marginTop: 10,
     marginBottom: 15,
     position: "relative",
@@ -264,7 +270,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#cccccc",
     width: "100%",
     position: "absolute",
-    top: 0,
+    top: -2.5,
     left: 0,
     zIndex: 10,
   },
@@ -523,17 +529,17 @@ const styles = StyleSheet.create({
 });
 
 const colStyles = {
-  "S No.": { width: "3%", textAlign: "center" },
+  "S No.": { width: "3%", textAlign: "left" },
   "Code": { width: "8%", textAlign: "left" },
-  "Product Name": { width: "24%", textAlign: "left" },
-  "Description": { width: "18%", textAlign: "left" },
-  "GST %": { width: "4.5%", textAlign: "center" },
-  "Qty": { width: "3.5%", textAlign: "center" },
-  "Units": { width: "4%", textAlign: "center" },
-  "Rate": { width: "11%", textAlign: "right" },
-  "Disc %": { width: "3.5%", textAlign: "center" },
-  "Flat Disc": { width: "9.5%", textAlign: "right" },
-  "Amount": { width: "11%", textAlign: "right" },
+  "Product Name": { width: "14%", textAlign: "left" },
+  "Description": { width: "28%", textAlign: "left" },
+  "GST %": { width: "4.5%", textAlign: "left" },
+  "Qty": { width: "3.5%", textAlign: "left" },
+  "Units": { width: "4%", textAlign: "left" },
+  "Rate": { width: "11%", textAlign: "left" },
+  "Disc %": { width: "3.5%", textAlign: "left" },
+  "Flat Disc": { width: "9.5%", textAlign: "left" },
+  "Amount": { width: "11%", textAlign: "left" },
 };
 
 // React PDF Document Component
@@ -632,9 +638,9 @@ const QuotationPDFDocument = ({
   }
 
   // Calculate dynamic word break thresholds based on column counts
-  const codeMaxChars = tableHeaders.length <= 6 ? 16 : (tableHeaders.length >= 9 ? 7 : 10);
-  const nameMaxChars = tableHeaders.length <= 6 ? 24 : (tableHeaders.length >= 9 ? 10 : 16);
-  const descMaxChars = tableHeaders.length <= 6 ? 20 : (tableHeaders.length >= 9 ? 8 : 12);
+  const codeMaxChars = tableHeaders.length <= 6 ? 16 : (tableHeaders.length >= 9 ? 8 : 10);
+  const nameMaxChars = tableHeaders.length <= 6 ? 24 : (tableHeaders.length >= 9 ? 12 : 16);
+  const descMaxChars = tableHeaders.length <= 6 ? 20 : (tableHeaders.length >= 9 ? 12 : 16);
 
   const showTaxBreakdown =
     (quotationData.isIGST && !hiddenColumns?.hideIGST) ||
