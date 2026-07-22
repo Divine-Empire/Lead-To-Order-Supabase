@@ -43,7 +43,7 @@ const TermsAndConditions = ({
                     <option value="6 months warranty applicable against Manufacturing defects.">
                       Standard 6 Months Warranty
                     </option>
-                    <option value="The equipment is warranted against manufacturing defects for a period of 12 months from the date of invoice. whichever is earlier. The rubber parts, wire rope and electric components are not covered under this warranty. Warranty is specifically for manufacturing defects only.">
+                    <option value="The equipment is warranted against manufacturing defects for a period of 6 months from the date of invoice. An unconditional warranty of 1 month is provided, during which service and spare parts will be provided free of charge.">
                       Extended 12 Months Warranty (Detailed)
                     </option>
                   </select>
