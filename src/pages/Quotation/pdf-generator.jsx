@@ -771,7 +771,7 @@ const QuotationPDFDocument = ({
 
             {/* Data Rows */}
             {items.map((item, index) => (
-              <View key={index} style={styles.tableRow} wrap={false}>
+              <View key={index} style={styles.tableRow}>
                 {tableHeaders.map((header, idx) => {
                   let cellContent = "";
                   if (header === "S No.") cellContent = index + 1;
@@ -814,7 +814,7 @@ const QuotationPDFDocument = ({
 
             {/* Empty fallback row */}
             {items.length === 0 && (
-              <View style={styles.tableRow} wrap={false}>
+              <View style={styles.tableRow}>
                 {tableHeaders.map((header, idx) => {
                   let cellContent = "";
                   if (header === "S No.") cellContent = "1";
