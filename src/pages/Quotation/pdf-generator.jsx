@@ -143,7 +143,7 @@ const wrapLongWords = (val) => {
 const styles = StyleSheet.create({
   page: {
     paddingTop: 20,
-    paddingBottom: 20,
+    paddingBottom: 40,
     paddingLeft: 20,
     paddingRight: 20,
     backgroundColor: "#ffffff",
@@ -508,10 +508,12 @@ const styles = StyleSheet.create({
     color: "#666666",
   },
   pageNumber: {
+    position: "absolute",
+    bottom: 12,
+    left: 0,
+    right: 0,
     fontSize: 8,
     fontFamily: "Roboto",
-    marginTop: "auto",
-    paddingBottom: 12,
     textAlign: "center",
     color: "#999999",
   },
