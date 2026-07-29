@@ -125,35 +125,25 @@ const formatCurrency = (value) => {
     .trim();
 };
 
-// Helper to force line wrapping on long continuous strings in react-pdf
-const wrapLongWords = (val, maxChars = 8) => {
-  if (!val) return "";
-  const str = String(val);
-  return str
-    .split("\n")
-    .map((line) =>
-      line
-        .split(" ")
-        .map((word) => {
-          if (word.length > maxChars) {
-            let result = "";
-            for (let i = 0; i < word.length; i += maxChars) {
-              result += word.slice(i, i + maxChars) + "\u200B";
-            }
-            return result;
-          }
-          return word;
-        })
-        .join(" ")
-    )
-    .join("\n");
+// Helper to force line wrapping on long continuous strings in react-pdf.
+// wordBreak: "break-all" on the cell style handles most wrapping, but
+// @react-pdf/renderer's default hyphenation splits a word at any existing
+// hyphen (e.g. "MOULD-150X150X150MM" -> "MOULD-" + "150X150X150MM") without
+// re-checking whether that remainder still fits the column, letting it
+// overflow past the cell's right edge. A zero-width space after the hyphen
+// doesn't fix this (the engine still mismeasures the fit), so instead we
+// force a real line break after a hyphen when the following run of
+// non-space characters is long enough to risk overflowing a table cell.
+const wrapLongWords = (val) => {
+  if (!val) return " ";
+  return String(val).replace(/-(\S{11,})/g, "-\n$1");
 };
 
 // React-PDF Stylesheet using Roboto for full Indian Rupee Symbol support
 const styles = StyleSheet.create({
   page: {
     paddingTop: 20,
-    paddingBottom: 35,
+    paddingBottom: 20,
     paddingLeft: 20,
     paddingRight: 20,
     backgroundColor: "#ffffff",
@@ -518,11 +508,10 @@ const styles = StyleSheet.create({
     color: "#666666",
   },
   pageNumber: {
-    position: "absolute",
     fontSize: 8,
-    bottom: 15,
-    left: 0,
-    right: 0,
+    fontFamily: "Roboto",
+    marginTop: "auto",
+    paddingBottom: 12,
     textAlign: "center",
     color: "#999999",
   },
@@ -744,7 +733,7 @@ const QuotationPDFDocument = ({
             <View style={styles.tableTopBorderLine} fixed />
             <View style={styles.tableBottomBorderLine} fixed />
             {/* Header Row */}
-            <View style={[styles.tableRow, styles.tableRowHeader]}>
+            <View style={[styles.tableRow, styles.tableRowHeader]} wrap={false}>
               {tableHeaders.map((header, idx) => (
                 <View
                   key={header}
@@ -771,7 +760,7 @@ const QuotationPDFDocument = ({
 
             {/* Data Rows */}
             {items.map((item, index) => (
-              <View key={index} style={styles.tableRow}>
+              <View key={index} style={styles.tableRow} minPresenceAhead={40}>
                 {tableHeaders.map((header, idx) => {
                   let cellContent = "";
                   if (header === "S No.") cellContent = index + 1;
@@ -814,7 +803,7 @@ const QuotationPDFDocument = ({
 
             {/* Empty fallback row */}
             {items.length === 0 && (
-              <View style={styles.tableRow}>
+              <View style={styles.tableRow} wrap={false}>
                 {tableHeaders.map((header, idx) => {
                   let cellContent = "";
                   if (header === "S No.") cellContent = "1";
@@ -1349,11 +1338,9 @@ const QuotationPDFDocument = ({
         </View>
 
         {/* Footer Page Number */}
-        <Text
-          style={styles.pageNumber}
-          render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
-          fixed
-        />
+        <Text style={styles.pageNumber} fixed>
+          Page
+        </Text>
       </Page>
     </Document>
   );
