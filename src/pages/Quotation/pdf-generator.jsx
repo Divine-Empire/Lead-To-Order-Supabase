@@ -762,7 +762,7 @@ const QuotationPDFDocument = ({
 
             {/* Data Rows */}
             {items.map((item, index) => (
-              <View key={index} style={styles.tableRow} minPresenceAhead={40}>
+              <View key={index} style={styles.tableRow}>
                 {tableHeaders.map((header, idx) => {
                   let cellContent = "";
                   if (header === "S No.") cellContent = index + 1;
